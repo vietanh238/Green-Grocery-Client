@@ -1,1 +1,10 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'styles/_variables';
+
+.btn-green {
+  background-color: #05bb4e;
+  color: white;
+  &:hover {
+    background-color: #00a63e;
+    color: white;
+  }
+}
