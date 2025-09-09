@@ -11,18 +11,31 @@
     <form>
       <div class="mb-3">
         <label for="exampleInputEmail1" class="form-label">Số điện thoại</label>
-        <input type="number" class="form-control" id="exampleInputNumber" />
+        <input
+          type="number"
+          class="form-control"
+          id="phoneNum"
+          name="phoneNum"
+          (keydown)="validateInput($event)"
+          [(ngModel)]="phoneNum"
+        />
       </div>
       <div class="mb-3">
         <label for="exampleInputPassword1" class="form-label">Mật khẩu</label>
-        <input type="password" class="form-control" id="exampleInputPassword1" />
+        <input
+          type="password"
+          class="form-control"
+          name="password"
+          id="exampleInputPassword1"
+          [(ngModel)]="password"
+        />
       </div>
       <div class="mb-5 d-flex gap-2 align-items-center">
         <input type="checkbox" class="check-input" id="exampleCheck1" />
         <label class="form-check-label" for="exampleCheck1">Nhớ mật khẩu</label>
       </div>
       <div class="d-flex justify-content-center">
-        <button type="submit" class="btn btn-green">Đăng nhập</button>
+        <button type="submit" class="btn btn-green" (click)="login()">Đăng nhập</button>
       </div>
     </form>
   </div>

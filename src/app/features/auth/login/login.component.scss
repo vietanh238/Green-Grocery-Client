@@ -1,5 +1,3 @@
-@use '../../../styles/variables' as *;
-
 .login-container {
   background-color: #d1e7dd;
   .form {
@@ -17,13 +15,16 @@
     }
   }
 }
+
 input[type='checkbox']:checked {
   background-color: #05bb4e;
 }
+
 input[type='checkbox']:checked:after {
   content: '\2713';
   color: white;
 }
+
 input[type='checkbox'] {
   text-align: center;
   display: table-cell;
@@ -35,4 +36,14 @@ input[type='checkbox'] {
   border: 1px solid #000;
   box-shadow: none;
   font-size: 1em;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
 }
