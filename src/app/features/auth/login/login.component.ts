@@ -47,9 +47,9 @@ export class LoginComponent implements OnInit {
       } else {
         this.message.add({
           severity: 'info',
-          summary: 'Info',
-          detail: 'Message Content',
-          life: 3000,
+          summary: 'Thông báo',
+          detail: data.response.error_message,
+          life: 300000,
         });
       }
     });
