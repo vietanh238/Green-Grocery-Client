@@ -10,12 +10,14 @@ export const authInterceptor = (
 ): Observable<HttpEvent<unknown>> => {
   const tokenService = inject(TokenService);
   const router = inject(Router);
-
-  let authReq = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${tokenService.getAccessToken() || ''}`,
-    },
-  });
+  const token = tokenService.getAccessToken();
+  let authReq = token
+    ? req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    : req;
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {

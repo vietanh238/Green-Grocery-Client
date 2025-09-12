@@ -1,5 +1,5 @@
 .login-container {
-  background-color: #d1e7dd;
+  background-image: radial-gradient(circle at center, #10b981, transparent);
   .form {
     background-color: white;
     padding: 40px;
@@ -46,4 +46,15 @@ input[type='number']::-webkit-outer-spin-button {
 
 input[type='number'] {
   -moz-appearance: textfield;
+}
+:host ::ng-deep {
+  .p-toast-message-icon {
+    margin-top: 3px;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  .p-toast {
+    max-width: 340px;
+  }
 }

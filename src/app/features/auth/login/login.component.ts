@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ConstantDef } from '../../../core/constanDef';
 import { Router } from '@angular/router';
 import { TokenService } from '../../../core/services/token.service';
-import $ from 'jquery';
+import $, { error } from 'jquery';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
@@ -18,6 +18,7 @@ import { MessageService } from 'primeng/api';
 export class LoginComponent implements OnInit {
   phoneNum: string = '';
   password: string = '';
+  isLoading: boolean = false;
 
   constructor(
     private service: Service,
@@ -35,27 +36,68 @@ export class LoginComponent implements OnInit {
   }
 
   login() {
+    if (!this.validate()) return;
+    if (this.isLoading) return;
+
+    this.isLoading = true;
+    setTimeout(() => {
+      this.isLoading = false;
+    }, 2000);
     const password = this.password.trim();
     const params = {
       phone_number: $('#phoneNum').val(),
       password: password,
     };
-    this.service.login(params).subscribe((data: any) => {
-      if (data.status === ConstantDef.STATUS_SUCCESS) {
-        this.saveAccessToken(data.response.access);
-        this.router.navigate(['home']);
-      } else {
+    this.service.login(params).subscribe(
+      (data: any) => {
+        if (data.status === ConstantDef.STATUS_SUCCESS) {
+          this.saveAccessToken(data.response.access);
+          this.router.navigate(['home']);
+        } else {
+          this.message.add({
+            severity: 'error',
+            summary: 'Thông báo',
+            detail: data.response.error_message_vn,
+            life: 1000,
+          });
+        }
+      },
+      (error: any) => {
+        console.log('error', error);
         this.message.add({
-          severity: 'info',
+          severity: 'error',
           summary: 'Thông báo',
-          detail: data.response.error_message,
-          life: 300000,
+          detail: 'Đã có lỗi xảy ra, vui lòng thử lại sau',
+          life: 1000,
         });
+        this.isLoading = false;
       }
-    });
+    );
   }
 
   saveAccessToken(token: string) {
     this.token.setAccessToken(token);
+  }
+
+  validate(): boolean {
+    if (!this.phoneNum) {
+      this.message.add({
+        severity: 'warn',
+        summary: 'Thông báo',
+        detail: 'Vui lòng nhập số điện thoại',
+        life: 1000,
+      });
+      return false;
+    }
+    if (!this.password) {
+      this.message.add({
+        severity: 'warn',
+        summary: 'Thông báo',
+        detail: 'Vui lòng nhập mât khẩu đăng nhập',
+        life: 1000,
+      });
+      return false;
+    }
+    return true;
   }
 }

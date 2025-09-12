@@ -3,6 +3,7 @@ import { importProvidersFrom } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { Routes } from '@angular/router';
+import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -13,6 +14,7 @@ export const routes: Routes = [
   {
     path: 'home',
     loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
+    canActivate: [AuthGuard],
   },
   {
     path: '',
