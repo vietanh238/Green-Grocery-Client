@@ -5,9 +5,12 @@
     </ng-template>
     <ng-template #end class="d-flex justify-content-around">
       <div class="d-flex justify-content-around gap-3 align-items-center">
-        <button class="bell">
+        <!-- <button class="bell">
           <i class="pi pi-bell"></i>
-        </button>
+        </button> -->
+        <p-overlaybadge value="2">
+          <i class="pi pi-bell" style="font-size: 24px" (click)="openDrawer()"></i>
+        </p-overlaybadge>
         <button class="search d-flex gap-2 align-items-center">
           <i class="pi pi-search"></i>
           <span class="text">Tìm kiếm nhanh...</span>
@@ -20,3 +23,18 @@
     </ng-template>
   </p-menubar>
 </div>
+<p-drawer [(visible)]="visible" position="right" closable="false">
+  <ng-template #header>
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="font-bold">Thông báo</h4>
+      <button class="readed">
+        <i>Đánh dấu đã đọc</i>
+      </button>
+    </div>
+  </ng-template>
+  <p>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+    labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
+    laboris nisi ut aliquip ex ea commodo consequat.
+  </p>
+</p-drawer>

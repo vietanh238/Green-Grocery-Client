@@ -5,16 +5,19 @@ import { Menubar } from 'primeng/menubar';
 import { NgIf, NgClass } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import $ from 'jquery';
+import { OverlayBadgeModule } from 'primeng/overlaybadge';
+import { DrawerModule } from 'primeng/drawer';
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
   standalone: true,
-  imports: [Menubar, NgIf, RouterLink, NgClass],
+  imports: [Menubar, NgIf, RouterLink, NgClass, OverlayBadgeModule, DrawerModule],
 })
 export class HeaderComponent implements OnInit {
   items: MenuItem[] | undefined;
+  visible: boolean = false;
   constructor(public router: Router) {}
   ngOnInit() {
     this.items = [
@@ -49,5 +52,8 @@ export class HeaderComponent implements OnInit {
         routerLinkActiveOptions: { exact: true },
       },
     ];
+  }
+  openDrawer() {
+    this.visible = true;
   }
 }

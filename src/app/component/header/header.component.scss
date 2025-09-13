@@ -35,12 +35,32 @@
     background: #e3f2fd !important;
     border-radius: 5px;
   }
+  .p-overlaybadge {
+    margin-top: 10px;
+    cursor: pointer;
+  }
 }
 .text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.readed {
+  border: none;
+  outline: none;
+  background: unset;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 5px;
+  &:hover {
+    background-color: green;
+    color: white;
+  }
+}
+
 @media (min-width: 900px) {
   .header-icon {
     display: inline-block;
