@@ -52,7 +52,7 @@ export class LoginComponent implements OnInit {
       (data: any) => {
         if (data.status === ConstantDef.STATUS_SUCCESS) {
           this.saveAccessToken(data.response.access);
-          this.router.navigate(['home']);
+          this.router.navigate(['page/home']);
         } else {
           this.message.add({
             severity: 'error',

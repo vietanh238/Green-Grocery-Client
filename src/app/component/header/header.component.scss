@@ -1,0 +1,48 @@
+.search {
+  width: 200px;
+  height: 40px;
+  border-radius: 10px;
+  outline: none;
+  border: 1px solid;
+}
+.admin {
+  border: 1px solid;
+  padding: 5px 15px;
+  border-radius: 5px;
+  background-color: white;
+  height: 40px;
+}
+.search {
+  border: 1px solid;
+  padding: 5px 15px;
+  border-radius: 5px;
+  background-color: white;
+  height: 40px;
+}
+.bell {
+  border: 1px solid;
+  padding: 5px 15px;
+  border-radius: 5px;
+  background-color: white;
+  height: 40px;
+}
+.header-icon {
+  display: none;
+}
+:host ::ng-deep {
+  .p-menubar-item-link-active {
+    color: green !important;
+    background: #e3f2fd !important;
+    border-radius: 5px;
+  }
+}
+.text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (min-width: 900px) {
+  .header-icon {
+    display: inline-block;
+  }
+}

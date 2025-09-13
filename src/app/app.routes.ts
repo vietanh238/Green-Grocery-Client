@@ -4,6 +4,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { HomeComponent } from './features/home/home.component';
 
 export const routes: Routes = [
   {
@@ -12,9 +13,15 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
-    path: 'home',
-    loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
+    path: 'page',
+    loadComponent: () => import('./component/page/page.component').then((m) => m.PageComponent),
     canActivate: [AuthGuard],
+    children: [
+      {
+        path: 'home',
+        component: HomeComponent,
+      },
+    ],
   },
   {
     path: '',

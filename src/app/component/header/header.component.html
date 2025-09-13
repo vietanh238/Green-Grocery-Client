@@ -1,0 +1,22 @@
+<div class="card">
+  <p-menubar [model]="items">
+    <ng-template #start>
+      <img src="assets/icon.png" alt="" class="header-icon" style="width: 50px; height: 50px" />
+    </ng-template>
+    <ng-template #end class="d-flex justify-content-around">
+      <div class="d-flex justify-content-around gap-3 align-items-center">
+        <button class="bell">
+          <i class="pi pi-bell"></i>
+        </button>
+        <button class="search d-flex gap-2 align-items-center">
+          <i class="pi pi-search"></i>
+          <span class="text">Tìm kiếm nhanh...</span>
+        </button>
+        <button class="admin d-flex gap-2 align-items-center">
+          <i class="pi pi-user"></i>
+          <span class="text header-icon">Quản lý</span>
+        </button>
+      </div>
+    </ng-template>
+  </p-menubar>
+</div>
