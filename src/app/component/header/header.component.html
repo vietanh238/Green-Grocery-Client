@@ -8,7 +8,10 @@
         <!-- <button class="bell">
           <i class="pi pi-bell"></i>
         </button> -->
-        <p-overlaybadge value="2">
+        <p-overlaybadge
+          [value]="countNotifications"
+          [severity]="countNotifications > 9 ? 'danger' : 'success'"
+        >
           <i class="pi pi-bell" style="font-size: 24px" (click)="openDrawer()"></i>
         </p-overlaybadge>
         <button class="search d-flex gap-2 align-items-center">
@@ -23,18 +26,36 @@
     </ng-template>
   </p-menubar>
 </div>
-<p-drawer [(visible)]="visible" position="right" closable="false">
+<p-drawer
+  [(visible)]="visible"
+  position="right"
+  closable="false"
+  [style]="drawerStyle"
+  [blockScroll]="true"
+  [modal]="true"
+>
   <ng-template #header>
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-between align-items-center w-100">
       <h4 class="font-bold">Thông báo</h4>
-      <button class="readed">
+      <button class="readed-all">
         <i>Đánh dấu đã đọc</i>
       </button>
     </div>
   </ng-template>
-  <p>
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-    labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-    laboris nisi ut aliquip ex ea commodo consequat.
-  </p>
+  <div *ngIf="visible">
+    <div *ngIf="lstNotification.length === 0">
+      <p-message severity="info">Không có thông báo</p-message>
+    </div>
+    <div *ngFor="let item of lstNotification" style="margin-top: 10px">
+      <span class="card-message" [style]="{ 'background-color': item.bg, color: item.color }">
+        <i [class]="item.icon" style="margin: auto 0px auto 2px"></i>
+        <div class="d-flex flex-column">
+          <p class="title text" style="margin: 2px">{{ item.title || '' }}</p>
+          <p class="text" style="margin: 2px; font-size: small">{{ item.message || '' }}</p>
+          <p class="text" style="margin: 2px; font-size: small">{{ item.time_now || '' }}</p>
+        </div>
+        <i class="pi pi-thumbs-up-fill readed" style="margin: auto 5px auto 0px"></i>
+      </span>
+    </div>
+  </div>
 </p-drawer>

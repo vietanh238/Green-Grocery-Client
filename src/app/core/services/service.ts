@@ -7,14 +7,19 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class Service {
-  private readonly loginUrl = environment.apiAuth + 'login/';
+  private readonly LOGIN_URL = environment.apiAuth + 'login/';
+  private readonly NOTIFICATION_URL = environment.apiHome + 'notifications/';
 
   constructor(private _http: HttpClient) {}
 
   login(params: any): Observable<any> {
-    return this._http.post(this.loginUrl, {
+    return this._http.post(this.LOGIN_URL, {
       phone_number: params.phone_number,
       password: params.password,
     });
+  }
+
+  getNotifications(): Observable<any> {
+    return this._http.get(this.NOTIFICATION_URL);
   }
 }

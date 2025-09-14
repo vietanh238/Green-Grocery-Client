@@ -39,14 +39,22 @@
     margin-top: 10px;
     cursor: pointer;
   }
+  .p-badge {
+    width: 10px;
+  }
 }
 .text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .readed {
+  cursor: pointer;
+  &:hover {
+    color: green;
+  }
+}
+.readed-all {
   border: none;
   outline: none;
   background: unset;
@@ -58,6 +66,17 @@
   &:hover {
     background-color: green;
     color: white;
+  }
+}
+.card-message {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid;
+  padding: 2px 5px;
+  border-radius: 5px;
+  align-items: start;
+  .title {
+    font-weight: bold;
   }
 }
 
