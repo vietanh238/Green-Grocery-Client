@@ -62,7 +62,7 @@ export class HeaderComponent implements OnInit {
       {
         label: 'Sản phẩm',
         icon: 'pi pi-shop',
-        routerLink: ['/page/product'],
+        routerLink: ['/page/products'],
         routerLinkActiveOptions: { exact: true },
       },
       {
@@ -80,9 +80,6 @@ export class HeaderComponent implements OnInit {
     ];
     this.drawerStyle = window.innerWidth < 700 ? { width: '20rem' } : { width: '25rem' };
     this.getNotifications();
-    setInterval(() => {
-      this.getNotifications();
-    }, 10000);
   }
 
   openDrawer() {

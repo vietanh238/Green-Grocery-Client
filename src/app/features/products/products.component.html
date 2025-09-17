@@ -1,0 +1,36 @@
+<div class="d-flex justify-content-between p-3 align-items-center">
+  <h3 style="color: green; font-weight: bold">Quản lý sản phẩm</h3>
+  <button class="btn btn-success" (click)="showDialog()">Thêm sản phẩm</button>
+</div>
+<p-dialog
+  header="Thêm sản phẩm mới"
+  [modal]="true"
+  [(visible)]="visible"
+  [style]="{ width: '25rem' }"
+>
+  <div class="d-flex flex-column">
+    <label for="username" class="label">Tên sản phẩm <span class="require-input">*</span></label>
+    <input
+      pInputText
+      id="username"
+      class="flex-auto"
+      autocomplete="off"
+      placeholder="Nhập tên sản phẩm"
+    />
+  </div>
+  <div class="d-flex flex-column mt-3">
+    <label for="username" class="label">SKU<span class="require-input">*</span></label>
+    <input
+      pInputText
+      id="username"
+      class="flex-auto"
+      autocomplete="off"
+      placeholder="Nhập mã SKU"
+    />
+  </div>
+
+  <div class="d-flex justify-content-between mt-4">
+    <p-button label="Cancel" severity="secondary" (click)="visible = false" />
+    <p-button label="Save" (click)="visible = false" />
+  </div>
+</p-dialog>
