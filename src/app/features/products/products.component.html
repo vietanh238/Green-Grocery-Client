@@ -8,108 +8,128 @@
   [(visible)]="visible"
   [style]="{ width: '25rem' }"
   draggable="false"
+  appendTo="body"
 >
   <div class="d-flex flex-column">
-    <label for="username" class="label">Tên sản phẩm <span class="require-input">*</span></label>
+    <label for="productName" class="label">Tên sản phẩm <span class="require-input">*</span></label>
     <input
       pInputText
-      id="username"
+      id="productName"
       class="flex-auto"
       autocomplete="off"
       placeholder="Nhập tên sản phẩm"
+      [(ngModel)]="productName"
     />
   </div>
   <div class="d-flex flex-column mt-3">
-    <label for="username" class="label">SKU<span class="require-input">*</span></label>
+    <label for="sku" class="label">SKU<span class="require-input">*</span></label>
     <input
       pInputText
-      id="username"
+      id="sku"
       class="flex-auto"
       autocomplete="off"
       placeholder="Nhập mã SKU"
+      [(ngModel)]="sku"
     />
   </div>
   <div class="d-flex mt-3 row">
-    <div class="col-sm-6">
-      <label for="username" class="label">Giá nhập<span class="require-input">*</span></label>
+    <div class="col-6 col-sm-6">
+      <label for="importPrice" class="label">Giá nhập<span class="require-input">*</span></label>
       <input
         pInputText
-        id="username"
+        id="importPrice"
         class="flex-auto w-100"
         autocomplete="off"
-        placeholder="0 VND"
+        [(ngModel)]="importPrice"
       />
     </div>
-    <div class="col-sm-6 mt-sm-0 mt-3">
-      <label for="username" class="label">Giá bán<span class="require-input">*</span></label>
+    <div class="col-6 col-sm-6">
+      <label for="sellingPrice" class="label">Giá bán<span class="require-input">*</span></label>
       <input
         pInputText
-        id="username"
+        id="sellingPrice"
         class="flex-auto w-100"
         autocomplete="off"
-        placeholder="0 VND"
+        [(ngModel)]="sellingPrice"
+        type="text"
+        (keydown)="inputNumber($event)"
+        (blur)="transformCurrency($event)"
+        (focus)="focusInp()"
+        (input)="input($event)"
       />
     </div>
   </div>
   <div class="d-flex mt-3 row">
-    <div class="col-6 col-sm-8">
-      <label for="username" class="label">Số lượng<span class="require-input">*</span></label>
-      <input pInputText id="username" class="flex-auto w-100" autocomplete="off" placeholder="0" />
+    <div class="col-6 col-sm-6">
+      <label for="quantity" class="label">Số lượng<span class="require-input">*</span></label>
+      <input
+        pInputText
+        id="quantity"
+        class="flex-auto w-100"
+        autocomplete="off"
+        placeholder="0"
+        [(ngModel)]="quantity"
+      />
     </div>
-    <div class="col-6 col-sm-4">
-      <label for="username" class="label">Đơn vị<span class="require-input">*</span></label>
+    <div class="col-6 col-sm-6">
+      <label for="unit" class="label">Đơn vị<span class="require-input">*</span></label>
       <p-select
-        [options]="category"
-        [(ngModel)]="categorySld"
+        id="unit"
+        [options]="lstUnit"
+        [(ngModel)]="unitSld"
         optionLabel="name"
         class="w-100"
         appendTo="body"
+        [filter]="true"
       />
     </div>
   </div>
-  <div class="d-flex flex-column mt-3">
-    <label for="username" class="label">Phân loại</label>
-    <p-select
-      [options]="category"
-      [(ngModel)]="categorySld"
-      optionLabel="name"
-      placeholder="Chọn phân loại sản phẩm"
-      class="w-100"
-      appendTo="body"
-    />
+  <div class="d-flex mt-3 row">
+    <div class="col-6 col-sm-6">
+      <label for="barCode" class="label">Phân loại</label>
+
+      <input
+        pInputText
+        id="category"
+        class="flex-auto w-100"
+        autocomplete="off"
+        [(ngModel)]="category"
+        placeholder="Nhập tên loại"
+      />
+    </div>
+    <div class="col-6 col-sm-6">
+      <label for="category" class="label">Phân loại đã có</label>
+      <p-select
+        [options]="lstCategory"
+        [(ngModel)]="categorySld"
+        optionLabel="name"
+        placeholder="Chọn"
+        class="w-100"
+        appendTo="body"
+        [filter]="true"
+        filterBy="name"
+        [showClear]="true"
+      />
+    </div>
   </div>
+
   <div class="d-flex flex-column mt-3">
-    <label for="username" class="label">Thương hiệu</label>
-    <p-select
-      [options]="category"
-      [(ngModel)]="categorySld"
-      optionLabel="name"
-      placeholder="Chọn phân loại sản phẩm"
-      class="w-100"
-      appendTo="body"
-    />
+    <label for="username" class="label">Barcode<span class="require-input">*</span></label>
+    <div class="d-flex justify-content-between gap-1">
+      <input
+        pInputText
+        id="barCode"
+        class="flex-auto w-100"
+        autocomplete="off"
+        [(ngModel)]="barCode"
+      />
+      <div>
+        <p-button icon="pi pi-qrcode" severity="secondary" (click)="openScanner()" />
+      </div>
+    </div>
   </div>
   <div class="d-flex justify-content-between mt-4">
-    <div>
-      <p-button icon="pi pi-qrcode" severity="secondary" />
-    </div>
-    <div class="d-flex gap-3">
-      <p-button label="Hủy" severity="secondary" (click)="visible = false" />
-      <p-button label="Lưu" (click)="visible = false" />
-    </div>
+    <p-button label="Hủy" severity="secondary" (click)="visible = false" />
+    <p-button label="Lưu" (click)="save()" />
   </div>
 </p-dialog>
-<div class="" style="width: 100px; height: 100px; margin-left: 100px">
-  <label class="label">Barcode / QR Code</label>
-
-  <zxing-scanner
-    [formats]="allowedFormats"
-    (scanSuccess)="onScanSuccess($event)"
-    (camerasFound)="onCamerasFound($event)"
-    [device]="currentDevice"
-    [autostart]="true"
-  >
-  </zxing-scanner>
-
-  <input pInputText class="mt-2" placeholder="Kết quả quét" [(ngModel)]="barcodeResult" />
-</div>

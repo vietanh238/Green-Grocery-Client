@@ -1,3 +1,13 @@
 .require-input {
   color: red;
 }
+
+:host ::ng-deep {
+  .p-component .p-component-overlay .p-select-overlay {
+    z-index: 9999 !important;
+  }
+}
+.invalid {
+  border: 1px solid red;
+  outline: none;
+}

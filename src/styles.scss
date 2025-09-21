@@ -13,3 +13,19 @@
   font-weight: bold;
   font-size: 16px;
 }
+.title {
+  font-weight: bold;
+  text-align: center;
+}
+.p-component-overlay.p-component {
+  position: absolute !important;
+}
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
