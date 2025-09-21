@@ -1,5 +1,6 @@
+const apiConnectServer = 'https://192.168.0.101:8000/api/';
 export const environment = {
-  apiCommon: 'http://127.0.0.1:8000/api/',
-  apiAuth: 'http://127.0.0.1:8000/api/account/',
-  apiHome: 'http://127.0.0.1:8000/api/home/',
+  apiCommon: apiConnectServer,
+  apiAuth: apiConnectServer + 'account/',
+  apiHome: apiConnectServer + 'home/',
 };

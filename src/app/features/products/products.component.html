@@ -7,6 +7,7 @@
   [modal]="true"
   [(visible)]="visible"
   [style]="{ width: '25rem' }"
+  draggable="false"
 >
   <div class="d-flex flex-column">
     <label for="username" class="label">Tên sản phẩm <span class="require-input">*</span></label>
@@ -28,9 +29,87 @@
       placeholder="Nhập mã SKU"
     />
   </div>
-
+  <div class="d-flex mt-3 row">
+    <div class="col-sm-6">
+      <label for="username" class="label">Giá nhập<span class="require-input">*</span></label>
+      <input
+        pInputText
+        id="username"
+        class="flex-auto w-100"
+        autocomplete="off"
+        placeholder="0 VND"
+      />
+    </div>
+    <div class="col-sm-6 mt-sm-0 mt-3">
+      <label for="username" class="label">Giá bán<span class="require-input">*</span></label>
+      <input
+        pInputText
+        id="username"
+        class="flex-auto w-100"
+        autocomplete="off"
+        placeholder="0 VND"
+      />
+    </div>
+  </div>
+  <div class="d-flex mt-3 row">
+    <div class="col-6 col-sm-8">
+      <label for="username" class="label">Số lượng<span class="require-input">*</span></label>
+      <input pInputText id="username" class="flex-auto w-100" autocomplete="off" placeholder="0" />
+    </div>
+    <div class="col-6 col-sm-4">
+      <label for="username" class="label">Đơn vị<span class="require-input">*</span></label>
+      <p-select
+        [options]="category"
+        [(ngModel)]="categorySld"
+        optionLabel="name"
+        class="w-100"
+        appendTo="body"
+      />
+    </div>
+  </div>
+  <div class="d-flex flex-column mt-3">
+    <label for="username" class="label">Phân loại</label>
+    <p-select
+      [options]="category"
+      [(ngModel)]="categorySld"
+      optionLabel="name"
+      placeholder="Chọn phân loại sản phẩm"
+      class="w-100"
+      appendTo="body"
+    />
+  </div>
+  <div class="d-flex flex-column mt-3">
+    <label for="username" class="label">Thương hiệu</label>
+    <p-select
+      [options]="category"
+      [(ngModel)]="categorySld"
+      optionLabel="name"
+      placeholder="Chọn phân loại sản phẩm"
+      class="w-100"
+      appendTo="body"
+    />
+  </div>
   <div class="d-flex justify-content-between mt-4">
-    <p-button label="Cancel" severity="secondary" (click)="visible = false" />
-    <p-button label="Save" (click)="visible = false" />
+    <div>
+      <p-button icon="pi pi-qrcode" severity="secondary" />
+    </div>
+    <div class="d-flex gap-3">
+      <p-button label="Hủy" severity="secondary" (click)="visible = false" />
+      <p-button label="Lưu" (click)="visible = false" />
+    </div>
   </div>
 </p-dialog>
+<div class="" style="width: 100px; height: 100px; margin-left: 100px">
+  <label class="label">Barcode / QR Code</label>
+
+  <zxing-scanner
+    [formats]="allowedFormats"
+    (scanSuccess)="onScanSuccess($event)"
+    (camerasFound)="onCamerasFound($event)"
+    [device]="currentDevice"
+    [autostart]="true"
+  >
+  </zxing-scanner>
+
+  <input pInputText class="mt-2" placeholder="Kết quả quét" [(ngModel)]="barcodeResult" />
+</div>
