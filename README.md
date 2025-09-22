@@ -1,1 +1,1 @@
-ng serve --ssl true --ssl-key ./certs/192.168.0.101+2-key.pem --ssl-cert ./certs/192.168.0.101+2.pem --host 0.0.0.0 --port 4200
+ng serve --ssl true --ssl-key ./certs/key.pem --ssl-cert ./certs/cert.pem --host 0.0.0.0 --port 4200

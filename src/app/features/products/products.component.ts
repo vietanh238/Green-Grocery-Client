@@ -30,16 +30,17 @@ export class ProductsComponent implements OnInit {
   barCode: string = '';
   productName: string = '';
   sku: string = '';
-  importPrice: Number = 0;
-  sellingPrice: any;
-  quantity: Number = 0;
-  unitId: Number = -1;
+  importPrice: number = 0;
+  sellingPrice: number = 0;
+  quantity: number = 0;
+  unitId: number = -1;
   unitSld: any;
   category: string = '';
   lstCategory: any[] = [];
   lstUnit: any[] = [];
-  displayPrice: string = '';
   isHasError: boolean = false;
+  importPriceDisplay: string = '';
+  sellingPriceDisplay: string = '';
 
   constructor(private dialog: MatDialog) {}
 
@@ -96,6 +97,16 @@ export class ProductsComponent implements OnInit {
     this.validate();
     if (!this.isHasError) {
       this.visible = false;
+      let params = {
+        productName: this.productName,
+        sku: this.sku,
+        importPrice: this.importPrice,
+        sellingPrice: this.sellingPrice,
+        quantity: $('#quantity').val(),
+        unit: this.unitSld.name,
+        category: this.categorySld,
+        barCode: this.barCode,
+      };
       this.resetInput();
     }
   }
@@ -103,34 +114,16 @@ export class ProductsComponent implements OnInit {
   resetInput() {
     this.productName = '';
     this.sku = '';
-    this.importPrice = 0;
-    this.sellingPrice = 0;
+    this.resetPriceField('importPrice');
+    this.resetPriceField('sellingPrice');
     this.quantity = 0;
     this.unitSld = undefined;
     this.category = '';
     this.barCode = '';
   }
 
-  inputNumber(key: KeyboardEvent) {
-    if (key.key === 'e') {
-      key.preventDefault();
-    }
-  }
-
-  transformCurrency(event: any) {
-    const value = event.target.value;
-    if (value == null || value === '') return '';
-    const num = typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : value;
-    const val = num.toLocaleString('vi-VN') + ' VND';
-    $('#sellingPrice').val(val);
-    return num.toLocaleString('vi-VN') + ' VND';
-  }
-  focusInp() {
-    $('#sellingPrice').val(this.sellingPrice);
-  }
-  input(event: any) {}
-
   validate() {
+    const quantity = $('#quantity').val();
     if (!this.productName) {
       this.isHasError = true;
       $('#productName').addClass('invalid');
@@ -139,21 +132,19 @@ export class ProductsComponent implements OnInit {
       this.isHasError = true;
       $('#sku').addClass('invalid');
     }
-    if (!this.importPrice) {
+    if (!this.importPrice || this.importPrice <= 0) {
       this.isHasError = true;
       $('#importPrice').addClass('invalid');
     }
-    if (!this.sellingPrice) {
+    if (!this.sellingPrice || this.sellingPrice <= 0) {
       this.isHasError = true;
       $('#sellingPrice').addClass('invalid');
     }
-    if (!this.quantity) {
+    if (!quantity) {
       this.isHasError = true;
       $('#quantity').addClass('invalid');
     }
     if (!this.unitSld) {
-      console.log(this.unitSld);
-
       this.isHasError = true;
       $('#unit').addClass('invalid');
     }
@@ -177,5 +168,152 @@ export class ProductsComponent implements OnInit {
     $('#unit').removeClass('invalid');
     $('#category').removeClass('invalid');
     $('#barCode').removeClass('invalid');
+  }
+
+  inputPrice(event: any, fieldType: 'importPrice' | 'sellingPrice'): void {
+    const input = event.target;
+    let value = input.value;
+
+    const numericValue = value.replace(/[^\d]/g, '');
+    if (numericValue === '') {
+      this.setPriceValue(fieldType, 0);
+      this.setPriceDisplay(fieldType, '');
+      input.value = '';
+      return;
+    }
+
+    this.setPriceValue(fieldType, parseInt(numericValue, 10));
+    const displayValue = this.formatNumberWithDots(numericValue);
+    this.setPriceDisplay(fieldType, displayValue);
+    input.value = displayValue;
+
+    setTimeout(() => {
+      const length = input.value.length;
+      input.setSelectionRange(length, length);
+    }, 0);
+  }
+
+  blurPrice(event: any, fieldType: 'importPrice' | 'sellingPrice'): void {
+    const input = event.target;
+    const displayValue = this.getPriceDisplay(fieldType);
+
+    if (displayValue && displayValue !== '0') {
+      input.value = displayValue + ' VND';
+    } else {
+      input.value = '';
+    }
+  }
+
+  focusPrice(event: any, fieldType: 'importPrice' | 'sellingPrice'): void {
+    const input = event.target;
+    const displayValue = this.getPriceDisplay(fieldType);
+
+    if (displayValue) {
+      input.value = displayValue;
+    } else {
+      input.value = '';
+    }
+
+    setTimeout(() => {
+      input.select();
+    }, 0);
+  }
+
+  keydownPrice(event: KeyboardEvent): boolean {
+    const allowedKeys = [
+      'Backspace',
+      'Delete',
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+      'Home',
+      'End',
+      'Tab',
+      'Enter',
+    ];
+
+    if (event.ctrlKey && ['a', 'c', 'v', 'x'].includes(event.key.toLowerCase())) {
+      return true;
+    }
+    if (allowedKeys.includes(event.key)) {
+      return true;
+    }
+
+    if (event.key >= '0' && event.key <= '9') {
+      return true;
+    }
+
+    event.preventDefault();
+    return false;
+  }
+
+  pastePrice(event: ClipboardEvent, fieldType: 'importPrice' | 'sellingPrice'): void {
+    event.preventDefault();
+
+    const paste = event.clipboardData?.getData('text') || '';
+    const numericPaste = paste.replace(/[^\d]/g, '');
+
+    if (numericPaste) {
+      const input = event.target as HTMLInputElement;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+
+      const currentNumeric = this.getPriceDisplay(fieldType).replace(/\./g, '');
+      const beforeCursor = currentNumeric.substring(0, start);
+      const afterCursor = currentNumeric.substring(end);
+      const newNumeric = beforeCursor + numericPaste + afterCursor;
+
+      this.setPriceValue(fieldType, parseInt(newNumeric, 10) || 0);
+      const displayValue = this.formatNumberWithDots(newNumeric);
+      this.setPriceDisplay(fieldType, displayValue);
+      input.value = displayValue;
+
+      const newCursorPos = beforeCursor.length + numericPaste.length;
+      setTimeout(() => {
+        input.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    }
+  }
+
+  private formatNumberWithDots(numericString: string): string {
+    if (!numericString || numericString === '0') return '';
+    const cleanNumber = numericString.replace(/^0+/, '') || '0';
+    if (cleanNumber === '0') return '';
+    return cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  private setPriceValue(fieldType: 'importPrice' | 'sellingPrice', value: number): void {
+    this[fieldType] = value;
+  }
+
+  private setPriceDisplay(fieldType: 'importPrice' | 'sellingPrice', value: string): void {
+    const displayField = (fieldType + 'Display') as 'importPriceDisplay' | 'sellingPriceDisplay';
+    this[displayField] = value;
+  }
+
+  private getPriceDisplay(fieldType: 'importPrice' | 'sellingPrice'): string {
+    const displayField = (fieldType + 'Display') as 'importPriceDisplay' | 'sellingPriceDisplay';
+    return this[displayField];
+  }
+
+  private resetPriceField(fieldType: 'importPrice' | 'sellingPrice'): void {
+    this.setPriceValue(fieldType, 0);
+    this.setPriceDisplay(fieldType, '');
+  }
+
+  blurValidate(event: any, idItem: string) {
+    const value = event.target.value;
+    const id = idItem;
+    console.log(value, id);
+
+    if (value) {
+      $(`#${id}`).removeClass('invalid');
+    }
+  }
+  onSelectChange(event: any, idItem: string) {
+    if (event.value?.name) {
+      $(`#${idItem}`).removeClass('invalid');
+    }
   }
 }

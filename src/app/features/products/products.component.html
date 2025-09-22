@@ -19,6 +19,7 @@
       autocomplete="off"
       placeholder="Nhập tên sản phẩm"
       [(ngModel)]="productName"
+      (blur)="blurValidate($event, 'productName')"
     />
   </div>
   <div class="d-flex flex-column mt-3">
@@ -30,6 +31,7 @@
       autocomplete="off"
       placeholder="Nhập mã SKU"
       [(ngModel)]="sku"
+      (blur)="blurValidate($event, 'sku')"
     />
   </div>
   <div class="d-flex mt-3 row">
@@ -40,7 +42,12 @@
         id="importPrice"
         class="flex-auto w-100"
         autocomplete="off"
-        [(ngModel)]="importPrice"
+        placeholder="0"
+        (input)="inputPrice($event, 'importPrice')"
+        (blur)="blurPrice($event, 'importPrice'); blurValidate($event, 'importPrice')"
+        (focus)="focusPrice($event, 'importPrice')"
+        (keydown)="keydownPrice($event)"
+        (paste)="pastePrice($event, 'importPrice')"
       />
     </div>
     <div class="col-6 col-sm-6">
@@ -50,12 +57,12 @@
         id="sellingPrice"
         class="flex-auto w-100"
         autocomplete="off"
-        [(ngModel)]="sellingPrice"
-        type="text"
-        (keydown)="inputNumber($event)"
-        (blur)="transformCurrency($event)"
-        (focus)="focusInp()"
-        (input)="input($event)"
+        placeholder="0"
+        (input)="inputPrice($event, 'sellingPrice')"
+        (blur)="blurPrice($event, 'sellingPrice'); blurValidate($event, 'sellingPrice')"
+        (focus)="focusPrice($event, 'sellingPrice')"
+        (keydown)="keydownPrice($event)"
+        (paste)="pastePrice($event, 'sellingPrice')"
       />
     </div>
   </div>
@@ -68,7 +75,8 @@
         class="flex-auto w-100"
         autocomplete="off"
         placeholder="0"
-        [(ngModel)]="quantity"
+        type="number"
+        (blur)="blurValidate($event, 'quantity')"
       />
     </div>
     <div class="col-6 col-sm-6">
@@ -81,13 +89,13 @@
         class="w-100"
         appendTo="body"
         [filter]="true"
+        (onChange)="onSelectChange($event, 'unit')"
       />
     </div>
   </div>
   <div class="d-flex mt-3 row">
     <div class="col-6 col-sm-6">
-      <label for="barCode" class="label">Phân loại</label>
-
+      <label for="category" class="label">Phân loại</label>
       <input
         pInputText
         id="category"
@@ -95,11 +103,13 @@
         autocomplete="off"
         [(ngModel)]="category"
         placeholder="Nhập tên loại"
+        (blur)="blurValidate($event, 'category')"
       />
     </div>
     <div class="col-6 col-sm-6">
-      <label for="category" class="label">Phân loại đã có</label>
+      <label for="categorySld" class="label">Phân loại đã có</label>
       <p-select
+        id="categorySld"
         [options]="lstCategory"
         [(ngModel)]="categorySld"
         optionLabel="name"
@@ -114,7 +124,7 @@
   </div>
 
   <div class="d-flex flex-column mt-3">
-    <label for="username" class="label">Barcode<span class="require-input">*</span></label>
+    <label for="barCode" class="label">Barcode<span class="require-input">*</span></label>
     <div class="d-flex justify-content-between gap-1">
       <input
         pInputText
@@ -122,6 +132,7 @@
         class="flex-auto w-100"
         autocomplete="off"
         [(ngModel)]="barCode"
+        (blur)="blurValidate($event, 'barCode')"
       />
       <div>
         <p-button icon="pi pi-qrcode" severity="secondary" (click)="openScanner()" />
