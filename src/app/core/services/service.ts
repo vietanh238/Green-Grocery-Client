@@ -10,6 +10,7 @@ export class Service {
   private readonly LOGIN_URL = environment.apiAuth + 'login/';
   private readonly NOTIFICATION_URL = environment.apiHome + 'notifications/';
   private readonly CREATE_PRODUCT_URL = environment.apiProduct + 'create/';
+  private readonly GET_CATEGORIES = environment.apiProduct + 'categories/';
 
   constructor(private _http: HttpClient) {}
 
@@ -35,5 +36,9 @@ export class Service {
       category: params.category,
       barCode: params.barCode,
     });
+  }
+
+  getCategories(): Observable<any> {
+    return this._http.get(this.GET_CATEGORIES);
   }
 }

@@ -121,7 +121,7 @@
         appendTo="body"
         [filter]="true"
         filterBy="name"
-        [showClear]="true"
+        (onChange)="changeCategory()"
       />
     </div>
   </div>

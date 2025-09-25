@@ -58,6 +58,29 @@ export class ProductsComponent implements OnInit {
 
   showDialog() {
     this.visible = true;
+    this.service.getCategories().subscribe(
+      (data: any) => {
+        if (data.status === ConstantDef.STATUS_SUCCESS) {
+          let listCategory = data.response.data;
+          listCategory = listCategory.map((item: any) => {
+            return {
+              name: item.name,
+              code: item.id,
+            };
+          });
+          this.lstCategory = listCategory;
+        } else {
+        }
+      },
+      (_error: any) => {
+        this.message.add({
+          severity: 'error',
+          summary: 'Thông báo',
+          detail: 'Đã có lỗi xảy ra, vui lòng thử lại sau',
+          life: 1000,
+        });
+      }
+    );
   }
 
   openAddProductDialog() {
@@ -337,6 +360,12 @@ export class ProductsComponent implements OnInit {
   onSelectChange(event: any, idItem: string) {
     if (event.value?.name) {
       $(`#${idItem}`).removeClass('invalid');
+    }
+  }
+
+  changeCategory() {
+    if (this.categorySld?.name) {
+      this.category = this.categorySld.name;
     }
   }
 }
