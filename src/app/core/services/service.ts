@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
 export class Service {
   private readonly LOGIN_URL = environment.apiAuth + 'login/';
   private readonly NOTIFICATION_URL = environment.apiHome + 'notifications/';
+  private readonly CREATE_PRODUCT_URL = environment.apiProduct + 'create/';
 
   constructor(private _http: HttpClient) {}
 
@@ -21,5 +22,18 @@ export class Service {
 
   getNotifications(): Observable<any> {
     return this._http.get(this.NOTIFICATION_URL);
+  }
+
+  createProduct(params: any): Observable<any> {
+    return this._http.post(this.CREATE_PRODUCT_URL, {
+      name: params.productName,
+      sku: params.sku,
+      costPrice: params.costPrice,
+      price: params.price,
+      quantity: params.quantity,
+      unit: params.unit,
+      category: params.category,
+      barCode: params.barCode,
+    });
   }
 }

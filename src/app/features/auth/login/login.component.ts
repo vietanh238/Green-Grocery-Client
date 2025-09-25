@@ -63,7 +63,6 @@ export class LoginComponent implements OnInit {
         }
       },
       (error: any) => {
-        console.log('error', error);
         this.message.add({
           severity: 'error',
           summary: 'Thông báo',

@@ -15,13 +15,17 @@ import {
   MatDialogRef,
   MatDialogTitle,
 } from '@angular/material/dialog';
+import { Service } from '../../core/services/service';
+import { ConstantDef } from '../../core/constanDef';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 declare var $: any;
 
 @Component({
   selector: 'app-products',
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss',
-  imports: [Dialog, ButtonModule, InputTextModule, FormsModule, Select],
+  imports: [Dialog, ButtonModule, InputTextModule, FormsModule, Select, ToastModule],
   standalone: true,
 })
 export class ProductsComponent implements OnInit {
@@ -30,8 +34,8 @@ export class ProductsComponent implements OnInit {
   barCode: string = '';
   productName: string = '';
   sku: string = '';
-  importPrice: number = 0;
-  sellingPrice: number = 0;
+  costPrice: number = 0;
+  price: number = 0;
   quantity: number = 0;
   unitId: number = -1;
   unitSld: any;
@@ -39,10 +43,14 @@ export class ProductsComponent implements OnInit {
   lstCategory: any[] = [];
   lstUnit: any[] = [];
   isHasError: boolean = false;
-  importPriceDisplay: string = '';
-  sellingPriceDisplay: string = '';
+  costPriceDisplay: string = '';
+  priceDisplay: string = '';
 
-  constructor(private dialog: MatDialog) {}
+  constructor(
+    private dialog: MatDialog,
+    private service: Service,
+    private message: MessageService
+  ) {}
 
   ngOnInit(): void {
     this.getListCategory();
@@ -100,22 +108,37 @@ export class ProductsComponent implements OnInit {
       let params = {
         productName: this.productName,
         sku: this.sku,
-        importPrice: this.importPrice,
-        sellingPrice: this.sellingPrice,
+        costPrice: this.costPrice,
+        price: this.price,
         quantity: $('#quantity').val(),
         unit: this.unitSld.name,
-        category: this.categorySld,
+        category: this.category,
         barCode: this.barCode,
       };
-      this.resetInput();
+
+      this.service.createProduct(params).subscribe(
+        (data: any) => {
+          if (data.status === ConstantDef.STATUS_SUCCESS) {
+            this.resetInput();
+          }
+        },
+        (_error) => {
+          this.message.add({
+            severity: 'error',
+            summary: 'Thông báo',
+            detail: 'Đã có lỗi xảy ra, vui lòng thử lại sau',
+            life: 1000,
+          });
+        }
+      );
     }
   }
 
   resetInput() {
     this.productName = '';
     this.sku = '';
-    this.resetPriceField('importPrice');
-    this.resetPriceField('sellingPrice');
+    this.resetPriceField('costPrice');
+    this.resetPriceField('price');
     this.quantity = 0;
     this.unitSld = undefined;
     this.category = '';
@@ -132,13 +155,13 @@ export class ProductsComponent implements OnInit {
       this.isHasError = true;
       $('#sku').addClass('invalid');
     }
-    if (!this.importPrice || this.importPrice <= 0) {
+    if (!this.costPrice || this.costPrice <= 0) {
       this.isHasError = true;
-      $('#importPrice').addClass('invalid');
+      $('#costPrice').addClass('invalid');
     }
-    if (!this.sellingPrice || this.sellingPrice <= 0) {
+    if (!this.price || this.price <= 0) {
       this.isHasError = true;
-      $('#sellingPrice').addClass('invalid');
+      $('#price').addClass('invalid');
     }
     if (!quantity) {
       this.isHasError = true;
@@ -162,15 +185,15 @@ export class ProductsComponent implements OnInit {
     this.isHasError = false;
     $('#productName').removeClass('invalid');
     $('#sku').removeClass('invalid');
-    $('#importPrice').removeClass('invalid');
-    $('#sellingPrice').removeClass('invalid');
+    $('#costPrice').removeClass('invalid');
+    $('#price').removeClass('invalid');
     $('#quantity').removeClass('invalid');
     $('#unit').removeClass('invalid');
     $('#category').removeClass('invalid');
     $('#barCode').removeClass('invalid');
   }
 
-  inputPrice(event: any, fieldType: 'importPrice' | 'sellingPrice'): void {
+  inputPrice(event: any, fieldType: 'costPrice' | 'price'): void {
     const input = event.target;
     let value = input.value;
 
@@ -193,7 +216,7 @@ export class ProductsComponent implements OnInit {
     }, 0);
   }
 
-  blurPrice(event: any, fieldType: 'importPrice' | 'sellingPrice'): void {
+  blurPrice(event: any, fieldType: 'costPrice' | 'price'): void {
     const input = event.target;
     const displayValue = this.getPriceDisplay(fieldType);
 
@@ -204,7 +227,7 @@ export class ProductsComponent implements OnInit {
     }
   }
 
-  focusPrice(event: any, fieldType: 'importPrice' | 'sellingPrice'): void {
+  focusPrice(event: any, fieldType: 'costPrice' | 'price'): void {
     const input = event.target;
     const displayValue = this.getPriceDisplay(fieldType);
 
@@ -248,7 +271,7 @@ export class ProductsComponent implements OnInit {
     return false;
   }
 
-  pastePrice(event: ClipboardEvent, fieldType: 'importPrice' | 'sellingPrice'): void {
+  pastePrice(event: ClipboardEvent, fieldType: 'costPrice' | 'price'): void {
     event.preventDefault();
 
     const paste = event.clipboardData?.getData('text') || '';
@@ -283,21 +306,21 @@ export class ProductsComponent implements OnInit {
     return cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 
-  private setPriceValue(fieldType: 'importPrice' | 'sellingPrice', value: number): void {
+  private setPriceValue(fieldType: 'costPrice' | 'price', value: number): void {
     this[fieldType] = value;
   }
 
-  private setPriceDisplay(fieldType: 'importPrice' | 'sellingPrice', value: string): void {
-    const displayField = (fieldType + 'Display') as 'importPriceDisplay' | 'sellingPriceDisplay';
+  private setPriceDisplay(fieldType: 'costPrice' | 'price', value: string): void {
+    const displayField = (fieldType + 'Display') as 'costPriceDisplay' | 'priceDisplay';
     this[displayField] = value;
   }
 
-  private getPriceDisplay(fieldType: 'importPrice' | 'sellingPrice'): string {
-    const displayField = (fieldType + 'Display') as 'importPriceDisplay' | 'sellingPriceDisplay';
+  private getPriceDisplay(fieldType: 'costPrice' | 'price'): string {
+    const displayField = (fieldType + 'Display') as 'costPriceDisplay' | 'priceDisplay';
     return this[displayField];
   }
 
-  private resetPriceField(fieldType: 'importPrice' | 'sellingPrice'): void {
+  private resetPriceField(fieldType: 'costPrice' | 'price'): void {
     this.setPriceValue(fieldType, 0);
     this.setPriceDisplay(fieldType, '');
   }
@@ -305,12 +328,12 @@ export class ProductsComponent implements OnInit {
   blurValidate(event: any, idItem: string) {
     const value = event.target.value;
     const id = idItem;
-    console.log(value, id);
 
     if (value) {
       $(`#${id}`).removeClass('invalid');
     }
   }
+
   onSelectChange(event: any, idItem: string) {
     if (event.value?.name) {
       $(`#${idItem}`).removeClass('invalid');

@@ -11,6 +11,8 @@ import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
 import { Message } from 'primeng/message';
 import { CommonModule } from '@angular/common';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-header',
@@ -26,6 +28,7 @@ import { CommonModule } from '@angular/common';
     DrawerModule,
     Message,
     CommonModule,
+    ToastModule,
   ],
 })
 export class HeaderComponent implements OnInit {
@@ -44,7 +47,12 @@ export class HeaderComponent implements OnInit {
   readonly PRIORITY_LOW_TEXT = '#2563eb';
   readonly READED_COLOR = '#f9fafb';
 
-  constructor(public router: Router, private service: Service, private cdr: ChangeDetectorRef) {}
+  constructor(
+    public router: Router,
+    private service: Service,
+    private cdr: ChangeDetectorRef,
+    private message: MessageService
+  ) {}
   ngOnInit() {
     this.items = [
       {

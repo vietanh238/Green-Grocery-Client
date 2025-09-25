@@ -29,3 +29,14 @@ input[type='number']::-webkit-outer-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
 }
+.card-message {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid;
+  padding: 2px 5px;
+  border-radius: 5px;
+  align-items: start;
+  .title {
+    font-weight: bold;
+  }
+}
