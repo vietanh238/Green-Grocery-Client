@@ -10,7 +10,8 @@ export class Service {
   private readonly LOGIN_URL = environment.apiAuth + 'login/';
   private readonly NOTIFICATION_URL = environment.apiHome + 'notifications/';
   private readonly CREATE_PRODUCT_URL = environment.apiProduct + 'create/';
-  private readonly GET_CATEGORIES = environment.apiProduct + 'categories/';
+  private readonly GET_CATEGORIES_URL = environment.apiProduct + 'categories/';
+  private readonly GET_PRODUCTS_URL = environment.apiProduct + 'products/';
 
   constructor(private _http: HttpClient) {}
 
@@ -39,6 +40,10 @@ export class Service {
   }
 
   getCategories(): Observable<any> {
-    return this._http.get(this.GET_CATEGORIES);
+    return this._http.get(this.GET_CATEGORIES_URL);
+  }
+
+  getProducts(): Observable<any> {
+    return this._http.get(this.GET_PRODUCTS_URL);
   }
 }

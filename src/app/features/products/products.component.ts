@@ -6,6 +6,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ScannerComponent } from '../../component/scanner/scanner.component';
+import { TableModule } from 'primeng/table';
+import { CommonModule } from '@angular/common';
+
 import {
   MAT_DIALOG_DATA,
   MatDialog,
@@ -25,7 +28,16 @@ declare var $: any;
   selector: 'app-products',
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss',
-  imports: [Dialog, ButtonModule, InputTextModule, FormsModule, Select, ToastModule],
+  imports: [
+    Dialog,
+    ButtonModule,
+    InputTextModule,
+    FormsModule,
+    Select,
+    ToastModule,
+    TableModule,
+    CommonModule,
+  ],
   standalone: true,
 })
 export class ProductsComponent implements OnInit {
@@ -45,6 +57,7 @@ export class ProductsComponent implements OnInit {
   isHasError: boolean = false;
   costPriceDisplay: string = '';
   priceDisplay: string = '';
+  products!: any[];
 
   constructor(
     private dialog: MatDialog,
@@ -53,6 +66,7 @@ export class ProductsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.getProducts();
     this.getListCategory();
   }
 
@@ -143,6 +157,20 @@ export class ProductsComponent implements OnInit {
         (data: any) => {
           if (data.status === ConstantDef.STATUS_SUCCESS) {
             this.resetInput();
+            this.message.add({
+              severity: 'success',
+              summary: 'Thông báo',
+              detail: 'Thêm sản phẩm thành công',
+              life: 1000,
+            });
+          } else {
+            // error_data = data.response
+            this.message.add({
+              severity: 'error',
+              summary: 'Thông báo',
+              detail: 'Lỗi giá trị nhập',
+              life: 1000,
+            });
           }
         },
         (_error) => {
@@ -367,5 +395,30 @@ export class ProductsComponent implements OnInit {
     if (this.categorySld?.name) {
       this.category = this.categorySld.name;
     }
+  }
+
+  getProducts() {
+    this.service.getProducts().subscribe({
+      next: (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.products = rs.response;
+        } else {
+          this.showError('Đã có lỗi xảy ra, vui lòng thử lại sau');
+        }
+      },
+      error: (_error: any) => {
+        console.error('API error:', _error);
+        this.showError('Lỗi hệ thống');
+      },
+    });
+  }
+
+  private showError(detail: string) {
+    this.message.add({
+      severity: 'error',
+      summary: 'Thông báo',
+      detail,
+      life: 1000,
+    });
   }
 }

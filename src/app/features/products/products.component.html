@@ -97,7 +97,7 @@
   </div>
   <div class="d-flex mt-3 row">
     <div class="col-6 col-sm-6">
-      <label for="category" class="label">Phân loại<span class="require-input">*</span></label>
+      <label for="category" class="label">Phân loại mới<span class="require-input">*</span></label>
       <input
         pInputText
         id="category"
@@ -149,3 +149,29 @@
   </div>
 </p-dialog>
 <p-toast />
+<div class="mt-2" style="margin: 0 auto">
+  <p-table [value]="products" [tableStyle]="{ 'min-width': '50rem' }">
+    <ng-template #header>
+      <tr>
+        <th>Tên</th>
+        <th>Barcode</th>
+        <th>Sku</th>
+        <th>Loại</th>
+        <th>Giá</th>
+        <th>Đơn vị</th>
+        <th>Số lượng</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-product>
+      <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.bar_code }}</td>
+        <td>{{ product.sku }}</td>
+        <td>{{ product.name_category }}</td>
+        <td>{{ product.price | number : '1.0-0' }} VND</td>
+        <td>{{ product.unit }}</td>
+        <td>{{ product.stock_quantity }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
