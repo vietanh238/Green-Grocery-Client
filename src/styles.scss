@@ -19,6 +19,7 @@
 }
 .p-component-overlay.p-component {
   position: absolute !important;
+  max-width: 100%;
 }
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
