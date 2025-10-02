@@ -1,32 +1,88 @@
 <div class="container-fluid mt-2">
   <div class="row">
     <div class="col-sm-8">
-      <div class="d-flex w-100 justify-content-between gap-1">
+      <div class="d-flex w-100 justify-content-between gap-1 mb-3">
         <p-inputgroup>
           <p-inputgroup-addon>
             <i class="pi pi-search"></i>
           </p-inputgroup-addon>
           <input pInputText placeholder="Tìm kiếm sản phẩm" style="width: 100%" />
         </p-inputgroup>
-        <button>
+        <button pButton class="scan-button">
           <i class="pi pi-camera"></i>
-          Quét mã sản phẩm
+          <span>Quét mã sản phẩm</span>
         </button>
       </div>
-      <div class="cards">a</div>
+
+      <div class="cards row g-3">
+        @for (product of products; track product.sku) {
+        <div class="col-sm-6">
+          <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
+        </div>
+        }
+      </div>
     </div>
+
     <div class="col-sm-4">
-      <p-panel>
-        <h4>Giỏ hàng</h4>
-        <p>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
-          ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-          ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-          reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
-          sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-          est laborum.
-        </p>
-      </p-panel>
+      <div class="cart-panel">
+        <div class="cart-header">
+          <h3 class="cart-title">Giỏ hàng</h3>
+        </div>
+
+        <div class="cart-body">
+          @if (cartItems.length === 0) {
+          <div class="empty-cart">
+            <i class="pi pi-shopping-cart"></i>
+            <p>Giỏ hàng trống</p>
+          </div>
+          } @else {
+          <div class="cart-items">
+            @for (item of cartItems; track item.id) {
+            <div class="cart-item">
+              <div class="item-info">
+                <h5 class="item-name">{{ item.name }}</h5>
+                <p class="item-price">{{ formatCurrency(item.price) }}</p>
+              </div>
+
+              <div class="item-actions">
+                <div class="quantity-controls">
+                  <button
+                    class="quantity-btn"
+                    (click)="decreaseQuantity(item)"
+                    [disabled]="item.quantity <= 1"
+                  >
+                    <i class="pi pi-minus"></i>
+                  </button>
+                  <span class="quantity-value">{{ item.quantity }}</span>
+                  <button class="quantity-btn" (click)="increaseQuantity(item)">
+                    <i class="pi pi-plus"></i>
+                  </button>
+                </div>
+
+                <button class="delete-btn" (click)="removeItem(item)">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </div>
+
+        @if (cartItems.length > 0) {
+        <div class="cart-footer">
+          <div class="total-section">
+            <span class="total-label">Tổng cộng:</span>
+            <span class="total-amount">{{ formatCurrency(totalAmount) }}</span>
+          </div>
+
+          <button pButton class="checkout-btn" (click)="createPaymentQR()">
+            <i class="pi pi-qrcode"></i>
+            <span>Tạo QR Thanh toán</span>
+          </button>
+        </div>
+        }
+      </div>
     </div>
   </div>
 </div>

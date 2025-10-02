@@ -1,0 +1,48 @@
+<div class="product-card">
+  <div class="product-card-content">
+    <!-- Product Image -->
+    <!-- <div class="product-image">
+      @if (product.image) {
+      <img [src]="product.image" [alt]="product.name" />
+      } @else {
+      <div class="image-placeholder">
+        <i class="pi pi-image"></i>
+      </div>
+      }
+      @if (product.stock <= 10 && product.stock > 0) {
+      <span class="stock-badge low-stock">Còn {{ product.stock }}</span>
+      } @else if (product.stock === 0) {
+      <span class="stock-badge out-of-stock">Hết hàng</span>
+      }
+    </div> -->
+
+    <!-- Product Info -->
+    <div class="product-info">
+      <div class="product-header">
+        <h4 class="product-name">{{ product.name }}</h4>
+        <span class="product-sku">SKU: {{ product.sku }}</span>
+      </div>
+
+      <div class="product-footer">
+        <div class="price-section">
+          @if (product.originalPrice && product.originalPrice > product.price) {
+          <span class="original-price">{{ formatPrice(product.originalPrice) }}</span>
+          }
+          <span class="current-price">{{ formatPrice(product.price) }}</span>
+        </div>
+
+        <button
+          pButton
+          type="button"
+          [disabled]="product.stock === 0"
+          (click)="onAddToCart()"
+          class="add-to-cart-btn"
+          [class.pulse]="product.stock > 0"
+        >
+          <i class="pi pi-plus"></i>
+          <span>Thêm</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

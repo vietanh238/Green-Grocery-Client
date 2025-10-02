@@ -407,7 +407,6 @@ export class ProductsComponent implements OnInit {
         }
       },
       error: (_error: any) => {
-        console.error('API error:', _error);
         this.showError('Lỗi hệ thống');
       },
     });
