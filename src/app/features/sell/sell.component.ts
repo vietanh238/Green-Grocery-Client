@@ -11,6 +11,8 @@ import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { ScannerComponent } from '../../component/scanner/scanner.component';
+import { Skeleton } from 'primeng/skeleton';
+import { PaymentQrDialogComponent } from '../../component/qrpay/qrpay.component';
 
 interface CartItem {
   id: number;
@@ -33,6 +35,7 @@ interface CartItem {
     InputGroupAddonModule,
     CardComponent,
     CommonModule,
+    Skeleton,
   ],
 })
 export class SellComponent implements OnInit {
@@ -79,7 +82,19 @@ export class SellComponent implements OnInit {
     this.showSuccess('Đã xóa sản phẩm khỏi giỏ hàng');
   }
 
-  createPaymentQR() {}
+  createPaymentQR() {
+    const dialogRef = this.dialog.open(PaymentQrDialogComponent, {
+      disableClose: true,
+      data: {
+        amount: this.totalAmount,
+      },
+    });
+    // dialogRef.afterClosed().subscribe((result: any) => {
+    //   if (result) {
+    //     this.filterData(result[0]);
+    //   }
+    // });
+  }
 
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {

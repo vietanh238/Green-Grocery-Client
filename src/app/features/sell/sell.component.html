@@ -19,13 +19,21 @@
         </button>
       </div>
 
-      <div class="cards row g-3">
+      <div class="cards row g-3" *ngIf="products.length > 0; else skeleton">
         @for (product of products; track product.sku) {
         <div class="col-sm-6">
           <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
         </div>
         }
       </div>
+      <ng-template #skeleton>
+        <div class="cards row g-3">
+          <div class="col-sm-6 d-flex gap-1 w-100">
+            <p-skeleton height="12rem" />
+            <p-skeleton height="12rem" />
+          </div>
+        </div>
+      </ng-template>
     </div>
 
     <div class="col-sm-4">

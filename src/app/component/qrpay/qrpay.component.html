@@ -1,0 +1,136 @@
+<div class="qr-dialog-overlay">
+  <div class="qr-dialog-container" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="dialog-header">
+      <div class="header-icon">
+        <i class="pi pi-qrcode"></i>
+      </div>
+      <div class="header-content">
+        <h2>Thanh toán QR Code</h2>
+        <p>Quét mã để chuyển khoản</p>
+      </div>
+      <button class="close-btn" (click)="closeDialog()">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="dialog-body">
+      <!-- QR Code Section -->
+      <div class="qr-section">
+        <div class="qr-container">
+          <div class="qr-border">
+            @if (isLoadingQR) {
+            <div class="qr-loading">
+              <i class="pi pi-spin pi-spinner"></i>
+              <span>Đang tạo mã QR...</span>
+            </div>
+            }
+            <img
+              [src]="qrCodeUrl"
+              alt="VietQR Code"
+              class="qr-image"
+              [class.loaded]="qrLoaded"
+              (error)="onImageError()"
+              (load)="onImageLoad()"
+            />
+          </div>
+          <div class="scan-line"></div>
+        </div>
+
+        <div class="qr-status" [class.success]="qrLoaded">
+          <i [class]="qrLoaded ? 'pi pi-check-circle' : 'pi pi-spin pi-spinner'"></i>
+          <span>{{ qrLoaded ? 'Mã QR đã sẵn sàng' : 'Đang tải mã QR...' }}</span>
+        </div>
+      </div>
+
+      <!-- Payment Info -->
+      <div class="payment-info">
+        <div class="info-card bank-info">
+          <div class="info-icon">
+            <i class="pi pi-building"></i>
+          </div>
+          <div class="info-content">
+            <span class="info-label">Ngân hàng</span>
+            <span class="info-value">{{ bankInfo.bankName }}</span>
+          </div>
+        </div>
+
+        <div class="info-card account-info">
+          <div class="info-icon">
+            <i class="pi pi-user"></i>
+          </div>
+          <div class="info-content">
+            <span class="info-label">Chủ tài khoản</span>
+            <span class="info-value">{{ bankInfo.accountName }}</span>
+          </div>
+        </div>
+
+        <div class="info-card account-number">
+          <div class="info-icon">
+            <i class="pi pi-credit-card"></i>
+          </div>
+          <div class="info-content">
+            <span class="info-label">Số tài khoản</span>
+            <span class="info-value">{{ bankInfo.accountNumber }}</span>
+          </div>
+          <button class="copy-btn" (click)="copyToClipboard(bankInfo.accountNumber)">
+            <i class="pi pi-copy"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Transaction Details -->
+      <div class="transaction-details">
+        <div class="detail-row">
+          <span class="detail-label">Số tiền</span>
+          <span class="detail-value amount">{{ formatCurrency(amount) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Nội dung</span>
+          <span class="detail-value content">{{ transferContent }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Mã giao dịch</span>
+          <span class="detail-value code">{{ transactionCode }}</span>
+        </div>
+      </div>
+
+      <!-- Timer -->
+      <div class="timer-section">
+        <div class="timer-icon">
+          <i class="pi pi-clock"></i>
+        </div>
+        <div class="timer-content">
+          <span class="timer-label">Thời gian còn lại</span>
+          <span class="timer-value" [class.warning]="remainingTime <= 60">
+            {{ formatTime(remainingTime) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="instructions">
+        <h4>Hướng dẫn thanh toán</h4>
+        <ol>
+          <li>Mở ứng dụng ngân hàng trên điện thoại</li>
+          <li>Chọn chức năng quét mã QR</li>
+          <li>Quét mã QR trên màn hình</li>
+          <li>Kiểm tra thông tin và xác nhận thanh toán</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="dialog-footer">
+      <button class="secondary-btn" (click)="closeDialog()">
+        <i class="pi pi-times"></i>
+        <span>Đóng</span>
+      </button>
+      <button class="primary-btn" (click)="downloadQR()" [disabled]="!qrLoaded">
+        <i class="pi pi-download"></i>
+        <span>Tải QR Code</span>
+      </button>
+    </div>
+  </div>
+</div>
