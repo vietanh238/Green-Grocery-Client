@@ -34,10 +34,10 @@
         <button
           pButton
           type="button"
-          [disabled]="product.stock === 0"
+          [disabled]="product.stock_quantity === 0"
           (click)="onAddToCart()"
           class="add-to-cart-btn"
-          [class.pulse]="product.stock > 0"
+          [class.pulse]="product.stock_quantity > 0"
         >
           <i class="pi pi-plus"></i>
           <span>Thêm</span>

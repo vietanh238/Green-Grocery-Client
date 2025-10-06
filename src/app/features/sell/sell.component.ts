@@ -9,6 +9,8 @@ import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
 import { MessageService } from 'primeng/api';
 import { CommonModule } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
+import { ScannerComponent } from '../../component/scanner/scanner.component';
 
 interface CartItem {
   id: number;
@@ -36,14 +38,20 @@ interface CartItem {
 export class SellComponent implements OnInit {
   products: any[] = [];
   cartItems: CartItem[] = [];
+  allProducts: any[] = [];
 
-  constructor(private service: Service, private message: MessageService) {}
+  constructor(
+    private service: Service,
+    private message: MessageService,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     this.service.getProducts().subscribe(
       (rs: any) => {
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
           this.products = rs.response;
+          this.allProducts = this.products;
         }
       },
       (_error: any) => {
@@ -104,6 +112,45 @@ export class SellComponent implements OnInit {
       existing.quantity += 1;
     } else {
       this.cartItems.push({ ...product, quantity: 1 });
+    }
+  }
+
+  filterProducts(event: any): void {
+    const value = event.target.value;
+    if (value) {
+      const keyFilter: string = String(value.trim()).toLowerCase();
+      this.filterData(keyFilter);
+    } else {
+      const keyFilter: string = String(value.trim()).toLowerCase();
+      this.filterData(keyFilter);
+    }
+  }
+
+  private normalize(str: string): string {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+  openScanner() {
+    const dialogRef = this.dialog.open(ScannerComponent, {});
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result) {
+        this.filterData(result[0]);
+      }
+    });
+  }
+
+  filterData(keyFilter: string): void {
+    if (keyFilter) {
+      this.products = this.allProducts.filter(
+        (item: any) =>
+          this.normalize(item.name)?.includes(keyFilter) ||
+          item?.sku?.toLowerCase()?.includes(keyFilter) ||
+          item?.bar_code?.includes(keyFilter)
+      );
+    } else {
+      this.products = [...this.allProducts];
     }
   }
 }

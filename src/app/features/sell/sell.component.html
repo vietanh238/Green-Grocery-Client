@@ -6,9 +6,14 @@
           <p-inputgroup-addon>
             <i class="pi pi-search"></i>
           </p-inputgroup-addon>
-          <input pInputText placeholder="Tìm kiếm sản phẩm" style="width: 100%" />
+          <input
+            pInputText
+            placeholder="Tìm kiếm sản phẩm"
+            style="width: 100%"
+            (input)="filterProducts($event)"
+          />
         </p-inputgroup>
-        <button pButton class="scan-button">
+        <button pButton class="scan-button" (click)="openScanner()">
           <i class="pi pi-camera"></i>
           <span>Quét mã sản phẩm</span>
         </button>
