@@ -13,6 +13,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { ScannerComponent } from '../../component/scanner/scanner.component';
 import { Skeleton } from 'primeng/skeleton';
 import { PaymentQrDialogComponent } from '../../component/qrpay/qrpay.component';
+import { AddManualOrder } from './addManualOrder/addManualOrder.component';
+import { DebitComponent } from './debit/debit.component';
 
 interface CartItem {
   id: number;
@@ -167,5 +169,70 @@ export class SellComponent implements OnInit {
     } else {
       this.products = [...this.allProducts];
     }
+  }
+
+  addManualOrder() {
+    const dialogRef = this.dialog.open(AddManualOrder, {
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result) {
+        const existing = this.cartItems.find((item) => item.sku === result.sku);
+
+        if (existing) {
+          existing.quantity += result.quantity;
+          this.showSuccess('Đã cập nhật số lượng sản phẩm');
+        } else {
+          this.cartItems.push(result);
+          this.showSuccess(`Đã thêm ${result.name} vào giỏ hàng`);
+        }
+      }
+    });
+  }
+  debit() {
+    if (this.cartItems.length === 0) {
+      this.showError('Giỏ hàng trống, vui lòng thêm sản phẩm trước');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(DebitComponent, {
+      disableClose: true,
+      data: {
+        totalAmount: this.totalAmount,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result) {
+        // result chứa thông tin ghi nợ:
+        // {
+        //   customerName: string,
+        //   phoneNumber: string | null,
+        //   debitAmount: number,
+        //   paidAmount: number,
+        //   totalAmount: number,
+        //   note: string | null,
+        //   dueDate: string | null,
+        //   createdAt: string,
+        //   status: 'pending'
+        // }
+
+        console.log('Thông tin ghi nợ:', result);
+
+        // Lưu vào database hoặc xử lý logic
+        // Ví dụ: gọi API để lưu thông tin ghi nợ
+        // this.service.createDebitOrder(result, this.cartItems).subscribe(...)
+
+        this.showSuccess(
+          `Đã ghi nợ ${this.formatCurrency(result.debitAmount)} cho khách hàng ${
+            result.customerName
+          }`
+        );
+
+        // Clear giỏ hàng sau khi ghi nợ thành công
+        this.cartItems = [];
+      }
+    });
   }
 }

@@ -38,8 +38,11 @@
 
     <div class="col-sm-4">
       <div class="cart-panel">
-        <div class="cart-header">
+        <div class="cart-header d-flex justify-content-between align-items-center">
           <h3 class="cart-title">Giỏ hàng</h3>
+          <button style="z-index: 10" class="add-to-cart-btn" (click)="addManualOrder()">
+            Thêm thủ công
+          </button>
         </div>
 
         <div class="cart-body">
@@ -89,10 +92,15 @@
             <span class="total-amount">{{ formatCurrency(totalAmount) }}</span>
           </div>
 
-          <button pButton class="checkout-btn" (click)="createPaymentQR()">
-            <i class="pi pi-qrcode"></i>
-            <span>Tạo QR Thanh toán</span>
-          </button>
+          <div class="d-flex gap-1 justify-content-between align-items-center">
+            <button class="debit" (click)="debit()" style="width: 150px">
+              <span class="">Ghi nợ</span>
+            </button>
+            <button pButton class="checkout-btn" (click)="createPaymentQR()">
+              <i class="pi pi-qrcode"></i>
+              <span>Tạo QR Thanh toán</span>
+            </button>
+          </div>
         </div>
         }
       </div>

@@ -1,0 +1,181 @@
+<div class="debit-container">
+  <div class="dialog-header">
+    <h4 class="dialog-title">
+      <i class="pi pi-book"></i>
+      Ghi nợ khách hàng
+    </h4>
+    <button class="close-btn" (click)="closeDialog()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="dialog-body">
+    <div class="amount-display">
+      <div class="amount-label">Tổng tiền cần thanh toán</div>
+      <div class="amount-value">{{ formatCurrency(totalAmount) }}</div>
+    </div>
+
+    <form [formGroup]="debitForm">
+      <div class="form-group">
+        <label for="customerName" class="form-label">
+          Tên khách hàng <span class="required">*</span>
+        </label>
+        <div class="input-icon-wrapper">
+          <i class="pi pi-user input-icon"></i>
+          <input
+            id="customerName"
+            type="text"
+            class="form-control with-icon"
+            formControlName="customerName"
+            placeholder="Nhập tên khách hàng"
+            [class.is-invalid]="isFieldInvalid('customerName')"
+          />
+        </div>
+        <div class="error-message" *ngIf="isFieldInvalid('customerName')">
+          Vui lòng nhập tên khách hàng
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="phoneNumber" class="form-label">
+          Số điện thoại
+          <span class="optional">(Tùy chọn)</span>
+        </label>
+        <div class="input-icon-wrapper">
+          <i class="pi pi-phone input-icon"></i>
+          <input
+            id="phoneNumber"
+            type="tel"
+            class="form-control with-icon"
+            formControlName="phoneNumber"
+            placeholder="Nhập số điện thoại"
+            maxlength="11"
+            [class.is-invalid]="isFieldInvalid('phoneNumber')"
+          />
+        </div>
+        <div class="error-message" *ngIf="isFieldInvalid('phoneNumber')">
+          Số điện thoại không hợp lệ (10-11 số)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="debitAmount" class="form-label">
+          Số tiền ghi nợ <span class="required">*</span>
+        </label>
+        <div class="price-input-wrapper">
+          <i class="pi pi-money-bill input-icon"></i>
+          <input
+            id="debitAmount"
+            type="number"
+            class="form-control with-icon"
+            formControlName="debitAmount"
+            placeholder="0"
+            min="0"
+            [max]="totalAmount"
+            step="1000"
+            [class.is-invalid]="isFieldInvalid('debitAmount')"
+          />
+          <span class="currency">₫</span>
+        </div>
+        <div class="amount-helper">
+          <button type="button" class="quick-amount-btn" (click)="setDebitAmount(totalAmount)">
+            Ghi nợ toàn bộ
+          </button>
+        </div>
+        <div class="error-message" *ngIf="isFieldInvalid('debitAmount')">
+          <span *ngIf="debitForm.get('debitAmount')?.hasError('required')">
+            Vui lòng nhập số tiền ghi nợ
+          </span>
+          <span *ngIf="debitForm.get('debitAmount')?.hasError('min')">
+            Số tiền phải lớn hơn 0
+          </span>
+          <span *ngIf="debitForm.get('debitAmount')?.hasError('max')">
+            Số tiền không được vượt quá tổng đơn hàng
+          </span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="paidAmount" class="form-label"> Số tiền đã trả </label>
+        <div class="price-input-wrapper readonly">
+          <i class="pi pi-wallet input-icon"></i>
+          <input
+            id="paidAmount"
+            type="text"
+            class="form-control with-icon"
+            [value]="formatCurrency(paidAmount)"
+            readonly
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="note" class="form-label">
+          Ghi chú
+          <span class="optional">(Tùy chọn)</span>
+        </label>
+        <textarea
+          id="note"
+          class="form-control textarea"
+          formControlName="note"
+          placeholder="Thêm ghi chú về khoản nợ này..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="dueDate" class="form-label">
+          Ngày hẹn trả
+          <span class="optional">(Tùy chọn)</span>
+        </label>
+        <div class="input-icon-wrapper">
+          <i class="pi pi-calendar input-icon"></i>
+          <input
+            id="dueDate"
+            type="date"
+            class="form-control with-icon"
+            formControlName="dueDate"
+            [min]="minDate"
+          />
+        </div>
+      </div>
+    </form>
+
+    <div class="summary-box">
+      <div class="summary-row">
+        <span class="summary-label">
+          <i class="pi pi-shopping-cart"></i>
+          Tổng đơn hàng:
+        </span>
+        <span class="summary-value">{{ formatCurrency(totalAmount) }}</span>
+      </div>
+      <div class="summary-row highlight">
+        <span class="summary-label">
+          <i class="pi pi-book"></i>
+          Số tiền ghi nợ:
+        </span>
+        <span class="summary-value debit">
+          {{ formatCurrency(debitForm.get('debitAmount')?.value || 0) }}
+        </span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">
+          <i class="pi pi-wallet"></i>
+          Đã thanh toán:
+        </span>
+        <span class="summary-value paid">{{ formatCurrency(paidAmount) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn btn-cancel" (click)="closeDialog()">
+      <i class="pi pi-times"></i>
+      Hủy
+    </button>
+    <button class="btn btn-save" [disabled]="!debitForm.valid" (click)="saveDebit()">
+      <i class="pi pi-check"></i>
+      Xác nhận ghi nợ
+    </button>
+  </div>
+</div>

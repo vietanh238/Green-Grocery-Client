@@ -1,0 +1,115 @@
+<div class="manual-order-container">
+  <div class="dialog-header">
+    <h4 class="dialog-title">
+      <i class="pi pi-plus-circle"></i>
+      Thêm sản phẩm thủ công
+    </h4>
+    <button class="close-btn" (click)="closeDialog()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="dialog-body">
+    <form [formGroup]="manualOrderForm">
+      <div class="form-group">
+        <label for="productName" class="form-label">
+          Tên sản phẩm <span class="required">*</span>
+        </label>
+        <input
+          id="productName"
+          type="text"
+          class="form-control"
+          formControlName="name"
+          placeholder="VD: Thịt lợn nạc"
+          [class.is-invalid]="isFieldInvalid('name')"
+        />
+        <div class="error-message" *ngIf="isFieldInvalid('name')">Vui lòng nhập tên sản phẩm</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="quantity" class="form-label">
+            Số lượng/Khối lượng <span class="required">*</span>
+          </label>
+          <div class="input-with-unit">
+            <input
+              id="quantity"
+              type="number"
+              class="form-control"
+              formControlName="quantity"
+              placeholder="0"
+              min="0.01"
+              step="0.01"
+              [class.is-invalid]="isFieldInvalid('quantity')"
+            />
+            <select class="unit-select" formControlName="unit">
+              <option value="kg">kg</option>
+              <option value="cái">cái</option>
+              <option value="hộp">hộp</option>
+              <option value="chai">chai</option>
+              <option value="gói">gói</option>
+              <option value="bịch">bịch</option>
+            </select>
+          </div>
+          <div class="error-message" *ngIf="isFieldInvalid('quantity')">
+            Số lượng phải lớn hơn 0
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="price" class="form-label"> Đơn giá <span class="required">*</span> </label>
+          <div class="price-input-wrapper">
+            <input
+              id="price"
+              type="number"
+              class="form-control"
+              formControlName="price"
+              placeholder="0"
+              min="0"
+              step="1000"
+              [class.is-invalid]="isFieldInvalid('price')"
+            />
+            <span class="currency">₫</span>
+          </div>
+          <div class="error-message" *ngIf="isFieldInvalid('price')">Giá phải lớn hơn 0</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="note" class="form-label">Ghi chú</label>
+        <textarea
+          id="note"
+          class="form-control textarea"
+          formControlName="note"
+          placeholder="Thêm ghi chú về sản phẩm (tùy chọn)"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="total-preview" *ngIf="totalAmount > 0">
+        <div class="preview-row">
+          <span>Số lượng:</span>
+          <span class="preview-value">
+            {{ manualOrderForm.get('quantity')?.value || 0 }}
+            {{ manualOrderForm.get('unit')?.value }}
+          </span>
+        </div>
+        <div class="preview-row">
+          <span>Đơn giá:</span>
+          <span class="preview-value">{{
+            formatCurrency(manualOrderForm.get('price')?.value || 0)
+          }}</span>
+        </div>
+        <div class="preview-row total">
+          <span>Thành tiền:</span>
+          <span class="preview-value">{{ formatCurrency(totalAmount) }}</span>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="dialog-footer d-flex justify-content-between">
+    <p-button label="Hủy" severity="secondary" (click)="closeDialog()" />
+    <p-button label="Lưu" [disabled]="!manualOrderForm.valid" (click)="saveManualOrder()" />
+  </div>
+</div>

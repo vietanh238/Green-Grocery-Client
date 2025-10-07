@@ -34,17 +34,21 @@ export class ScannerComponent implements OnInit {
   ngOnInit(): void {
     this.barcodeResult = '';
   }
+
   onScanSuccess(result: string) {
     this.barcodeResult = result;
   }
+
   onCamerasFound(devices: MediaDeviceInfo[]) {
     this.availableDevices = devices;
     const backCam = devices.find((d) => /back|rear|environment/gi.test(d.label));
     this.currentDevice = backCam || devices[0];
   }
+
   resetBarcode() {
     this.barcodeResult = '';
   }
+
   closeDialog() {
     this.dialogRef.close();
   }
