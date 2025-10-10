@@ -1,4 +1,4 @@
-const apiConnectServer = 'http://127.0.0.1:8000/api/';
+const apiConnectServer = 'https://uncondemnable-faviola-nondeducible.ngrok-free.dev/api/';
 export const environment = {
   apiCommon: apiConnectServer,
   apiAuth: apiConnectServer + 'account/',

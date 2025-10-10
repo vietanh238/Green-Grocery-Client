@@ -219,11 +219,6 @@ export class SellComponent implements OnInit {
         // }
 
         console.log('Thông tin ghi nợ:', result);
-
-        // Lưu vào database hoặc xử lý logic
-        // Ví dụ: gọi API để lưu thông tin ghi nợ
-        // this.service.createDebitOrder(result, this.cartItems).subscribe(...)
-
         this.showSuccess(
           `Đã ghi nợ ${this.formatCurrency(result.debitAmount)} cho khách hàng ${
             result.customerName

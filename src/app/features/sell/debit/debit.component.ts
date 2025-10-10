@@ -2,6 +2,7 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
 
 interface DebitData {
   totalAmount: number;
@@ -12,7 +13,7 @@ interface DebitData {
   templateUrl: './debit.component.html',
   styleUrl: './debit.component.scss',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ButtonModule],
 })
 export class DebitComponent implements OnInit {
   debitForm!: FormGroup;
@@ -85,12 +86,11 @@ export class DebitComponent implements OnInit {
         note: formValue.note?.trim() || null,
         dueDate: formValue.dueDate || null,
         createdAt: new Date().toISOString(),
-        status: 'pending', // pending, partial, paid
+        status: 'pending',
       };
 
       this.dialogRef.close(debitInfo);
     } else {
-      // Mark all fields as touched to show validation errors
       Object.keys(this.debitForm.controls).forEach((key) => {
         this.debitForm.get(key)?.markAsTouched();
       });

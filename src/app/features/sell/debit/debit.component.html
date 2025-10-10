@@ -168,14 +168,8 @@
     </div>
   </div>
 
-  <div class="dialog-footer">
-    <button class="btn btn-cancel" (click)="closeDialog()">
-      <i class="pi pi-times"></i>
-      Hủy
-    </button>
-    <button class="btn btn-save" [disabled]="!debitForm.valid" (click)="saveDebit()">
-      <i class="pi pi-check"></i>
-      Xác nhận ghi nợ
-    </button>
+  <div class="dialog-footer d-flex justify-content-between align-items-center">
+    <p-button label="Hủy" severity="secondary" (click)="closeDialog()" />
+    <p-button label="Xác nhận ghi nợ" [disabled]="!debitForm.valid" (click)="saveDebit()" />
   </div>
 </div>

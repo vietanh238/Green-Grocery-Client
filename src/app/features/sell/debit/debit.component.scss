@@ -6,9 +6,10 @@
   max-height: 90vh;
   background: #ffffff;
   overflow: hidden;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+}
+
+.dialog-body::-webkit-scrollbar {
+  display: none;
 }
 
 .dialog-header {

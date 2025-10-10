@@ -42,14 +42,17 @@
               step="0.01"
               [class.is-invalid]="isFieldInvalid('quantity')"
             />
-            <select class="unit-select" formControlName="unit">
-              <option value="kg">kg</option>
-              <option value="cái">cái</option>
-              <option value="hộp">hộp</option>
-              <option value="chai">chai</option>
-              <option value="gói">gói</option>
-              <option value="bịch">bịch</option>
-            </select>
+            <p-select
+              id="unit"
+              class="unit-select"
+              [options]="lstUnit"
+              formControlName="unit"
+              optionLabel="name"
+              class=""
+              style="height: 50px"
+              appendTo="body"
+              [filter]="true"
+            />
           </div>
           <div class="error-message" *ngIf="isFieldInvalid('quantity')">
             Số lượng phải lớn hơn 0
@@ -69,6 +72,7 @@
               step="1000"
               [class.is-invalid]="isFieldInvalid('price')"
             />
+
             <span class="currency">₫</span>
           </div>
           <div class="error-message" *ngIf="isFieldInvalid('price')">Giá phải lớn hơn 0</div>
