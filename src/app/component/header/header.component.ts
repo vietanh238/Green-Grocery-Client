@@ -13,6 +13,7 @@ import { Message } from 'primeng/message';
 import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { PaymentWsService } from '../../core/services/websocket.service';
 
 @Component({
   selector: 'app-header',
@@ -51,9 +52,11 @@ export class HeaderComponent implements OnInit {
     public router: Router,
     private service: Service,
     private cdr: ChangeDetectorRef,
-    private message: MessageService
+    private message: MessageService,
+    private ws: PaymentWsService
   ) {}
   ngOnInit() {
+    this.ws.connect();
     this.items = [
       {
         label: 'Trang chủ',
@@ -93,7 +96,9 @@ export class HeaderComponent implements OnInit {
   openDrawer() {
     this.visible = true;
   }
-
+  ngOnDestroy(): void {
+    this.ws.disconnect();
+  }
   addAttribute() {
     const array = this.lstNotification.map((item: any) => {
       const time = new Date(item.time);
