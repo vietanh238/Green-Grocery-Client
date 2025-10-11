@@ -26,14 +26,7 @@
               <span style="text-align: center">Đang tạo mã QR...</span>
             </div>
             }
-            <img
-              [src]="qrCodeUrl"
-              alt="VietQR Code"
-              class="qr-image"
-              [class.loaded]="qrLoaded"
-              (error)="onImageError()"
-              (load)="onImageLoad()"
-            />
+            <qrcode [qrdata]="qrCodeUrl" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
           </div>
           <div class="scan-line"></div>
         </div>

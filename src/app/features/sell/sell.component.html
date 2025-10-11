@@ -18,8 +18,8 @@
           <span>Quét mã sản phẩm</span>
         </button>
       </div>
-
-      <div class="cards row g-3" *ngIf="products.length > 0; else skeleton">
+      <h4 *ngIf="isProductNotFound" class="product-not-found">Không tìm thấy sản phẩm phù hợp</h4>
+      <div class="cards row g-3" *ngIf="products; else skeleton">
         @for (product of products; track product.sku) {
         <div class="col-sm-6">
           <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>

@@ -4,4 +4,6 @@ export const environment = {
   apiAuth: apiConnectServer + 'account/',
   apiHome: apiConnectServer + 'home/',
   apiProduct: apiConnectServer + 'product/',
+  apiSell: apiConnectServer + 'sell/',
+  apiPayment: apiConnectServer + 'payments/',
 };

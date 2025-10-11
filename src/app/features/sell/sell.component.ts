@@ -41,9 +41,10 @@ interface CartItem {
   ],
 })
 export class SellComponent implements OnInit {
-  products: any[] = [];
+  products!: any[];
   cartItems: CartItem[] = [];
   allProducts: any[] = [];
+  isProductNotFound: boolean = false;
 
   constructor(
     private service: Service,
@@ -89,6 +90,7 @@ export class SellComponent implements OnInit {
       disableClose: true,
       data: {
         amount: this.totalAmount,
+        items: this.cartItems,
       },
     });
     // dialogRef.afterClosed().subscribe((result: any) => {
@@ -159,6 +161,7 @@ export class SellComponent implements OnInit {
   }
 
   filterData(keyFilter: string): void {
+    this.isProductNotFound = false;
     if (keyFilter) {
       this.products = this.allProducts.filter(
         (item: any) =>
@@ -166,6 +169,9 @@ export class SellComponent implements OnInit {
           item?.sku?.toLowerCase()?.includes(keyFilter) ||
           item?.bar_code?.includes(keyFilter)
       );
+      if (this.products.length == 0) {
+        this.isProductNotFound = true;
+      }
     } else {
       this.products = [...this.allProducts];
     }

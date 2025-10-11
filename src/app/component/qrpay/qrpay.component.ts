@@ -1,6 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { QRCodeComponent } from 'angularx-qrcode';
+import { Service } from '../../core/services/service';
+import { Router } from '@angular/router';
+import { ConstantDef } from '../../core/constanDef';
+import { MessageService } from 'primeng/api';
 
 interface BankInfo {
   bankName: string;
@@ -14,7 +19,7 @@ interface BankInfo {
   templateUrl: './qrpay.component.html',
   styleUrl: './qrpay.component.scss',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, QRCodeComponent],
 })
 export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   @Input() transferContent: string = '';
@@ -35,13 +40,19 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   isLoadingQR: boolean = true;
   qrLoaded: boolean = false;
   amount: number = 0;
+  items: any[] = [];
+
   private timerInterval: any;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: any,
-    private dialogRef: MatDialogRef<PaymentQrDialogComponent>
+    private dialogRef: MatDialogRef<PaymentQrDialogComponent>,
+    private service: Service,
+    private router: Router,
+    private message: MessageService
   ) {
     this.amount = data.amount;
+    this.items = data.items || [];
   }
   ngOnInit() {
     this.transactionCode = this.generateTransactionCode();
@@ -52,21 +63,61 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.clearTimer();
   }
+  private showError(detail: string) {
+    this.message.add({
+      severity: 'error',
+      summary: 'Thông báo',
+      detail,
+      life: 1000,
+    });
+  }
 
+  private showSuccess(detail: string) {
+    this.message.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail,
+      life: 1000,
+    });
+  }
   generateVietQRUrl() {
     this.isLoadingQR = true;
     this.qrLoaded = false;
 
-    const baseUrl = `${this.VIETQR_BASE_URL}/${this.bankInfo.bankId}-${this.bankInfo.accountNumber}-${this.QR_TEMPLATE}.jpg`;
+    // const baseUrl = `${this.VIETQR_BASE_URL}/${this.bankInfo.bankId}-${this.bankInfo.accountNumber}-${this.QR_TEMPLATE}.jpg`;
 
-    const params = new URLSearchParams({
-      amount: this.amount.toString(),
-      addInfo: this.transferContent || this.transactionCode,
-      accountName: this.bankInfo.accountName,
-    });
+    // const params = new URLSearchParams({
+    //   amount: this.amount.toString(),
+    //   addInfo: this.transferContent || this.transactionCode,
+    //   accountName: this.bankInfo.accountName,
+    // });
+    // this.qrCodeUrl = `${baseUrl}?${params.toString()}`;
 
-    this.qrCodeUrl = `${baseUrl}?${params.toString()}`;
-    console.log('VietQR URL:', this.qrCodeUrl);
+    // use qr code of payos
+    const orderCode = Date.now();
+    const params = {
+      orderCode: orderCode,
+      amount: this.amount,
+      description: this.transactionCode,
+      cancelUrl: this.router.url,
+      returnUrl: this.router.url,
+      items: this.items,
+    };
+
+    this.service.createPayment(params).subscribe(
+      (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.qrCodeUrl = rs.response.qrCode;
+        } else {
+          this.showError('Không thể tạo mã');
+        }
+      },
+      (_error: any) => {
+        this.showError('Lỗi hệ thống');
+      }
+    );
+
+    this.onImageLoad();
   }
 
   generateTransactionCode(): string {

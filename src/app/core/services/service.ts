@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environment/environment';
 import { Observable } from 'rxjs';
+import { param } from 'jquery';
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +13,7 @@ export class Service {
   private readonly CREATE_PRODUCT_URL = environment.apiProduct + 'create/';
   private readonly GET_CATEGORIES_URL = environment.apiProduct + 'categories/';
   private readonly GET_PRODUCTS_URL = environment.apiProduct + 'products/';
+  private readonly CREATE_PAYMENT = environment.apiPayment + 'create/';
 
   constructor(private _http: HttpClient) {}
 
@@ -45,5 +47,9 @@ export class Service {
 
   getProducts(): Observable<any> {
     return this._http.get(this.GET_PRODUCTS_URL);
+  }
+
+  createPayment(params: any): Observable<any> {
+    return this._http.post(this.CREATE_PAYMENT, params);
   }
 }
