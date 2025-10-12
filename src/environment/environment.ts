@@ -1,4 +1,5 @@
-const apiConnectServer = 'https://uncondemnable-faviola-nondeducible.ngrok-free.dev/api/';
+export const URL_SERVER = 'https://uncondemnable-faviola-nondeducible.ngrok-free.dev';
+const apiConnectServer = URL_SERVER + '/api/';
 export const environment = {
   apiCommon: apiConnectServer,
   apiAuth: apiConnectServer + 'account/',

@@ -12,7 +12,6 @@ export const authInterceptor = (
   const router = inject(Router);
   const token = tokenService.getAccessToken();
 
-  // Giữ nguyên logic cũ, chỉ thêm header ngrok-skip-browser-warning
   let authReq = token
     ? req.clone({
         setHeaders: {
@@ -34,7 +33,6 @@ export const authInterceptor = (
         return throwError(() => new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'));
       }
 
-      // Bổ sung xử lý khi ngrok trả về HTML thay vì JSON
       if (typeof error.error === 'string' && error.error.startsWith('<!DOCTYPE')) {
         return throwError(
           () =>

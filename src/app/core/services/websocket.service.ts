@@ -1,14 +1,14 @@
 // src/app/services/payment-ws.service.ts
 import { Injectable, NgZone } from '@angular/core';
+import { environment, URL_SERVER } from '../../../environment/environment';
 
 @Injectable({ providedIn: 'root' })
-export class PaymentWsService {
+export class WebSocketService {
   private ws?: WebSocket;
-
   constructor(private ngZone: NgZone) {}
 
   connect(): void {
-    const url = 'wss://uncondemnable-faviola-nondeducible.ngrok-free.dev/ws/payments/';
+    const url = 'wss://uncondemnable-faviola-nondeducible.ngrok-free.dev/ws/message/';
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
@@ -17,8 +17,6 @@ export class PaymentWsService {
 
     this.ws.onmessage = (event) => {
       this.ngZone.run(() => {
-        console.log('adas');
-
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'payment_success') {
@@ -33,7 +31,6 @@ export class PaymentWsService {
     };
 
     this.ws.onclose = (ev) => {
-      console.log('[WS] Closed:', ev.code, ev.reason);
       setTimeout(() => this.connect(), 3000);
     };
 

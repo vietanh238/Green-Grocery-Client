@@ -13,7 +13,7 @@ import { Message } from 'primeng/message';
 import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { PaymentWsService } from '../../core/services/websocket.service';
+import { WebSocketService } from '../../core/services/websocket.service';
 
 @Component({
   selector: 'app-header',
@@ -53,7 +53,7 @@ export class HeaderComponent implements OnInit {
     private service: Service,
     private cdr: ChangeDetectorRef,
     private message: MessageService,
-    private ws: PaymentWsService
+    private ws: WebSocketService
   ) {}
   ngOnInit() {
     this.ws.connect();
