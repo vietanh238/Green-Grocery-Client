@@ -6,6 +6,8 @@ import { Service } from '../../core/services/service';
 import { Router } from '@angular/router';
 import { ConstantDef } from '../../core/constanDef';
 import { MessageService } from 'primeng/api';
+import { Subscription } from 'rxjs';
+import { WebSocketService } from '../../core/services/websocket.service';
 
 interface BankInfo {
   bankName: string;
@@ -23,7 +25,7 @@ interface BankInfo {
 })
 export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   @Input() transferContent: string = '';
-
+  private sub?: Subscription;
   bankInfo: BankInfo = {
     bankName: 'Vietcombank',
     accountName: 'DUONG VIET ANH',
@@ -46,6 +48,7 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: any,
+    private wsService: WebSocketService,
     private dialogRef: MatDialogRef<PaymentQrDialogComponent>,
     private service: Service,
     private router: Router,
@@ -58,6 +61,9 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
     this.transactionCode = this.generateTransactionCode();
     this.generateVietQRUrl();
     this.startTimer();
+    this.sub = this.wsService.paymentSuccess$.subscribe((data) => {
+      this.dialogRef.close({ success: true, data });
+    });
   }
 
   ngOnDestroy() {

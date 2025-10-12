@@ -26,7 +26,12 @@
               <span style="text-align: center">Đang tạo mã QR...</span>
             </div>
             }
-            <qrcode [qrdata]="qrCodeUrl" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+            <qrcode
+              *ngIf="qrCodeUrl"
+              [qrdata]="qrCodeUrl"
+              [width]="256"
+              [errorCorrectionLevel]="'M'"
+            ></qrcode>
           </div>
           <div class="scan-line"></div>
         </div>

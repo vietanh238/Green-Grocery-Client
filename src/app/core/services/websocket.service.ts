@@ -1,11 +1,14 @@
 // src/app/services/payment-ws.service.ts
 import { Injectable, NgZone } from '@angular/core';
 import { environment, URL_SERVER } from '../../../environment/environment';
+import { Subject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
   private ws?: WebSocket;
   constructor(private ngZone: NgZone) {}
+  private paymentSuccessSource = new Subject<any>();
+  paymentSuccess$ = this.paymentSuccessSource.asObservable();
 
   connect(): void {
     const url = 'wss://uncondemnable-faviola-nondeducible.ngrok-free.dev/ws/message/';
@@ -20,7 +23,7 @@ export class WebSocketService {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'payment_success') {
-            alert(`Thanh toán thành công: Đơn ${msg.data?.orderId}, số tiền ${msg.data?.amount}`);
+            this.paymentSuccessSource.next(msg.data);
           } else {
             console.log('[WS] Message:', msg);
           }
