@@ -1,0 +1,123 @@
+.confirm-dialog {
+  min-width: 400px;
+  max-width: 500px;
+
+  .dialog-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid #e0e0e0;
+
+    .dialog-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+    }
+  }
+
+  .dialog-content {
+    padding: 20px 24px;
+
+    .dialog-message {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #666;
+    }
+  }
+
+  .dialog-actions {
+    padding: 16px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #e0e0e0;
+
+    .dialog-btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 80px;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      &.btn-primary {
+        background-color: #22c55e;
+        color: white;
+
+        &:hover {
+          background-color: #16a34a;
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+      }
+
+      &.btn-yellow {
+        background-color: yellow;
+        color: white;
+
+        &:hover {
+          background-color: #16a34a;
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+      }
+
+      &.btn-warn {
+        background-color: #ef4444;
+        color: white;
+
+        &:hover {
+          background-color: #dc2626;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+      }
+
+      &.btn-accent {
+        background-color: #3b82f6;
+        color: white;
+
+        &:hover {
+          background-color: #2563eb;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+      }
+
+      &.btn-default {
+        background-color: #f3f4f6;
+        color: #666;
+        border: 1px solid #d1d5db;
+
+        &:hover {
+          background-color: #e5e7eb;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+      }
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .confirm-dialog {
+    min-width: 280px;
+    max-width: 90vw;
+
+    .dialog-actions {
+      flex-direction: column-reverse;
+
+      .dialog-btn {
+        width: 100%;
+      }
+    }
+  }
+}

@@ -80,3 +80,59 @@ input[type='number'] {
     font-size: 0.9rem;
   }
 }
+.dialog-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 80px;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  background-color: #f3f4f6;
+  color: #666;
+  border: 1px solid #d1d5db;
+
+  &:hover {
+    background-color: #e5e7eb;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+}
+.dialog-btn-yellow {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 80px;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #666;
+  border: 1px solid #d1d5db;
+
+  &:hover {
+    background-color: #e5e7eb;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+}

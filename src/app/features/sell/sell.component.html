@@ -19,11 +19,9 @@
         </button>
       </div>
       <h4 *ngIf="isProductNotFound" class="product-not-found">Không tìm thấy sản phẩm phù hợp</h4>
-      <div class="cards row g-3" *ngIf="products; else skeleton">
+      <div class="cards" *ngIf="products; else skeleton">
         @for (product of products; track product.sku) {
-        <div class="col-sm-6">
-          <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
-        </div>
+        <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
         }
       </div>
       <ng-template #skeleton>
@@ -93,8 +91,8 @@
           </div>
 
           <div class="d-flex gap-1 justify-content-between align-items-center">
-            <button class="debit" (click)="debit()" style="width: 150px">
-              <span class="">Ghi nợ</span>
+            <button class="debit" (click)="close()" style="width: 150px">
+              <span class="">Xóa</span>
             </button>
             <button pButton class="checkout-btn" (click)="createPaymentQR()">
               <i class="pi pi-qrcode"></i>

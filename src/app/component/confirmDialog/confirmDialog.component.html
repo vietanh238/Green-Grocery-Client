@@ -1,0 +1,21 @@
+<div class="confirm-dialog">
+  <div class="dialog-header">
+    <h2 class="dialog-title">{{ title }}</h2>
+  </div>
+
+  <div class="dialog-content" *ngIf="message">
+    <p class="dialog-message">{{ message }}</p>
+  </div>
+
+  <div class="dialog-actions d-flex justify-content-between">
+    <button
+      *ngFor="let btn of lstButton"
+      class="dialog-btn"
+      [ngClass]="'btn-' + btn.class"
+      [style.color]="btn.color"
+      (click)="onButtonClick(btn.value)"
+    >
+      {{ btn.label }}
+    </button>
+  </div>
+</div>

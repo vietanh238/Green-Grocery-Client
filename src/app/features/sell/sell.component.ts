@@ -15,6 +15,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { PaymentQrDialogComponent } from '../../component/qrpay/qrpay.component';
 import { AddManualOrder } from './addManualOrder/addManualOrder.component';
 import { DebitComponent } from './debit/debit.component';
+import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 
 interface CartItem {
   id: number;
@@ -90,14 +91,19 @@ export class SellComponent implements OnInit {
       disableClose: true,
       data: {
         amount: this.totalAmount,
-        items: this.cartItems,
+        cartItems: this.cartItems,
       },
     });
-    // dialogRef.afterClosed().subscribe((result: any) => {
-    //   if (result) {
-    //     this.filterData(result[0]);
-    //   }
-    // });
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result && 'success' in result && result.success === true) {
+        this.showSuccess('Thanh toán thành công');
+        this.cartItems = [];
+      }
+      if (result && 'cancel' in result && result.cancel === true) {
+        this.showSuccess('hủy thanh toán thành công');
+        this.cartItems = [];
+      }
+    });
   }
 
   formatCurrency(amount: number): string {
@@ -196,43 +202,33 @@ export class SellComponent implements OnInit {
       }
     });
   }
-  debit() {
-    if (this.cartItems.length === 0) {
-      this.showError('Giỏ hàng trống, vui lòng thêm sản phẩm trước');
-      return;
-    }
-
-    const dialogRef = this.dialog.open(DebitComponent, {
+  close() {
+    const dialog = this.dialog.open(ConfirmDialogComponent, {
       disableClose: true,
       data: {
-        totalAmount: this.totalAmount,
+        title: 'Xác nhận xóa đơn hàng',
+        buttons: [
+          {
+            label: 'Hủy',
+            class: 'default',
+            value: false,
+            color: '',
+            background: '',
+          },
+          {
+            label: 'Xác nhận',
+            class: 'primary',
+            value: true,
+            color: '',
+            background: '',
+          },
+        ],
       },
     });
-
-    dialogRef.afterClosed().subscribe((result: any) => {
+    dialog.afterClosed().subscribe((result: any) => {
       if (result) {
-        // result chứa thông tin ghi nợ:
-        // {
-        //   customerName: string,
-        //   phoneNumber: string | null,
-        //   debitAmount: number,
-        //   paidAmount: number,
-        //   totalAmount: number,
-        //   note: string | null,
-        //   dueDate: string | null,
-        //   createdAt: string,
-        //   status: 'pending'
-        // }
-
-        console.log('Thông tin ghi nợ:', result);
-        this.showSuccess(
-          `Đã ghi nợ ${this.formatCurrency(result.debitAmount)} cho khách hàng ${
-            result.customerName
-          }`
-        );
-
-        // Clear giỏ hàng sau khi ghi nợ thành công
         this.cartItems = [];
+        this.showSuccess('Xóa giỏ hàng thành công');
       }
     });
   }

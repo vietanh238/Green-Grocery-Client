@@ -9,9 +9,7 @@
         <h2>Thanh toán QR Code</h2>
         <p>Quét mã để chuyển khoản</p>
       </div>
-      <button class="close-btn" (click)="closeDialog()">
-        <i class="pi pi-times"></i>
-      </button>
+      <button class="dialog-btn-yellow" (click)="debit()">Ghi nợ</button>
     </div>
 
     <!-- Body -->
@@ -108,7 +106,7 @@
       </div>
 
       <!-- Instructions -->
-      <div class="instructions">
+      <!-- <div class="instructions">
         <h4>Hướng dẫn thanh toán</h4>
         <ol>
           <li>Mở ứng dụng ngân hàng trên điện thoại</li>
@@ -116,14 +114,14 @@
           <li>Quét mã QR trên màn hình</li>
           <li>Kiểm tra thông tin và xác nhận thanh toán</li>
         </ol>
-      </div>
+      </div> -->
     </div>
 
     <!-- Footer -->
     <div class="dialog-footer">
       <button class="secondary-btn" (click)="closeDialog()">
         <i class="pi pi-times"></i>
-        <span>Đóng</span>
+        <span>Hủy</span>
       </button>
       <button class="primary-btn" (click)="downloadQR()" [disabled]="!qrLoaded">
         <i class="pi pi-download"></i>

@@ -14,6 +14,7 @@ export class Service {
   private readonly GET_CATEGORIES_URL = environment.apiProduct + 'categories/';
   private readonly GET_PRODUCTS_URL = environment.apiProduct + 'products/';
   private readonly CREATE_PAYMENT = environment.apiPayment + 'create/';
+  private readonly DELETE_PAYMENT = environment.apiPayment + 'delete/';
 
   constructor(private _http: HttpClient) {}
 
@@ -51,5 +52,10 @@ export class Service {
 
   createPayment(params: any): Observable<any> {
     return this._http.post(this.CREATE_PAYMENT, params);
+  }
+
+  deletePayment(orderCode: any): Observable<any> {
+    const url = this.DELETE_PAYMENT + orderCode + '/';
+    return this._http.delete(url);
   }
 }
