@@ -65,9 +65,17 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   }
   ngOnInit() {
     this.transactionCode = this.generateTransactionCode();
-    this.generateVietQRUrl();
+    if (sessionStorage.getItem('qrCodeUrl')) {
+      this.onImageLoad();
+      this.qrCodeUrl = sessionStorage.getItem('qrCodeUrl') || '';
+      this.orderCode = sessionStorage.getItem('orderCode') || '';
+    } else {
+      this.generateVietQRUrl();
+    }
     this.startTimer();
     this.sub = this.wsService.paymentSuccess$.subscribe((data) => {
+      sessionStorage.removeItem('qrCodeUrl');
+      sessionStorage.removeItem('orderCode');
       this.dialogRef.close({ success: true, data });
     });
   }
@@ -113,14 +121,17 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
       description: this.transactionCode,
       cancelUrl: this.router.url,
       returnUrl: this.router.url,
-      items: this.items,
+      items: this.cartItems,
     };
 
     this.service.createPayment(params).subscribe(
       (rs: any) => {
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.onImageLoad();
           this.qrCodeUrl = rs.response.qrCode;
           this.orderCode = rs.response.orderCode;
+          sessionStorage.setItem('qrCodeUrl', this.qrCodeUrl);
+          sessionStorage.setItem('orderCode', this.orderCode);
         } else {
           this.showError('Không thể tạo mã');
         }
@@ -129,8 +140,6 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
         this.showError('Lỗi hệ thống');
       }
     );
-
-    this.onImageLoad();
   }
 
   generateTransactionCode(): string {
@@ -243,6 +252,8 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
       if (result) {
         this.service.deletePayment(this.orderCode).subscribe((rs: any) => {
           if (rs.status === ConstantDef.STATUS_SUCCESS) {
+            sessionStorage.removeItem('qrCodeUrl');
+            sessionStorage.removeItem('orderCode');
             this.dialogRef.close({ cancel: true, data: '' });
           }
         });

@@ -1,62 +1,217 @@
-<div class="card">
-  <p-menubar [model]="items">
+<div class="header-wrapper">
+  <p-menubar [model]="items" styleClass="custom-menubar">
     <ng-template #start>
-      <img src="assets/icon.png" alt="" class="header-icon" style="width: 50px; height: 50px" />
+      <div class="logo-container">
+        <img src="assets/icon.png" alt="Logo" class="header-icon" />
+      </div>
     </ng-template>
-    <ng-template #end class="d-flex justify-content-around">
-      <div class="d-flex justify-content-around gap-3 align-items-center">
-        <!-- <button class="bell">
-          <i class="pi pi-bell"></i>
-        </button> -->
-        <p-overlaybadge
-          [value]="countNotifications"
-          [severity]="countNotifications > 9 ? 'danger' : 'success'"
-        >
-          <i class="pi pi-bell" style="font-size: 24px" (click)="openDrawer()"></i>
-        </p-overlaybadge>
-        <button class="search d-flex gap-2 align-items-center">
+    <ng-template #end>
+      <div class="header-actions">
+        <button class="action-btn search-btn" (click)="openSearch()">
           <i class="pi pi-search"></i>
-          <span class="text">Tìm kiếm nhanh...</span>
+          <span class="action-text text-hidden">Tìm kiếm</span>
         </button>
-        <button class="admin d-flex gap-2 align-items-center">
+
+        <div class="notification-wrapper">
+          <p-overlaybadge
+            [value]="countNotifications"
+            [severity]="countNotifications > 9 ? 'danger' : 'success'"
+          >
+            <button
+              class="action-btn bell-btn"
+              (click)="openNotificationDrawer()"
+              [class.shake]="bellShake"
+            >
+              <i class="pi pi-bell"></i>
+            </button>
+          </p-overlaybadge>
+        </div>
+
+        <button class="action-btn settings-btn" (click)="openSettings()">
+          <i class="pi pi-cog"></i>
+          <span class="action-text text-hidden">Cài đặt</span>
+        </button>
+
+        <button class="action-btn user-btn">
           <i class="pi pi-user"></i>
-          <span class="text header-icon">Quản lý</span>
+          <span class="action-text text-hidden">Quản lý</span>
         </button>
       </div>
     </ng-template>
   </p-menubar>
 </div>
+
 <p-drawer
-  [(visible)]="visible"
+  [(visible)]="notificationVisible"
   position="right"
-  closable="false"
   [style]="drawerStyle"
   [blockScroll]="true"
   [modal]="true"
+  styleClass="notification-drawer"
 >
   <ng-template #header>
-    <div class="d-flex justify-content-between align-items-center w-100">
-      <h4 class="font-bold">Thông báo</h4>
-      <button class="readed-all">
-        <i>Đánh dấu đã đọc</i>
-      </button>
+    <div class="drawer-header">
+      <h3 class="drawer-title text-hidden" *ngIf="!isHiddenIconBell">
+        <i class="pi pi-bell"></i>
+        Thông báo
+      </h3>
+      <div class="header-actions-drawer">
+        <button class="mark-all-btn" (click)="markAllAsRead()" *ngIf="lstNotification.length > 0">
+          <i class="pi pi-check-circle"></i>
+          <span class="text-hidden">Đọc tất cả</span>
+        </button>
+        <button
+          class="clear-all-btn"
+          (click)="clearAllNotifications()"
+          *ngIf="lstNotification.length > 0"
+        >
+          <i class="pi pi-trash"></i>
+        </button>
+      </div>
     </div>
   </ng-template>
-  <div *ngIf="visible">
-    <div *ngIf="lstNotification.length === 0">
-      <p-message severity="info">Không có thông báo</p-message>
+
+  <div class="notifications-container">
+    <div *ngIf="lstNotification.length === 0" class="empty-state">
+      <i class="pi pi-inbox empty-icon"></i>
+      <p class="empty-text">Không có thông báo</p>
     </div>
-    <div *ngFor="let item of lstNotification" style="margin-top: 10px">
-      <span class="card-message" [style]="{ 'background-color': item.bg, color: item.color }">
-        <i [class]="item.icon" style="margin: auto 0px auto 2px"></i>
-        <div class="d-flex flex-column">
-          <p class="title text" style="margin: 2px">{{ item.title || '' }}</p>
-          <p class="text" style="margin: 2px; font-size: small">{{ item.message || '' }}</p>
-          <p class="text" style="margin: 2px; font-size: small">{{ item.time_now || '' }}</p>
-        </div>
-        <i class="pi pi-thumbs-up-fill readed" style="margin: auto 5px auto 0px"></i>
-      </span>
+
+    <div
+      *ngFor="let item of lstNotification"
+      class="notification-card"
+      [class.unread]="!item.isRead"
+      [style.background-color]="item.bg"
+      [style.border-left-color]="item.color"
+      (click)="onNotificationClick(item)"
+    >
+      <div class="notification-content">
+        <h4 class="notification-title" [style.color]="item.color">
+          {{ item.title }}
+        </h4>
+        <p class="notification-message">{{ item.message }}</p>
+        <span class="notification-time">
+          <i class="pi pi-clock"></i>
+          {{ item.time_now }}
+        </span>
+      </div>
+
+      <div class="notification-actions">
+        <button
+          class="action-icon"
+          [class.read]="item.isRead"
+          (click)="markAsRead(item, $event)"
+          [title]="item.isRead ? 'Đã đọc' : 'Đánh dấu đã đọc'"
+        >
+          <i [class]="item.isRead ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+        </button>
+        <button
+          class="action-icon delete"
+          (click)="deleteNotification(item, $event)"
+          title="Xóa thông báo"
+        >
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
     </div>
   </div>
 </p-drawer>
-<p-toast />
+
+<p-dialog
+  [(visible)]="settingsVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="settings-dialog"
+  header="Cài đặt"
+  [style]="{ width: '500px' }"
+>
+  <div class="settings-content">
+    <div class="setting-group">
+      <h4>
+        <i class="pi pi-user"></i>
+        Thông tin tài khoản
+      </h4>
+      <div class="setting-item">
+        <label>Tên người dùng</label>
+        <p>Admin User</p>
+      </div>
+      <div class="setting-item">
+        <label>Email</label>
+        <p>admin@example.com</p>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h4>
+        <i class="pi pi-palette"></i>
+        Giao diện
+      </h4>
+      <div class="setting-item">
+        <label>Chế độ tối</label>
+        <button class="toggle-btn">
+          <i class="pi pi-moon"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <h4>
+        <i class="pi pi-bell"></i>
+        Thông báo
+      </h4>
+      <div class="setting-item">
+        <label>Âm thanh thông báo</label>
+        <button class="toggle-btn active">
+          <i class="pi pi-volume-up"></i>
+        </button>
+      </div>
+      <div class="setting-item">
+        <label>Thông báo desktop</label>
+        <button class="toggle-btn active">
+          <i class="pi pi-desktop"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="searchVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="search-dialog"
+  [showHeader]="false"
+  [style]="{ width: '600px' }"
+>
+  <div class="search-content">
+    <div class="search-input-wrapper">
+      <i class="pi pi-search search-icon"></i>
+      <input
+        type="text"
+        pInputText
+        placeholder="Tìm kiếm sản phẩm, đơn hàng, khách hàng..."
+        class="search-input"
+        (keyup.enter)="handleSearch()"
+        autofocus
+      />
+      <button class="close-search" (click)="searchVisible = false">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+    <div class="search-suggestions">
+      <p class="suggestion-title">Tìm kiếm gần đây</p>
+      <div class="suggestion-item">
+        <i class="pi pi-history"></i>
+        <span>Sản phẩm A</span>
+      </div>
+      <div class="suggestion-item">
+        <i class="pi pi-history"></i>
+        <span>Đơn hàng #12345</span>
+      </div>
+    </div>
+  </div>
+</p-dialog>
+
+<p-toast position="top-right" />

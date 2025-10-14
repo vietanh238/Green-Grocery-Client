@@ -88,7 +88,7 @@ export class SellComponent implements OnInit {
 
   createPaymentQR() {
     const dialogRef = this.dialog.open(PaymentQrDialogComponent, {
-      disableClose: true,
+      // disableClose: true,
       data: {
         amount: this.totalAmount,
         cartItems: this.cartItems,

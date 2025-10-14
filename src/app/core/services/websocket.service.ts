@@ -8,7 +8,9 @@ export class WebSocketService {
   private ws?: WebSocket;
   constructor(private ngZone: NgZone) {}
   private paymentSuccessSource = new Subject<any>();
+  private messageSource = new Subject<any>();
   paymentSuccess$ = this.paymentSuccessSource.asObservable();
+  message$ = this.messageSource.asObservable();
 
   connect(): void {
     const url = 'wss://uncondemnable-faviola-nondeducible.ngrok-free.dev/ws/message/';
@@ -24,8 +26,9 @@ export class WebSocketService {
           const msg = JSON.parse(event.data);
           if (msg.type === 'payment_success') {
             this.paymentSuccessSource.next(msg.data);
-          } else {
-            console.log('[WS] Message:', msg);
+          }
+          if (msg.type === 'message') {
+            this.messageSource.next(msg.data);
           }
         } catch {
           console.warn('WS message is not valid JSON:', event.data);
