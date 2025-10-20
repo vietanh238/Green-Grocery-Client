@@ -1,23 +1,21 @@
 <div class="product-management-container">
-  <!-- Header Section -->
   <div class="header-section">
     <div class="header-left">
       <h3 class="page-title">Quản lý sản phẩm</h3>
       <span class="product-count">Tổng: {{ products?.length || 0 }} sản phẩm</span>
     </div>
     <div class="header-actions">
-      <button class="btn btn-outline" (click)="exportExcel()">
+      <button class="btn btn-primary" (click)="exportExcel()">
         <i class="pi pi-download"></i>
         <span class="btn-text">Xuất Excel</span>
       </button>
-      <button class="btn btn-primary" (click)="showDialog()">
+      <button class="btn btn-primary" (click)="openAddProductDialog()">
         <i class="pi pi-plus"></i>
         Thêm sản phẩm
       </button>
     </div>
   </div>
 
-  <!-- Search and Filter Section -->
   <div class="search-filter-section">
     <div class="search-box">
       <i class="pi pi-search search-icon"></i>
@@ -52,7 +50,6 @@
     </div>
   </div>
 
-  <!-- Table Section -->
   <div class="table-container">
     <p-table
       [value]="filteredProducts"
@@ -84,7 +81,7 @@
           <td>{{ rowIndex + 1 }}</td>
           <td>
             <div class="product-image">
-              <img [src]="product.image || 'assets/no-image.png'" (error)="onImageError($event)" />
+              <img [src]="product.image || ''" (error)="onImageError($event)" />
             </div>
           </td>
           <td>
@@ -100,7 +97,7 @@
             <span class="sku-badge">{{ product.sku }}</span>
           </td>
           <td>
-            <span class="category-tag">{{ product.name_category }}</span>
+            <span class="category-tag text-hidden">{{ product.name_category }}</span>
           </td>
           <td class="text-right">
             <span class="price-text">{{ product.cost_price | number : '1.0-0' }}</span>
@@ -141,295 +138,6 @@
       </ng-template>
     </p-table>
   </div>
-
-  <!-- Add/Edit Product Dialog -->
-  <p-dialog
-    [header]="isEditMode ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm mới'"
-    [modal]="true"
-    [(visible)]="visible"
-    [style]="{ width: '90vw', 'max-width': '600px' }"
-    [draggable]="false"
-    [resizable]="false"
-    styleClass="product-dialog"
-  >
-    <div class="dialog-content">
-      <!-- Product Image Upload -->
-      <div class="form-group image-upload-group">
-        <label class="form-label">Ảnh sản phẩm</label>
-        <div class="image-upload-container">
-          <div class="image-preview" (click)="fileInput.click()">
-            <img *ngIf="productImage" [src]="productImage" alt="Preview" />
-            <div *ngIf="!productImage" class="upload-placeholder">
-              <i class="pi pi-camera"></i>
-              <span>Chọn ảnh</span>
-            </div>
-          </div>
-          <input
-            #fileInput
-            type="file"
-            accept="image/*"
-            (change)="onImageSelect($event)"
-            style="display: none"
-          />
-          <button
-            *ngIf="productImage"
-            class="btn-remove-image"
-            (click)="removeImage(); $event.stopPropagation()"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Product Name -->
-      <div class="form-group">
-        <label for="productName" class="form-label">
-          Tên sản phẩm <span class="require-input">*</span>
-        </label>
-        <input
-          pInputText
-          id="productName"
-          placeholder="Nhập tên sản phẩm"
-          [(ngModel)]="productName"
-          (blur)="blurValidate($event, 'productName')"
-          maxlength="255"
-          class="form-input"
-        />
-      </div>
-
-      <!-- SKU -->
-      <div class="form-group">
-        <label for="sku" class="form-label"> SKU <span class="require-input">*</span> </label>
-        <input
-          pInputText
-          id="sku"
-          placeholder="Nhập mã SKU"
-          [(ngModel)]="sku"
-          (blur)="blurValidate($event, 'sku')"
-          maxlength="64"
-          class="form-input"
-        />
-      </div>
-
-      <!-- Price Row -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="costPrice" class="form-label">
-            Giá nhập <span class="require-input">*</span>
-          </label>
-          <input
-            pInputText
-            id="costPrice"
-            placeholder="0"
-            (input)="inputPrice($event, 'costPrice')"
-            (blur)="blurPrice($event, 'costPrice'); blurValidate($event, 'costPrice')"
-            (focus)="focusPrice($event, 'costPrice')"
-            (keydown)="keydownPrice($event)"
-            (paste)="pastePrice($event, 'costPrice')"
-            class="form-input"
-          />
-        </div>
-        <div class="form-group">
-          <label for="price" class="form-label">
-            Giá bán <span class="require-input">*</span>
-          </label>
-          <input
-            pInputText
-            id="price"
-            placeholder="0"
-            (input)="inputPrice($event, 'price')"
-            (blur)="blurPrice($event, 'price'); blurValidate($event, 'price')"
-            (focus)="focusPrice($event, 'price')"
-            (keydown)="keydownPrice($event)"
-            (paste)="pastePrice($event, 'price')"
-            class="form-input"
-          />
-        </div>
-      </div>
-
-      <!-- Quantity and Unit Row -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="quantity" class="form-label">
-            Số lượng <span class="require-input">*</span>
-          </label>
-          <input
-            pInputText
-            id="quantity"
-            placeholder="0"
-            type="number"
-            [(ngModel)]="quantity"
-            (blur)="blurValidate($event, 'quantity')"
-            class="form-input"
-          />
-        </div>
-        <div class="form-group">
-          <label for="unit" class="form-label"> Đơn vị <span class="require-input">*</span> </label>
-          <p-select
-            id="unit"
-            [options]="lstUnit"
-            [(ngModel)]="unitSld"
-            optionLabel="name"
-            placeholder="Chọn đơn vị"
-            [filter]="true"
-            (onChange)="onSelectChange($event, 'unit')"
-            styleClass="form-select"
-          />
-        </div>
-      </div>
-
-      <!-- Category Row -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="category" class="form-label">
-            Phân loại mới <span class="require-input">*</span>
-          </label>
-          <input
-            pInputText
-            id="category"
-            placeholder="Nhập tên loại"
-            [(ngModel)]="category"
-            (blur)="blurValidate($event, 'category')"
-            maxlength="255"
-            class="form-input"
-          />
-        </div>
-        <div class="form-group">
-          <label for="categorySld" class="form-label">Phân loại đã có</label>
-          <p-select
-            id="categorySld"
-            [options]="lstCategory"
-            [(ngModel)]="categorySld"
-            optionLabel="name"
-            placeholder="Chọn loại có sẵn"
-            [filter]="true"
-            filterBy="name"
-            (onChange)="changeCategory()"
-            [showClear]="true"
-            styleClass="form-select"
-          />
-        </div>
-      </div>
-
-      <!-- Barcode -->
-      <div class="form-group">
-        <label for="barCode" class="form-label">
-          Barcode <span class="require-input">*</span>
-        </label>
-        <div class="barcode-input-group">
-          <input
-            pInputText
-            id="barCode"
-            placeholder="Nhập hoặc quét barcode"
-            [(ngModel)]="barCode"
-            (blur)="blurValidate($event, 'barCode')"
-            maxlength="64"
-            class="form-input"
-          />
-          <button class="btn-scan" (click)="openScanner()">
-            <i class="pi pi-qrcode"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="dialog-footer">
-      <button class="btn btn-secondary" (click)="cancelDialog()">
-        <i class="pi pi-times"></i>
-        Hủy
-      </button>
-      <button class="btn btn-primary" (click)="save()">
-        <i class="pi pi-check"></i>
-        {{ isEditMode ? 'Cập nhật' : 'Lưu' }}
-      </button>
-    </div>
-  </p-dialog>
-
-  <!-- Delete Confirmation Dialog -->
-  <p-dialog
-    header="Xác nhận xóa"
-    [modal]="true"
-    [(visible)]="showDeleteDialog"
-    [style]="{ width: '90vw', 'max-width': '400px' }"
-    [draggable]="false"
-    styleClass="delete-dialog"
-  >
-    <div class="delete-content">
-      <i class="pi pi-exclamation-triangle warning-icon"></i>
-      <p>
-        Bạn có chắc chắn muốn xóa sản phẩm <strong>{{ productToDelete?.name }}</strong> không?
-      </p>
-      <p class="warning-text">Hành động này không thể hoàn tác!</p>
-    </div>
-    <div class="dialog-footer">
-      <button class="btn btn-secondary" (click)="showDeleteDialog = false">Hủy</button>
-      <button class="btn btn-danger" (click)="deleteProduct()">
-        <i class="pi pi-trash"></i>
-        Xóa
-      </button>
-    </div>
-  </p-dialog>
-
-  <!-- Product Detail Dialog -->
-  <p-dialog
-    header="Chi tiết sản phẩm"
-    [modal]="true"
-    [(visible)]="showDetailDialog"
-    [style]="{ width: '90vw', 'max-width': '500px' }"
-    [draggable]="false"
-    styleClass="detail-dialog"
-  >
-    <div class="detail-content" *ngIf="selectedProduct">
-      <div class="detail-image">
-        <img
-          [src]="selectedProduct.image || 'assets/no-image.png'"
-          (error)="onImageError($event)"
-        />
-      </div>
-      <div class="detail-info">
-        <div class="detail-row">
-          <span class="detail-label">Tên sản phẩm:</span>
-          <span class="detail-value">{{ selectedProduct.name }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">SKU:</span>
-          <span class="detail-value">{{ selectedProduct.sku }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Phân loại:</span>
-          <span class="detail-value">{{ selectedProduct.name_category }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Giá nhập:</span>
-          <span class="detail-value">{{ selectedProduct.cost_price | number : '1.0-0' }} VND</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Giá bán:</span>
-          <span class="detail-value">{{ selectedProduct.price | number : '1.0-0' }} VND</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Lợi nhuận/SP:</span>
-          <span class="detail-value profit"
-            >{{ selectedProduct.price - selectedProduct.cost_price | number : '1.0-0' }} VND</span
-          >
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Đơn vị:</span>
-          <span class="detail-value">{{ selectedProduct.unit }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Tồn kho:</span>
-          <span class="detail-value" [class.low-stock-text]="selectedProduct.stock_quantity <= 10">
-            {{ selectedProduct.stock_quantity }} {{ selectedProduct.unit }}
-          </span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Barcode:</span>
-          <span class="detail-value">{{ selectedProduct.barcode || 'Không có' }}</span>
-        </div>
-      </div>
-    </div>
-  </p-dialog>
 
   <p-toast />
 </div>

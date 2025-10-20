@@ -29,6 +29,9 @@ export class WebSocketService {
       this.ngZone.run(() => {
         try {
           const msg = JSON.parse(event.data);
+          if (msg.type == 'echo') {
+            console.log(`${msg.data.type} connect websocket success`);
+          }
           if (msg.type === 'payment_success') {
             this.paymentSuccessSource.next(msg.data);
           } else if (msg.type === 'message') {

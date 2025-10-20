@@ -143,3 +143,16 @@ input[type='number'] {
   overflow: hidden;
   display: block;
 }
+.btn-primary {
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #16a34a;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+}

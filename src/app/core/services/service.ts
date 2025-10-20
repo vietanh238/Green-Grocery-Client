@@ -13,6 +13,7 @@ export class Service {
   private readonly CREATE_PRODUCT_URL = environment.apiProduct + 'create/';
   private readonly GET_CATEGORIES_URL = environment.apiProduct + 'categories/';
   private readonly GET_PRODUCTS_URL = environment.apiProduct + 'products/';
+  private readonly DELETE_RPODUCT = environment.apiProduct + 'delete/';
   private readonly CREATE_PAYMENT = environment.apiPayment + 'create/';
   private readonly DELETE_PAYMENT = environment.apiPayment + 'delete/';
 
@@ -56,6 +57,11 @@ export class Service {
 
   deletePayment(orderCode: any): Observable<any> {
     const url = this.DELETE_PAYMENT + orderCode + '/';
+    return this._http.delete(url);
+  }
+
+  deleteProduct(barCode: string): Observable<any> {
+    const url = this.DELETE_RPODUCT + barCode + '/';
     return this._http.delete(url);
   }
 }
