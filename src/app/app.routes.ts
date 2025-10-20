@@ -7,6 +7,8 @@ import { AuthGuard } from './core/guards/auth.guard';
 import { HomeComponent } from './features/home/home.component';
 import { ProductsComponent } from './features/products/products.component';
 import { SellComponent } from './features/sell/sell.component';
+import { DebtComponent } from './features/debit/debit.component';
+import { ReportComponent } from './features/report/report.component';
 
 export const routes: Routes = [
   {
@@ -30,6 +32,14 @@ export const routes: Routes = [
       {
         path: 'sell',
         component: SellComponent,
+      },
+      {
+        path: 'debit',
+        component: DebtComponent,
+      },
+      {
+        path: 'report',
+        component: ReportComponent,
       },
     ],
   },

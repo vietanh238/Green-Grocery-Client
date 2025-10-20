@@ -1,5 +1,6 @@
 import { HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, catchError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { TokenService } from '../services/token.service';
 import { Router } from '@angular/router';
 import { inject } from '@angular/core';
@@ -12,18 +13,13 @@ export const authInterceptor = (
   const router = inject(Router);
   const token = tokenService.getAccessToken();
 
-  let authReq = token
+  const authReq = token
     ? req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`,
-          'ngrok-skip-browser-warning': 'true',
         },
       })
-    : req.clone({
-        setHeaders: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-      });
+    : req;
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -32,16 +28,6 @@ export const authInterceptor = (
         router.navigate(['/login']);
         return throwError(() => new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'));
       }
-
-      if (typeof error.error === 'string' && error.error.startsWith('<!DOCTYPE')) {
-        return throwError(
-          () =>
-            new Error(
-              'Ngrok trả về HTML thay vì JSON. Hãy chắc chắn đã thêm header ngrok-skip-browser-warning.'
-            )
-        );
-      }
-
       return throwError(() => error);
     })
   );

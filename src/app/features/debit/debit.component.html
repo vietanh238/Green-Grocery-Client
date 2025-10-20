@@ -1,0 +1,517 @@
+<div class="debt-container">
+  <div class="page-header">
+    <div class="header-left">
+      <h2 class="page-title">
+        <i class="pi pi-users"></i>
+        Quản lý công nợ
+      </h2>
+      <p class="page-subtitle">Theo dõi và quản lý công nợ khách hàng</p>
+    </div>
+    <div class="header-actions">
+      <button class="action-btn export-btn" (click)="exportData()">
+        <i class="pi pi-download"></i>
+        <span>Xuất dữ liệu</span>
+      </button>
+      <button class="action-btn primary-btn" (click)="openAddCustomerDialog()">
+        <i class="pi pi-user-plus"></i>
+        <span>Thêm khách hàng</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <i class="pi pi-wallet"></i>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Tổng công nợ</p>
+        <h3 class="stat-value">{{ totalDebt | number : '1.0-0' }} đ</h3>
+        <div class="stat-footer">
+          <span class="stat-change up">
+            <i class="pi pi-arrow-up"></i>
+            8.5%
+          </span>
+          <span class="stat-period">so với tháng trước</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card customers">
+      <div class="stat-icon">
+        <i class="pi pi-users"></i>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Khách hàng nợ</p>
+        <h3 class="stat-value">{{ totalCustomers }}</h3>
+        <div class="stat-footer">
+          <span class="stat-change down">
+            <i class="pi pi-arrow-down"></i>
+            3.2%
+          </span>
+          <span class="stat-period">so với tháng trước</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card overdue">
+      <div class="stat-icon">
+        <i class="pi pi-exclamation-triangle"></i>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Nợ quá hạn</p>
+        <h3 class="stat-value">{{ overdueDebt | number : '1.0-0' }} đ</h3>
+        <div class="stat-footer">
+          <span class="stat-info">5 khách hàng</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card month">
+      <div class="stat-icon">
+        <i class="pi pi-calendar"></i>
+      </div>
+      <div class="stat-content">
+        <p class="stat-label">Nợ tháng này</p>
+        <h3 class="stat-value">{{ thisMonthDebt | number : '1.0-0' }} đ</h3>
+        <div class="stat-footer">
+          <span class="stat-info">12 giao dịch</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-buttons-group">
+    <button class="quick-action-btn debt" (click)="openAddDebtDialog()">
+      <i class="pi pi-plus-circle"></i>
+      <span>Ghi nợ mới</span>
+    </button>
+    <button class="quick-action-btn payment" (click)="openPaymentDialog()">
+      <i class="pi pi-check-circle"></i>
+      <span>Thu nợ</span>
+    </button>
+  </div>
+
+  <p-tabs value="0" styleClass="custom-tabs">
+    <p-tabpanel value="0">
+      <ng-template #header>
+        <div class="tab-header">
+          <i class="pi pi-users"></i>
+          <span>Danh sách khách hàng</span>
+        </div>
+      </ng-template>
+
+      <div class="table-toolbar">
+        <p-iconfield iconPosition="left" class="search-field">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            type="text"
+            pInputText
+            placeholder="Tìm kiếm khách hàng..."
+            [(ngModel)]="searchValue"
+            (input)="onSearch()"
+            class="search-input"
+          />
+        </p-iconfield>
+        <button class="clear-btn" *ngIf="searchValue" (click)="clearSearch()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="table-container">
+        <p-table
+          [value]="filteredCustomers"
+          [rows]="10"
+          [paginator]="true"
+          [loading]="loading"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} khách hàng"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          styleClass="debt-table"
+        >
+          <ng-template #header>
+            <tr>
+              <th>Mã KH</th>
+              <th>Tên khách hàng</th>
+              <th>Số điện thoại</th>
+              <th>Địa chỉ</th>
+              <th class="text-right">Tổng nợ</th>
+              <th>Giao dịch cuối</th>
+              <th class="text-center">Trạng thái</th>
+              <th class="text-center">Thao tác</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-customer>
+            <tr>
+              <td>
+                <span class="customer-id">{{ customer.id }}</span>
+              </td>
+              <td>
+                <div class="customer-info">
+                  <strong class="customer-name">{{ customer.name }}</strong>
+                </div>
+              </td>
+              <td>
+                <span class="phone">{{ customer.phone }}</span>
+              </td>
+              <td>
+                <span class="address">{{ customer.address }}</span>
+              </td>
+              <td class="text-right">
+                <span class="debt-amount" [class.high]="customer.totalDebt > 5000000">
+                  {{ customer.totalDebt | number : '1.0-0' }} đ
+                </span>
+              </td>
+              <td>
+                <span class="date">{{ customer.lastTransaction }}</span>
+              </td>
+              <td class="text-center">
+                <p-tag [value]="getStatusLabel(customer.status)" />
+              </td>
+              <td class="text-center">
+                <div class="action-buttons">
+                  <button
+                    class="action-icon-btn view"
+                    (click)="viewCustomerDetail(customer)"
+                    title="Chi tiết"
+                  >
+                    <i class="pi pi-eye"></i>
+                  </button>
+                  <button
+                    class="action-icon-btn remind"
+                    (click)="sendReminder(customer)"
+                    title="Nhắc nợ"
+                  >
+                    <i class="pi pi-bell"></i>
+                  </button>
+                  <button
+                    class="action-icon-btn delete"
+                    (click)="deleteCustomer(customer)"
+                    title="Xóa"
+                  >
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="8" class="empty-message">
+                <div class="empty-state">
+                  <i class="pi pi-users"></i>
+                  <p>Không tìm thấy khách hàng</p>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </p-tabpanel>
+
+    <p-tabpanel value="1">
+      <ng-template #header>
+        <div class="tab-header">
+          <i class="pi pi-list"></i>
+          <span>Lịch sử giao dịch</span>
+        </div>
+      </ng-template>
+
+      <div class="table-container">
+        <p-table
+          [value]="debtTransactions"
+          [rows]="10"
+          [paginator]="true"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} giao dịch"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          styleClass="transaction-table"
+        >
+          <ng-template #header>
+            <tr>
+              <th>Mã GD</th>
+              <th>Khách hàng</th>
+              <th class="text-center">Loại</th>
+              <th class="text-right">Số tiền</th>
+              <th>Ghi chú</th>
+              <th>Thời gian</th>
+              <th class="text-right">Nợ còn lại</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-transaction>
+            <tr>
+              <td>
+                <span class="transaction-id">{{ transaction.id }}</span>
+              </td>
+              <td>
+                <span class="customer-name">{{ transaction.customerName }}</span>
+              </td>
+              <td class="text-center">
+                <p-tag [value]="getTransactionTypeLabel(transaction.type)" />
+              </td>
+              <td class="text-right">
+                <span
+                  class="transaction-amount"
+                  [class.debt]="transaction.type === 'debt'"
+                  [class.payment]="transaction.type === 'payment'"
+                >
+                  {{ transaction.type === 'debt' ? '+' : '-'
+                  }}{{ transaction.amount | number : '1.0-0' }} đ
+                </span>
+              </td>
+              <td>
+                <span class="note">{{ transaction.note || '-' }}</span>
+              </td>
+              <td>
+                <span class="datetime">{{ transaction.date }}</span>
+              </td>
+              <td class="text-right">
+                <span class="remaining">{{ transaction.remainingDebt | number : '1.0-0' }} đ</span>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </p-tabpanel>
+  </p-tabs>
+</div>
+
+<p-dialog
+  header="Thêm khách hàng mới"
+  [(visible)]="showAddCustomerDialog"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [draggable]="false"
+  styleClass="custom-dialog"
+>
+  <div class="dialog-content">
+    <div class="form-group">
+      <label class="form-label"> Tên khách hàng <span class="required">*</span> </label>
+      <input
+        pInputText
+        [(ngModel)]="newCustomer.name"
+        placeholder="Nhập tên khách hàng"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label"> Số điện thoại <span class="required">*</span> </label>
+      <input
+        pInputText
+        [(ngModel)]="newCustomer.phone"
+        placeholder="Nhập số điện thoại"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Địa chỉ</label>
+      <textarea
+        pInputTextarea
+        [(ngModel)]="newCustomer.address"
+        placeholder="Nhập địa chỉ"
+        [rows]="3"
+        class="form-input"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="dialog-footer">
+      <button class="btn-cancel" (click)="showAddCustomerDialog = false">Hủy</button>
+      <button class="btn-primary" (click)="addCustomer()">Lưu</button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Ghi nợ mới"
+  [(visible)]="showAddDebtDialog"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [draggable]="false"
+  styleClass="custom-dialog"
+>
+  <div class="dialog-content">
+    <div class="form-group">
+      <label class="form-label"> Khách hàng <span class="required">*</span> </label>
+      <p-select
+        [(ngModel)]="newDebt.customerId"
+        [options]="customers"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Chọn khách hàng"
+        [filter]="true"
+        class="form-input"
+        styleClass="w-100"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label"> Số tiền <span class="required">*</span> </label>
+      <input
+        pInputText
+        placeholder="0 VND"
+        (input)="inputAmount($event, 'debt')"
+        (blur)="blurAmount($event)"
+        (focus)="focusAmount($event)"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Ghi chú</label>
+      <textarea
+        pInputTextarea
+        [(ngModel)]="newDebt.note"
+        placeholder="Nhập ghi chú"
+        [rows]="3"
+        class="form-input"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="dialog-footer">
+      <button class="btn-cancel" (click)="showAddDebtDialog = false">Hủy</button>
+      <button class="btn-primary" (click)="addDebt()">Ghi nợ</button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Thu nợ"
+  [(visible)]="showPaymentDialog"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [draggable]="false"
+  styleClass="custom-dialog"
+>
+  <div class="dialog-content">
+    <div class="form-group">
+      <label class="form-label"> Khách hàng <span class="required">*</span> </label>
+      <p-select
+        [(ngModel)]="newPayment.customerId"
+        [options]="customers"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Chọn khách hàng"
+        [filter]="true"
+        class="form-input"
+        styleClass="w-100"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label"> Số tiền <span class="required">*</span> </label>
+      <input
+        pInputText
+        placeholder="0 VND"
+        (input)="inputAmount($event, 'payment')"
+        (blur)="blurAmount($event)"
+        (focus)="focusAmount($event)"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Ghi chú</label>
+      <textarea
+        pInputTextarea
+        [(ngModel)]="newPayment.note"
+        placeholder="Nhập ghi chú"
+        [rows]="3"
+        class="form-input"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="dialog-footer">
+      <button class="btn-cancel" (click)="showPaymentDialog = false">Hủy</button>
+      <button class="btn-primary" (click)="addPayment()">Thu nợ</button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Chi tiết khách hàng"
+  [(visible)]="showCustomerDetailDialog"
+  [modal]="true"
+  [style]="{ width: '700px' }"
+  [draggable]="false"
+  styleClass="custom-dialog detail-dialog"
+>
+  <div class="detail-content" *ngIf="selectedCustomer">
+    <div class="customer-detail-header">
+      <div class="customer-avatar">
+        <i class="pi pi-user"></i>
+      </div>
+      <div class="customer-detail-info">
+        <h3>{{ selectedCustomer.name }}</h3>
+        <p class="customer-id">{{ selectedCustomer.id }}</p>
+      </div>
+      <div class="customer-debt-badge">
+        <span class="label">Tổng nợ</span>
+        <span class="value">{{ selectedCustomer.totalDebt | number : '1.0-0' }} đ</span>
+      </div>
+    </div>
+
+    <div class="customer-contact">
+      <div class="contact-item">
+        <i class="pi pi-phone"></i>
+        <span>{{ selectedCustomer.phone }}</span>
+      </div>
+      <div class="contact-item">
+        <i class="pi pi-map-marker"></i>
+        <span>{{ selectedCustomer.address }}</span>
+      </div>
+    </div>
+
+    <div class="transaction-history">
+      <h4 class="section-title">
+        <i class="pi pi-history"></i>
+        Lịch sử giao dịch
+      </h4>
+      <div class="timeline">
+        <div class="timeline-item" *ngFor="let trans of customerTransactions">
+          <div
+            class="timeline-marker"
+            [class.debt]="trans.type === 'debt'"
+            [class.payment]="trans.type === 'payment'"
+          >
+            <i [class]="trans.type === 'debt' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"></i>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span
+                class="timeline-type"
+                [class.debt]="trans.type === 'debt'"
+                [class.payment]="trans.type === 'payment'"
+              >
+                {{ getTransactionTypeLabel(trans.type) }}
+              </span>
+              <span
+                class="timeline-amount"
+                [class.debt]="trans.type === 'debt'"
+                [class.payment]="trans.type === 'payment'"
+              >
+                {{ trans.type === 'debt' ? '+' : '-' }}{{ trans.amount | number : '1.0-0' }} đ
+              </span>
+            </div>
+            <p class="timeline-note">{{ trans.note }}</p>
+            <div class="timeline-footer">
+              <span class="timeline-date">{{ trans.date }}</span>
+              <span class="timeline-remaining"
+                >Còn lại: {{ trans.remainingDebt | number : '1.0-0' }} đ</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</p-dialog>
+
+<p-toast position="top-right" />

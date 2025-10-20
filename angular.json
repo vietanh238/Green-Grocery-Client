@@ -67,7 +67,7 @@
           },
           "defaultConfiguration": "development",
           "options": {
-            "allowedHosts": [".ngrok-free.app"]
+            "allowedHosts": ["app.green-grocery.io.vn"]
           }
         },
         "extract-i18n": {

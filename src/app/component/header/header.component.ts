@@ -118,7 +118,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       {
         label: 'Công nợ',
         icon: 'pi pi-users',
-        routerLink: ['/page/debt'],
+        routerLink: ['/page/debit'],
         routerLinkActiveOptions: { exact: true },
       },
       {

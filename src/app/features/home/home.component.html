@@ -1,1 +1,229 @@
-aaa
+<div class="home-container">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h2 class="page-title">
+          <i class="pi pi-home"></i>
+          Dashboard
+        </h2>
+        <p class="page-subtitle">Tổng quan hoạt động kinh doanh hôm nay</p>
+      </div>
+      <div class="header-actions">
+        <p-select
+          [(ngModel)]="selectedPeriod"
+          [options]="periodOptions"
+          optionLabel="label"
+          (onChange)="onPeriodChange()"
+          styleClass="period-select"
+        />
+        <button class="action-btn refresh-btn" (click)="refreshData()">
+          <i class="pi pi-refresh"></i>
+        </button>
+        <button class="action-btn export-btn" (click)="exportReport()">
+          <i class="pi pi-download"></i>
+          <span>Xuất báo cáo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card revenue">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="pi pi-dollar"></i>
+        </div>
+        <div class="stat-trend up">
+          <i class="pi pi-arrow-up"></i>
+          <span>12.5%</span>
+        </div>
+      </div>
+      <div class="stat-body">
+        <p class="stat-label">Doanh thu hôm nay</p>
+        <h3 class="stat-value">{{ todayRevenue | number : '1.0-0' }} đ</h3>
+        <p class="stat-compare">So với hôm qua: +1.2M đ</p>
+      </div>
+    </div>
+
+    <div class="stat-card orders">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="pi pi-shopping-cart"></i>
+        </div>
+        <div class="stat-trend up">
+          <i class="pi pi-arrow-up"></i>
+          <span>8.3%</span>
+        </div>
+      </div>
+      <div class="stat-body">
+        <p class="stat-label">Đơn hàng</p>
+        <h3 class="stat-value">{{ todayOrders }}</h3>
+        <p class="stat-compare">Trung bình: 42 đơn/ngày</p>
+      </div>
+    </div>
+
+    <div class="stat-card profit">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="pi pi-chart-line"></i>
+        </div>
+        <div class="stat-trend up">
+          <i class="pi pi-arrow-up"></i>
+          <span>15.2%</span>
+        </div>
+      </div>
+      <div class="stat-body">
+        <p class="stat-label">Lợi nhuận</p>
+        <h3 class="stat-value">{{ todayProfit | number : '1.0-0' }} đ</h3>
+        <p class="stat-compare">Tỷ suất: 27%</p>
+      </div>
+    </div>
+
+    <div class="stat-card customers">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="pi pi-users"></i>
+        </div>
+        <div class="stat-trend up">
+          <i class="pi pi-arrow-up"></i>
+          <span>5.7%</span>
+        </div>
+      </div>
+      <div class="stat-body">
+        <p class="stat-label">Khách hàng</p>
+        <h3 class="stat-value">{{ todayCustomers }}</h3>
+        <p class="stat-compare">Khách mới: 8 người</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid d-flex gap-3">
+    <div class="chart-section revenue-chart col-sm-7">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="pi pi-chart-line"></i>
+          Biểu đồ doanh thu
+        </h3>
+      </div>
+      <div class="chart-container">
+        <p-chart type="line" [data]="revenueChartData" [options]="revenueChartOptions" />
+      </div>
+    </div>
+
+    <div class="chart-section category-chart col-sm-5">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="pi pi-chart-pie"></i>
+          Doanh thu theo danh mục
+        </h3>
+      </div>
+      <div class="chart-container">
+        <p-chart type="doughnut" [data]="categoryChartData" [options]="categoryChartOptions" />
+      </div>
+    </div>
+  </div>
+
+  <div class="data-grid">
+    <div class="data-section recent-sales">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="pi pi-clock"></i>
+          Đơn hàng gần đây
+        </h3>
+        <button class="view-all-btn" (click)="viewAllSales()">
+          Xem tất cả
+          <i class="pi pi-arrow-right"></i>
+        </button>
+      </div>
+      <div class="table-wrapper">
+        <p-table [value]="recentSales" styleClass="sales-table">
+          <ng-template #header>
+            <tr>
+              <th>Mã đơn</th>
+              <th>Thời gian</th>
+              <th>Khách hàng</th>
+              <th class="text-right">Số tiền</th>
+              <th>Thanh toán</th>
+              <th class="text-center">Trạng thái</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-sale>
+            <tr>
+              <td>
+                <span class="order-id">{{ sale.id }}</span>
+              </td>
+              <td>
+                <span class="time">{{ sale.time }}</span>
+              </td>
+              <td>
+                <span class="customer-name">{{ sale.customer }}</span>
+              </td>
+              <td class="text-right">
+                <span class="amount">{{ sale.amount | number : '1.0-0' }} đ</span>
+              </td>
+              <td>
+                <span class="payment-method">{{ sale.payment }}</span>
+              </td>
+              <td class="text-center">
+                <p-tag [value]="getStatusLabel(sale.status)" />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+
+    <div class="data-section top-products">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="pi pi-star-fill"></i>
+          Sản phẩm bán chạy
+        </h3>
+        <button class="view-all-btn" (click)="viewAllProducts()">
+          Xem tất cả
+          <i class="pi pi-arrow-right"></i>
+        </button>
+      </div>
+      <div class="products-list">
+        <div class="product-item" *ngFor="let product of topProducts; let i = index">
+          <div class="product-rank">{{ i + 1 }}</div>
+          <div class="product-info">
+            <h4 class="product-name">{{ product.name }}</h4>
+            <div class="product-stats">
+              <span class="quantity">
+                <i class="pi pi-box"></i>
+                {{ product.quantity }} đã bán
+              </span>
+              <span class="revenue">{{ product.revenue | number : '1.0-0' }} đ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <h3 class="section-title">
+      <i class="pi pi-bolt"></i>
+      Thao tác nhanh
+    </h3>
+    <div class="actions-grid">
+      <button class="quick-action-btn">
+        <i class="pi pi-plus-circle"></i>
+        <span>Tạo đơn hàng</span>
+      </button>
+      <button class="quick-action-btn">
+        <i class="pi pi-shopping-bag"></i>
+        <span>Thêm sản phẩm</span>
+      </button>
+      <button class="quick-action-btn">
+        <i class="pi pi-user-plus"></i>
+        <span>Thêm khách hàng</span>
+      </button>
+      <button class="quick-action-btn">
+        <i class="pi pi-file-pdf"></i>
+        <span>In báo cáo</span>
+      </button>
+    </div>
+  </div>
+</div>

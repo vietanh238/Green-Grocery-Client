@@ -88,7 +88,7 @@ export class SellComponent implements OnInit {
 
   createPaymentQR() {
     const dialogRef = this.dialog.open(PaymentQrDialogComponent, {
-      // disableClose: true,
+      disableClose: false,
       data: {
         amount: this.totalAmount,
         cartItems: this.cartItems,
@@ -100,8 +100,7 @@ export class SellComponent implements OnInit {
         this.cartItems = [];
       }
       if (result && 'cancel' in result && result.cancel === true) {
-        this.showSuccess('hủy thanh toán thành công');
-        this.cartItems = [];
+        this.showSuccess('hủy mã thành công');
       }
     });
   }

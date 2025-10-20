@@ -604,23 +604,23 @@ export class ProductsComponent implements OnInit {
 
   // ===== Export Excel =====
   exportExcel() {
-    if (!this.products || this.products.length === 0) {
-      this.showError('Không có dữ liệu để xuất');
-      return;
-    }
+    // if (!this.products || this.products.length === 0) {
+    //   this.showError('Không có dữ liệu để xuất');
+    //   return;
+    // }
 
-    const exportData = this.filteredProducts.map((p, index) => ({
-      STT: index + 1,
-      'Tên sản phẩm': p.name,
-      SKU: p.sku,
-      'Phân loại': p.name_category,
-      'Giá nhập': p.cost_price,
-      'Giá bán': p.price,
-      'Lợi nhuận': p.price - p.cost_price,
-      'Đơn vị': p.unit,
-      'Tồn kho': p.stock_quantity,
-      Barcode: p.barcode || '',
-    }));
+    // const exportData = this.filteredProducts.map((p, index) => ({
+    //   STT: index + 1,
+    //   'Tên sản phẩm': p.name,
+    //   SKU: p.sku,
+    //   'Phân loại': p.name_category,
+    //   'Giá nhập': p.cost_price,
+    //   'Giá bán': p.price,
+    //   'Lợi nhuận': p.price - p.cost_price,
+    //   'Đơn vị': p.unit,
+    //   'Tồn kho': p.stock_quantity,
+    //   Barcode: p.barcode || '',
+    // }));
 
     // const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
     // const wb: XLSX.WorkBook = XLSX.utils.book_new();
@@ -640,9 +640,9 @@ export class ProductsComponent implements OnInit {
     //   { wch: 15 }, // Barcode
     // ];
 
-    const fileName = `san-pham_${new Date().getTime()}.xlsx`;
+    // const fileName = `san-pham_${new Date().getTime()}.xlsx`;
     // XLSX.writeFile(wb, fileName);
-    this.showSuccess('Xuất file Excel thành công');
+    this.showError('Chức năng đang phát triển');
   }
 
   // ===== Notifications =====

@@ -1,22 +1,27 @@
-// src/app/services/payment-ws.service.ts
 import { Injectable, NgZone } from '@angular/core';
-import { environment, URL_SERVER } from '../../../environment/environment';
-import { Subject } from 'rxjs';
+import { Subject, BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
   private ws?: WebSocket;
-  constructor(private ngZone: NgZone) {}
+  private reconnectDelay = 3000;
+
   private paymentSuccessSource = new Subject<any>();
   private messageSource = new Subject<any>();
+  private connectionStatus = new BehaviorSubject<boolean>(false);
+
   paymentSuccess$ = this.paymentSuccessSource.asObservable();
   message$ = this.messageSource.asObservable();
+  connected$ = this.connectionStatus.asObservable();
+
+  constructor(private ngZone: NgZone) {}
 
   connect(): void {
-    const url = 'wss://uncondemnable-faviola-nondeducible.ngrok-free.dev/ws/message/';
+    const url = 'wss://api.green-grocery.io.vn/ws/message/';
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
+      this.connectionStatus.next(true);
       this.send({ type: 'ping', at: Date.now() });
     };
 
@@ -26,18 +31,18 @@ export class WebSocketService {
           const msg = JSON.parse(event.data);
           if (msg.type === 'payment_success') {
             this.paymentSuccessSource.next(msg.data);
-          }
-          if (msg.type === 'message') {
+          } else if (msg.type === 'message') {
             this.messageSource.next(msg.data);
           }
-        } catch {
+        } catch (e) {
           console.warn('WS message is not valid JSON:', event.data);
         }
       });
     };
 
-    this.ws.onclose = (ev) => {
-      setTimeout(() => this.connect(), 3000);
+    this.ws.onclose = () => {
+      this.connectionStatus.next(false);
+      setTimeout(() => this.connect(), this.reconnectDelay);
     };
 
     this.ws.onerror = (err) => {
@@ -54,5 +59,6 @@ export class WebSocketService {
   disconnect(): void {
     this.ws?.close();
     this.ws = undefined;
+    this.connectionStatus.next(false);
   }
 }

@@ -1,4 +1,4 @@
-export const URL_SERVER = 'https://uncondemnable-faviola-nondeducible.ngrok-free.dev';
+export const URL_SERVER = 'https://api.green-grocery.io.vn';
 const apiConnectServer = URL_SERVER + '/api/';
 export const environment = {
   apiCommon: apiConnectServer,
