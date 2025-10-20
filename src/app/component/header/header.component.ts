@@ -283,6 +283,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   openNotificationDrawer() {
     this.notificationVisible = true;
+    this.addAttribute();
   }
 
   openSettings() {
