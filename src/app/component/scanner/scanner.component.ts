@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/library';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +9,9 @@ import { MatDialogRef } from '@angular/material/dialog';
   selector: 'app-scanner',
   templateUrl: './scanner.component.html',
   styleUrl: './scanner.component.scss',
+  standalone: true,
   imports: [ZXingScannerModule, FormsModule, ButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScannerComponent implements OnInit {
   barcodeResult: string = '';
@@ -29,7 +31,7 @@ export class ScannerComponent implements OnInit {
     BarcodeFormat.QR_CODE,
   ];
 
-  constructor(private dialogRef: MatDialogRef<ScannerComponent>) {}
+  constructor(private dialogRef: MatDialogRef<ScannerComponent>, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.barcodeResult = '';
@@ -37,16 +39,22 @@ export class ScannerComponent implements OnInit {
 
   onScanSuccess(result: string) {
     this.barcodeResult = result;
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.save();
+    }, 500);
   }
 
   onCamerasFound(devices: MediaDeviceInfo[]) {
     this.availableDevices = devices;
     const backCam = devices.find((d) => /back|rear|environment/gi.test(d.label));
     this.currentDevice = backCam || devices[0];
+    this.cdr.markForCheck();
   }
 
   resetBarcode() {
     this.barcodeResult = '';
+    this.cdr.markForCheck();
   }
 
   closeDialog() {

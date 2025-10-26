@@ -18,9 +18,10 @@
             [severity]="countNotifications > 9 ? 'danger' : 'success'"
           >
             <button
-              class="action-btn bell-btn"
+              class="action-btn"
               (click)="openNotificationDrawer()"
               [class.shake]="bellShake"
+              [class.bell-btn]="countNotifications > 0"
             >
               <i class="pi pi-bell"></i>
             </button>

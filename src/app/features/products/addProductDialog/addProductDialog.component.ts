@@ -1,7 +1,12 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import {
+  MatDialogRef,
+  MAT_DIALOG_DATA,
+  MatDialogModule,
+  MatDialog,
+} from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -13,6 +18,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Service } from '../../../core/services/service';
 import { ConstantDef } from '../../../core/constanDef';
+import { ScannerComponent } from '../../../component/scanner/scanner.component';
 
 interface Product {
   id?: number;
@@ -23,7 +29,7 @@ interface Product {
   price: number;
   unit: string;
   stock_quantity: number;
-  barcode?: string;
+  bar_code?: string;
   image?: string;
   category_id?: number;
 }
@@ -74,7 +80,8 @@ export class AddEditProductDialogComponent implements OnInit {
     public dialogRef: MatDialogRef<AddEditProductDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
     private service: Service,
-    private message: MessageService
+    private message: MessageService,
+    private dialog: MatDialog
   ) {
     this.isEditMode = data.isEditMode || false;
     this.product = data.product || null;
@@ -97,12 +104,13 @@ export class AddEditProductDialogComponent implements OnInit {
     this.price = this.product.price;
     this.quantity = this.product.stock_quantity;
     this.category = this.product.name_category;
-    this.barCode = this.product.barcode || '';
+    this.barCode = this.product.bar_code || '';
     this.productImage = this.product.image || '';
 
     this.costPriceDisplay = this.formatNumberWithDots(this.costPrice.toString());
     this.priceDisplay = this.formatNumberWithDots(this.price.toString());
-
+    $('#price').val(this.priceDisplay);
+    $('#cost_price').val(this.costPriceDisplay);
     const unit = this.lstUnit.find((u) => u.name === this.product?.unit);
     this.unitSld = unit || null;
 
@@ -241,7 +249,7 @@ export class AddEditProductDialogComponent implements OnInit {
 
   validate(): boolean {
     this.errors = {};
-
+    console.log('price', this.price, this.costPrice);
     if (!this.productName?.trim()) {
       this.errors['productName'] = true;
     }
@@ -278,41 +286,37 @@ export class AddEditProductDialogComponent implements OnInit {
 
     this.loading = true;
     const params = {
-      name: this.productName.trim(),
+      productName: this.productName.trim(),
       sku: this.sku.trim(),
-      cost_price: this.costPrice,
+      costPrice: this.costPrice,
       price: this.price,
-      stock_quantity: this.quantity,
+      quantity: this.quantity,
       unit: this.unitSld.name,
-      name_category: this.category.trim(),
-      barcode: this.barCode.trim(),
+      category: this.category.trim(),
+      barCode: this.barCode.trim(),
       image: this.productImage,
     };
+    const request = this.isEditMode
+      ? this.service.updateProduct(params)
+      : this.service.createProduct(params);
 
-    // Uncomment when API is ready
-    // const request = this.isEditMode && this.product?.id
-    //   ? this.service.updateProduct(this.product.id, params)
-    //   : this.service.createProduct(params);
-    //
-    // request.subscribe({
-    //   next: (rs: any) => {
-    //     this.loading = false;
-    //     if (rs.status === ConstantDef.STATUS_SUCCESS) {
-    //       this.showSuccess(this.isEditMode ? 'Cập nhật sản phẩm thành công' : 'Thêm sản phẩm thành công');
-    //       this.dialogRef.close(true);
-    //     } else {
-    //       this.showError('Lỗi giá trị nhập vào');
-    //     }
-    //   },
-    //   error: (_error: any) => {
-    //     this.loading = false;
-    //     this.showError('Đã có lỗi xảy ra, vui lòng thử lại sau');
-    //   },
-    // });
-
-    this.loading = false;
-    this.showSuccess(this.isEditMode ? 'Cập nhật sản phẩm thành công' : 'Thêm sản phẩm thành công');
-    this.dialogRef.close(true);
+    request.subscribe({
+      next: (rs: any) => {
+        this.loading = false;
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.showSuccess(
+            this.isEditMode ? 'Cập nhật sản phẩm thành công' : 'Thêm sản phẩm thành công'
+          );
+          this.dialogRef.close(true);
+        } else {
+          this.showError(rs.response.error_message_vn);
+        }
+      },
+      error: (_error: any) => {
+        this.loading = false;
+        this.showError('Đã có lỗi xảy ra, vui lòng thử lại sau');
+      },
+    });
   }
 
   cancel(): void {
@@ -362,6 +366,18 @@ export class AddEditProductDialogComponent implements OnInit {
       summary: 'Thông báo',
       detail,
       life: 3000,
+    });
+  }
+
+  inputNewCategory() {
+    this.categorySld = '';
+  }
+  openScanner() {
+    const dialog = this.dialog.open(ScannerComponent, {});
+    dialog.afterClosed().subscribe((result: any) => {
+      if (result && result[0]) {
+        this.barCode = result[0];
+      }
     });
   }
 }

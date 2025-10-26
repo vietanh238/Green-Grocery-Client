@@ -13,6 +13,9 @@ import { MessageService } from 'primeng/api';
 import { TabsModule } from 'primeng/tabs';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { Service } from '../../core/services/service';
+import { ConstantDef } from '../../core/constanDef';
+import moment from 'moment';
 
 interface Customer {
   id: string;
@@ -22,6 +25,7 @@ interface Customer {
   totalDebt: number;
   lastTransaction: string;
   status: string;
+  colorStatus: string;
 }
 
 interface DebtTransaction {
@@ -57,10 +61,13 @@ interface DebtTransaction {
   ],
 })
 export class DebtComponent implements OnInit {
-  totalDebt: number = 45800000;
-  totalCustomers: number = 18;
-  overdueDebt: number = 12500000;
-  thisMonthDebt: number = 8300000;
+  totalDebt: number = 0;
+  totalCustomers: number = 0;
+  overdueDebt: number = 0;
+  thisMonthDebt: number = 0;
+  change_percent: number = 0;
+  countTransaction: number = 0;
+  overdue_customers: number = 0;
 
   selectedCustomer: Customer | null = null;
   showAddCustomerDialog: boolean = false;
@@ -95,117 +102,82 @@ export class DebtComponent implements OnInit {
   amountDisplay: string = '';
   loading: boolean = false;
 
-  constructor(private message: MessageService) {}
+  constructor(private message: MessageService, private service: Service) {}
 
   ngOnInit() {
-    this.loadMockData();
+    this.getCustomer();
+    this.getDebit();
   }
 
-  loadMockData() {
-    this.customers = [
-      {
-        id: 'KH001',
-        name: 'Nguyễn Văn An',
-        phone: '0901234567',
-        address: '123 Đường ABC, Quận 1, TP.HCM',
-        totalDebt: 5800000,
-        lastTransaction: '2025-10-10',
-        status: 'active',
+  getCustomer() {
+    this.service.getCustomer().subscribe(
+      (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          if (rs.response && rs.response.length > 0) {
+            let data = rs.response;
+            data = data.map((item: any, index: number) => ({
+              id: item?.customer_code,
+              name: item?.name,
+              phone: item?.phone,
+              address: item?.address,
+              totalDebt: item?.total_debt || 0,
+              lastTransaction: item?.last_transaction
+                ? moment(item?.last_transaction).format('DD/MM/YYYY')
+                : 'Không có giao dịch',
+              status: item?.status,
+              colorStatus: this.getColorStatus(item?.status),
+            }));
+            this.customers = data;
+            this.filteredCustomers = [...this.customers];
+          }
+        }
       },
-      {
-        id: 'KH002',
-        name: 'Trần Thị Bình',
-        phone: '0912345678',
-        address: '456 Đường XYZ, Quận 2, TP.HCM',
-        totalDebt: 3200000,
-        lastTransaction: '2025-10-12',
-        status: 'active',
-      },
-      {
-        id: 'KH003',
-        name: 'Lê Văn Cường',
-        phone: '0923456789',
-        address: '789 Đường DEF, Quận 3, TP.HCM',
-        totalDebt: 8500000,
-        lastTransaction: '2025-09-28',
-        status: 'overdue',
-      },
-      {
-        id: 'KH004',
-        name: 'Phạm Thị Dung',
-        phone: '0934567890',
-        address: '321 Đường GHI, Quận 4, TP.HCM',
-        totalDebt: 1200000,
-        lastTransaction: '2025-10-14',
-        status: 'active',
-      },
-      {
-        id: 'KH005',
-        name: 'Hoàng Văn Em',
-        phone: '0945678901',
-        address: '654 Đường JKL, Quận 5, TP.HCM',
-        totalDebt: 6700000,
-        lastTransaction: '2025-09-15',
-        status: 'overdue',
-      },
-    ];
-
-    this.debtTransactions = [
-      {
-        id: 'GD001',
-        customerId: 'KH001',
-        customerName: 'Nguyễn Văn An',
-        type: 'debt',
-        amount: 2000000,
-        note: 'Mua hàng tháng 10',
-        date: '2025-10-10 14:30',
-        remainingDebt: 5800000,
-      },
-      {
-        id: 'GD002',
-        customerId: 'KH002',
-        customerName: 'Trần Thị Bình',
-        type: 'payment',
-        amount: 1000000,
-        note: 'Trả nợ một phần',
-        date: '2025-10-12 10:15',
-        remainingDebt: 3200000,
-      },
-      {
-        id: 'GD003',
-        customerId: 'KH003',
-        customerName: 'Lê Văn Cường',
-        type: 'debt',
-        amount: 3500000,
-        note: 'Mua sỉ đầu tháng',
-        date: '2025-09-28 09:20',
-        remainingDebt: 8500000,
-      },
-      {
-        id: 'GD004',
-        customerId: 'KH004',
-        customerName: 'Phạm Thị Dung',
-        type: 'debt',
-        amount: 1200000,
-        note: 'Đơn hàng #HD123',
-        date: '2025-10-14 16:45',
-        remainingDebt: 1200000,
-      },
-      {
-        id: 'GD005',
-        customerId: 'KH001',
-        customerName: 'Nguyễn Văn An',
-        type: 'payment',
-        amount: 1500000,
-        note: 'Thanh toán',
-        date: '2025-10-08 11:30',
-        remainingDebt: 3800000,
-      },
-    ];
-
-    this.filteredCustomers = [...this.customers];
+      (_error: any) => {
+        this.showError('Lỗi hệ thống');
+      }
+    );
   }
 
+  getColorStatus(status: any): string {
+    let color: string = 'secondary';
+    switch (status) {
+      case 'in_debt': {
+        color = 'warn';
+        break;
+      }
+      case 'overdue': {
+        color = 'danger';
+        break;
+      }
+      case 'paid_debt': {
+        color = 'success';
+        break;
+      }
+      default: {
+        color = 'secondary';
+      }
+    }
+    return color;
+  }
+
+  getDebit() {
+    this.service.getDebit().subscribe(
+      (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.totalDebt = rs.response?.total_debt || 0;
+          this.change_percent = rs.response?.change_percent || 0;
+          this.totalCustomers = rs.response?.customer_count || 0;
+          this.thisMonthDebt = rs.response?.debit_this_month?.this_month_amount || 0;
+          this.countTransaction = rs.response?.debit_this_month?.this_month_transactions || 0;
+          this.overdueDebt = rs.response?.debit_overdue?.overdue_amount || 0;
+          this.overdue_customers = rs.response?.debit_overdue?.overdue_customers || 0;
+        }
+      },
+      (_error: any) => {
+        this.showError('Lỗi hệ thống');
+      }
+    );
+  }
   onSearch() {
     if (!this.searchValue.trim()) {
       this.filteredCustomers = [...this.customers];
@@ -241,12 +213,14 @@ export class DebtComponent implements OnInit {
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'active':
+      case 'no_debt':
+        return 'Không nợ';
+      case 'in_debt':
         return 'Đang nợ';
       case 'overdue':
         return 'Quá hạn';
-      case 'warning':
-        return 'Cảnh báo';
+      case 'paid_debt':
+        return 'Đã trả';
       default:
         return 'Khác';
     }
@@ -459,6 +433,15 @@ export class DebtComponent implements OnInit {
       severity: 'info',
       summary: 'Thông báo',
       detail: `Đã gửi nhắc nợ đến ${customer.name}`,
+      life: 3000,
+    });
+  }
+
+  showError(message: string) {
+    this.message.add({
+      severity: 'error',
+      summary: 'Thông báo',
+      detail: `${message}`,
       life: 3000,
     });
   }

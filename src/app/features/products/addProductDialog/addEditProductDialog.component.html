@@ -64,6 +64,7 @@
           <label class="form-label"> Giá nhập <span class="require-input">*</span> </label>
           <input
             type="text"
+            id="cost_price"
             placeholder="0"
             (input)="inputPrice($event, 'costPrice')"
             (blur)="blurPrice($event, 'costPrice')"
@@ -77,6 +78,7 @@
         <div class="form-group">
           <label class="form-label"> Giá bán <span class="require-input">*</span> </label>
           <input
+            id="price"
             type="text"
             placeholder="0"
             (input)="inputPrice($event, 'price')"
@@ -112,14 +114,15 @@
             placeholder="Chọn đơn vị"
             [filter]="true"
             [class.select-error]="errors['unit']"
-            styleClass="form-select"
+            styleClass="form-select1"
+            appendTo="body"
           />
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label"> Phân loại mới <span class="require-input">*</span> </label>
+          <label class="form-label">Nhập phân loại<span class="require-input">*</span> </label>
           <input
             type="text"
             [(ngModel)]="category"
@@ -128,6 +131,7 @@
             maxlength="255"
             [class.input-error]="errors['category']"
             class="form-input"
+            (input)="inputNewCategory()"
           />
         </div>
         <div class="form-group">
@@ -142,14 +146,15 @@
             filterBy="name"
             (onChange)="changeCategory()"
             [showClear]="true"
-            styleClass="form-select"
+            styleClass="form-select1"
+            appendTo="body"
           />
         </div>
       </div>
 
       <div class="form-group">
         <label class="form-label"> Barcode <span class="require-input">*</span> </label>
-        <div class="barcode-input-group">
+        <div class="barcode-input-group d-flex">
           <input
             type="text"
             [(ngModel)]="barCode"
@@ -158,26 +163,20 @@
             maxlength="64"
             [class.input-error]="errors['barCode']"
             class="form-input"
+            [disabled]="isEditMode"
           />
+          <button *ngIf="!isEditMode" class="btn-scanner" (click)="openScanner()">
+            <i class="pi pi-camera scanner"></i>
+          </button>
         </div>
       </div>
     </form>
   </mat-dialog-content>
 
-  <mat-dialog-actions class="dialog-actions">
-    <button mat-button (click)="cancel()" class="btn-cancel">
-      <i class="pi pi-times"></i>
-      Hủy
-    </button>
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="save()"
-      [disabled]="loading"
-      class="btn-save"
-    >
+  <mat-dialog-actions class="dialog-actions d-flex justify-content-between">
+    <button (click)="cancel()" class="btn-gray">Hủy</button>
+    <button color="primary" (click)="save()" [disabled]="loading" class="btn-green">
       <mat-spinner *ngIf="loading" diameter="20" class="spinner"></mat-spinner>
-      <i *ngIf="!loading" class="pi pi-check"></i>
       {{ isEditMode ? 'Cập nhật' : 'Lưu' }}
     </button>
   </mat-dialog-actions>

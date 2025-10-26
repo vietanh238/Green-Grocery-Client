@@ -27,13 +27,6 @@
       <div class="stat-content">
         <p class="stat-label">Tổng công nợ</p>
         <h3 class="stat-value">{{ totalDebt | number : '1.0-0' }} đ</h3>
-        <div class="stat-footer">
-          <span class="stat-change up">
-            <i class="pi pi-arrow-up"></i>
-            8.5%
-          </span>
-          <span class="stat-period">so với tháng trước</span>
-        </div>
       </div>
     </div>
 
@@ -44,13 +37,6 @@
       <div class="stat-content">
         <p class="stat-label">Khách hàng nợ</p>
         <h3 class="stat-value">{{ totalCustomers }}</h3>
-        <div class="stat-footer">
-          <span class="stat-change down">
-            <i class="pi pi-arrow-down"></i>
-            3.2%
-          </span>
-          <span class="stat-period">so với tháng trước</span>
-        </div>
       </div>
     </div>
 
@@ -62,7 +48,7 @@
         <p class="stat-label">Nợ quá hạn</p>
         <h3 class="stat-value">{{ overdueDebt | number : '1.0-0' }} đ</h3>
         <div class="stat-footer">
-          <span class="stat-info">5 khách hàng</span>
+          <span class="stat-info">{{ overdue_customers }} khách hàng</span>
         </div>
       </div>
     </div>
@@ -75,7 +61,7 @@
         <p class="stat-label">Nợ tháng này</p>
         <h3 class="stat-value">{{ thisMonthDebt | number : '1.0-0' }} đ</h3>
         <div class="stat-footer">
-          <span class="stat-info">12 giao dịch</span>
+          <span class="stat-info">{{ countTransaction }} giao dịch</span>
         </div>
       </div>
     </div>
@@ -165,8 +151,11 @@
               <td>
                 <span class="date">{{ customer.lastTransaction }}</span>
               </td>
-              <td class="text-center">
-                <p-tag [value]="getStatusLabel(customer.status)" />
+              <td class="text-center text-hidden">
+                <p-tag
+                  [value]="getStatusLabel(customer.status)"
+                  [severity]="customer.colorStatus"
+                />
               </td>
               <td class="text-center">
                 <div class="action-buttons">

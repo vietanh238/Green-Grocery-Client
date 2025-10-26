@@ -14,8 +14,11 @@ export class Service {
   private readonly GET_CATEGORIES_URL = environment.apiProduct + 'categories/';
   private readonly GET_PRODUCTS_URL = environment.apiProduct + 'products/';
   private readonly DELETE_RPODUCT = environment.apiProduct + 'delete/';
+  private readonly UPDATE_PRODUCT = environment.apiProduct + 'update/';
   private readonly CREATE_PAYMENT = environment.apiPayment + 'create/';
   private readonly DELETE_PAYMENT = environment.apiPayment + 'delete/';
+  private readonly GET_CUSTOMER = environment.apiDebit + 'get/customer/';
+  private readonly GET_DEBIT = environment.apiDebit + 'get/debit/';
 
   constructor(private _http: HttpClient) {}
 
@@ -40,6 +43,7 @@ export class Service {
       unit: params.unit,
       category: params.category,
       barCode: params.barCode,
+      stock_quantity: params.quantity,
     });
   }
 
@@ -63,5 +67,17 @@ export class Service {
   deleteProduct(barCode: string): Observable<any> {
     const url = this.DELETE_RPODUCT + barCode + '/';
     return this._http.delete(url);
+  }
+
+  updateProduct(data: any): Observable<any> {
+    const params = data;
+    return this._http.put(this.UPDATE_PRODUCT, params);
+  }
+
+  getCustomer(): Observable<any> {
+    return this._http.get(this.GET_CUSTOMER);
+  }
+  getDebit(): Observable<any> {
+    return this._http.get(this.GET_DEBIT);
   }
 }

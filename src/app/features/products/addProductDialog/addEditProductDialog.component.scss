@@ -201,7 +201,7 @@ $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 
 // Select
 :host ::ng-deep {
-  .form-select {
+  .form-select1 {
     .p-select {
       width: 100%;
       border: 1px solid $border-color;
@@ -302,5 +302,43 @@ $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+:host ::ng-deep {
+  .form-select1 {
+    height: 45px;
+    .p-select {
+      width: 100%;
+      border: 1px solid $border-color;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+
+      &:not(.p-disabled):hover {
+        border-color: $primary-color;
+      }
+
+      &.p-focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+      }
+
+      .p-select-label {
+        padding: 0.625rem 0.875rem;
+      }
+    }
+  }
+}
+
+.btn-scanner {
+  padding: 7px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 60px;
+  color: #22c55e;
+
+  &:hover {
+    color: white;
+    background: #22c55e;
   }
 }
