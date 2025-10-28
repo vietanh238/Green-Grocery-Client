@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -19,6 +19,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 import moment from 'moment';
 import * as XLSX from 'xlsx';
+import { DatePicker } from 'primeng/datepicker';
 
 interface Customer {
   id: string;
@@ -61,6 +62,7 @@ interface DebtTransaction {
     TabsModule,
     IconFieldModule,
     InputIconModule,
+    DatePicker,
   ],
 })
 export class DebtComponent implements OnInit {
@@ -104,6 +106,10 @@ export class DebtComponent implements OnInit {
 
   amountDisplay: string = '';
   loading: boolean = false;
+  dueDate: Date | undefined;
+  dialogWidth: string = '500px';
+
+  private readonly mobileBreakpoint: number = 768;
 
   constructor(
     private message: MessageService,
@@ -114,6 +120,11 @@ export class DebtComponent implements OnInit {
   ngOnInit() {
     this.getCustomer();
     this.getDebit();
+    this.checkWindowSize();
+  }
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.checkWindowSize();
   }
   private getCurrentDate(): string {
     const today = new Date();
@@ -121,6 +132,15 @@ export class DebtComponent implements OnInit {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  checkWindowSize() {
+    const currentWidth = window.innerWidth;
+    if (currentWidth <= this.mobileBreakpoint) {
+      this.dialogWidth = '361px';
+    } else {
+      this.dialogWidth = '500px';
+    }
   }
   getCustomer() {
     this.service.getCustomer().subscribe(
@@ -253,6 +273,7 @@ export class DebtComponent implements OnInit {
   }
 
   openAddDebtDialog() {
+    this.checkWindowSize();
     this.showAddDebtDialog = true;
     this.resetDebtForm();
   }
@@ -329,11 +350,10 @@ export class DebtComponent implements OnInit {
       });
       return;
     }
-
     const params = {
       customer_code: this.newDebt.customerId,
       debit_amount: this.newDebt.amount,
-      due_date: this.getCurrentDate(),
+      due_date: moment(this.dueDate).format('YYYY-MM-DD'),
       note: this.newDebt.note.trim(),
     };
 

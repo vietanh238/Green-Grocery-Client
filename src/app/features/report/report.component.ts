@@ -10,26 +10,21 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
-
-interface ReportData {
-  period: string;
-  revenue: number;
-  cost: number;
-  profit: number;
-  orders: number;
-}
+import { Service } from '../../core/services/service';
+import { ConstantDef } from '../../core/constanDef';
+import * as XLSX from 'xlsx';
 
 interface TopProduct {
   name: string;
+  sku: string;
   quantity: number;
   revenue: number;
-  profit: number;
 }
 
-interface CategoryData {
-  category: string;
+interface MonthlyRevenue {
+  month: string;
   revenue: number;
-  percentage: number;
+  orders?: number;
 }
 
 @Component({
@@ -52,163 +47,79 @@ interface CategoryData {
   providers: [MessageService],
 })
 export class ReportComponent implements OnInit {
-  selectedPeriod: any = { label: 'Tháng này', value: 'month' };
+  readonly Math = Math;
+
+  selectedPeriod: string = 'month';
   periodOptions = [
-    { label: 'Hôm nay', value: 'today' },
     { label: 'Tuần này', value: 'week' },
     { label: 'Tháng này', value: 'month' },
-    { label: 'Quý này', value: 'quarter' },
     { label: 'Năm nay', value: 'year' },
     { label: 'Tùy chỉnh', value: 'custom' },
   ];
 
-  dateRange: Date[] = [];
+  customDateFrom: string = '';
+  customDateTo: string = '';
   showCustomDate: boolean = false;
-
-  totalRevenue: number = 285000000;
-  totalProfit: number = 78500000;
-  totalOrders: number = 856;
-  profitMargin: number = 27.5;
-
-  revenueChartData: any;
-  revenueChartOptions: any;
-
-  profitChartData: any;
-  profitChartOptions: any;
-
-  categoryChartData: any;
-  categoryChartOptions: any;
-
-  comparisonChartData: any;
-  comparisonChartOptions: any;
-
-  reportData: ReportData[] = [];
-  topProducts: TopProduct[] = [];
-  categoryData: CategoryData[] = [];
-
   loading: boolean = false;
 
-  constructor(private message: MessageService) {}
+  totalRevenue: number = 0;
+  totalProfit: number = 0;
+  totalOrders: number = 0;
+  profitMargin: number = 0;
+
+  revenueGrowth: number = 0;
+  profitGrowth: number = 0;
+  orderGrowth: number = 0;
+  marginGrowth: number = 0;
+
+  revenueComparison: number = 0;
+  profitComparison: number = 0;
+  orderComparison: number = 0;
+
+  topProducts: TopProduct[] = [];
+  monthlyRevenueData: MonthlyRevenue[] = [];
+
+  revenueChartData: any;
+  profitChartData: any;
+  topProductsChartData: any;
+
+  commonChartOptions: any;
+  pieChartOptions: any;
+
+  constructor(private service: Service, private message: MessageService) {}
 
   ngOnInit() {
-    this.loadMockData();
-    this.initCharts();
+    this.initializeChartOptions();
+    this.loadReportData();
   }
 
-  loadMockData() {
-    this.reportData = [
-      {
-        period: '01/10/2025',
-        revenue: 8500000,
-        cost: 6200000,
-        profit: 2300000,
-        orders: 25,
-      },
-      {
-        period: '02/10/2025',
-        revenue: 9200000,
-        cost: 6700000,
-        profit: 2500000,
-        orders: 28,
-      },
-      {
-        period: '03/10/2025',
-        revenue: 7800000,
-        cost: 5600000,
-        profit: 2200000,
-        orders: 22,
-      },
-      {
-        period: '04/10/2025',
-        revenue: 10500000,
-        cost: 7500000,
-        profit: 3000000,
-        orders: 32,
-      },
-      {
-        period: '05/10/2025',
-        revenue: 9800000,
-        cost: 7100000,
-        profit: 2700000,
-        orders: 29,
-      },
-    ];
-
-    this.topProducts = [
-      {
-        name: 'Gạo ST25 5kg',
-        quantity: 125,
-        revenue: 18750000,
-        profit: 3750000,
-      },
-      {
-        name: 'Dầu ăn Neptune 1L',
-        quantity: 98,
-        revenue: 2450000,
-        profit: 490000,
-      },
-      {
-        name: 'Nước ngọt Coca Cola 330ml',
-        quantity: 456,
-        revenue: 4560000,
-        profit: 1368000,
-      },
-      {
-        name: 'Mì Hảo Hảo tôm chua cay',
-        quantity: 678,
-        revenue: 2712000,
-        profit: 813600,
-      },
-      {
-        name: 'Sữa tươi Vinamilk 1L',
-        quantity: 234,
-        revenue: 7020000,
-        profit: 2106000,
-      },
-    ];
-
-    this.categoryData = [
-      { category: 'Thực phẩm khô', revenue: 95000000, percentage: 33.3 },
-      { category: 'Đồ uống', revenue: 71000000, percentage: 24.9 },
-      { category: 'Gia vị', revenue: 57000000, percentage: 20.0 },
-      { category: 'Đồ ăn vặt', revenue: 42750000, percentage: 15.0 },
-      { category: 'Khác', revenue: 19250000, percentage: 6.8 },
-    ];
-  }
-
-  initCharts() {
+  private initializeChartOptions(): void {
     const documentStyle = getComputedStyle(document.documentElement);
     const textColor = documentStyle.getPropertyValue('--text-color');
     const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
     const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
 
-    this.revenueChartData = {
-      labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
-      datasets: [
-        {
-          label: 'Doanh thu',
-          data: [25, 28, 32, 29, 35, 38, 42, 40, 45, 48, 52, 55],
-          fill: true,
-          backgroundColor: 'rgba(34, 197, 94, 0.2)',
-          borderColor: '#22c55e',
-          tension: 0.4,
-        },
-      ],
-    };
-
-    this.revenueChartOptions = {
+    this.commonChartOptions = {
       maintainAspectRatio: false,
-      aspectRatio: 0.6,
+      responsive: true,
       plugins: {
         legend: {
           display: true,
           position: 'top',
+          labels: {
+            color: textColor,
+            font: { size: 12 },
+          },
+        },
+        filler: {
+          propagate: true,
         },
       },
       scales: {
         x: {
           ticks: {
             color: textColorSecondary,
+            font: { size: 11 },
           },
           grid: {
             color: surfaceBorder,
@@ -218,9 +129,8 @@ export class ReportComponent implements OnInit {
         y: {
           ticks: {
             color: textColorSecondary,
-            callback: function (value: any) {
-              return value + 'M';
-            },
+            font: { size: 11 },
+            callback: (value: any) => `${value}M`,
           },
           grid: {
             color: surfaceBorder,
@@ -230,131 +140,25 @@ export class ReportComponent implements OnInit {
       },
     };
 
-    this.profitChartData = {
-      labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
-      datasets: [
-        {
-          label: 'Lợi nhuận',
-          data: [6.5, 7.2, 8.5, 7.8, 9.2, 10.1, 11.5, 10.8, 12.3, 13.1, 14.2, 15.0],
-          backgroundColor: '#22c55e',
-          borderColor: '#22c55e',
-          borderWidth: 2,
-        },
-      ],
-    };
-
-    this.profitChartOptions = {
+    this.pieChartOptions = {
       maintainAspectRatio: false,
-      aspectRatio: 0.8,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-        },
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            color: surfaceBorder,
-            drawBorder: false,
-          },
-        },
-        y: {
-          ticks: {
-            color: textColorSecondary,
-            callback: function (value: any) {
-              return value + 'M';
-            },
-          },
-          grid: {
-            color: surfaceBorder,
-            drawBorder: false,
-          },
-        },
-      },
-    };
-
-    this.categoryChartData = {
-      labels: ['Thực phẩm khô', 'Đồ uống', 'Gia vị', 'Đồ ăn vặt', 'Khác'],
-      datasets: [
-        {
-          data: [33.3, 24.9, 20.0, 15.0, 6.8],
-          backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'],
-          hoverBackgroundColor: ['#16a34a', '#2563eb', '#d97706', '#db2777', '#7c3aed'],
-        },
-      ],
-    };
-
-    this.categoryChartOptions = {
-      maintainAspectRatio: false,
-      aspectRatio: 1,
+      responsive: true,
       plugins: {
         legend: {
           position: 'right',
           labels: {
+            color: textColor,
+            font: { size: 12 },
             usePointStyle: true,
-            padding: 20,
-          },
-        },
-      },
-    };
-
-    this.comparisonChartData = {
-      labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'],
-      datasets: [
-        {
-          label: 'Tháng này',
-          data: [65, 72, 68, 80],
-          backgroundColor: 'rgba(34, 197, 94, 0.8)',
-        },
-        {
-          label: 'Tháng trước',
-          data: [58, 65, 62, 70],
-          backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        },
-      ],
-    };
-
-    this.comparisonChartOptions = {
-      maintainAspectRatio: false,
-      aspectRatio: 0.8,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-        },
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            color: surfaceBorder,
-            drawBorder: false,
-          },
-        },
-        y: {
-          ticks: {
-            color: textColorSecondary,
-            callback: function (value: any) {
-              return value + 'M';
-            },
-          },
-          grid: {
-            color: surfaceBorder,
-            drawBorder: false,
+            padding: 15,
           },
         },
       },
     };
   }
 
-  onPeriodChange() {
-    if (this.selectedPeriod.value === 'custom') {
+  onPeriodChange(): void {
+    if (this.selectedPeriod === 'custom') {
       this.showCustomDate = true;
     } else {
       this.showCustomDate = false;
@@ -362,60 +166,189 @@ export class ReportComponent implements OnInit {
     }
   }
 
-  onDateRangeSelect() {
-    if (this.dateRange && this.dateRange.length === 2) {
+  onDateRangeSelect(): void {
+    if (this.customDateFrom && this.customDateTo) {
       this.loadReportData();
     }
   }
 
-  loadReportData() {
+  private loadReportData(): void {
     this.loading = true;
-    setTimeout(() => {
-      this.loading = false;
-      this.message.add({
-        severity: 'success',
-        summary: 'Thành công',
-        detail: 'Đã tải báo cáo',
-        life: 2000,
-      });
-    }, 500);
+
+    const params =
+      this.selectedPeriod === 'custom'
+        ? {
+            period: 'custom',
+            date_from: this.customDateFrom,
+            date_to: this.customDateTo,
+          }
+        : { period: this.selectedPeriod };
+
+    this.service.getBusinessReport(params).subscribe(
+      (rs: any) => {
+        this.loading = false;
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.processReportData(rs.response);
+          this.initializeCharts();
+        } else {
+          this.showError('Không thể tải báo cáo');
+        }
+      },
+      (error: any) => {
+        this.loading = false;
+        this.showError('Lỗi hệ thống');
+      }
+    );
   }
 
-  exportPDF() {
+  private processReportData(data: any): void {
+    this.totalRevenue = data.total_revenue || 0;
+    this.totalProfit = data.total_profit || 0;
+    this.totalOrders = data.orders_count || 0;
+    this.profitMargin = data.profit_margin || 0;
+
+    this.revenueGrowth = data.revenue_growth || 0;
+    this.profitGrowth = data.profit_growth || 0;
+    this.orderGrowth = data.order_growth || 0;
+    this.marginGrowth = data.margin_growth || 0;
+
+    this.revenueComparison = data.revenue_comparison || 0;
+    this.profitComparison = data.profit_comparison || 0;
+    this.orderComparison = data.order_comparison || 0;
+
+    this.topProducts = data.top_products || [];
+    this.monthlyRevenueData = data.monthly_revenue || [];
+  }
+
+  private initializeCharts(): void {
+    this.initRevenueChart();
+    this.initProfitChart();
+    this.initTopProductsChart();
+  }
+
+  private initRevenueChart(): void {
+    const labels = this.monthlyRevenueData.map((item) => item.month);
+    const data = this.monthlyRevenueData.map((item) => item.revenue / 1000000);
+
+    this.revenueChartData = {
+      labels,
+      datasets: [
+        {
+          label: 'Doanh thu',
+          data,
+          fill: true,
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          borderColor: '#22c55e',
+          borderWidth: 2,
+          tension: 0.4,
+          pointBackgroundColor: '#22c55e',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+        },
+      ],
+    };
+  }
+
+  private initProfitChart(): void {
+    const labels = this.monthlyRevenueData.map((item) => item.month);
+    const data = this.monthlyRevenueData.map((item) => (item.revenue * 0.3) / 1000000);
+
+    this.profitChartData = {
+      labels,
+      datasets: [
+        {
+          label: 'Lợi nhuận',
+          data,
+          backgroundColor: '#22c55e',
+          borderColor: '#22c55e',
+          borderWidth: 1,
+        },
+      ],
+    };
+  }
+
+  private initTopProductsChart(): void {
+    const labels = this.topProducts.slice(0, 5).map((item) => item.name);
+    const data = this.topProducts.slice(0, 5).map((item) => item.revenue / 1000000);
+
+    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+
+    this.topProductsChartData = {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: colors,
+          hoverBackgroundColor: colors.map((c) => c.replace('1', '0.8')),
+        },
+      ],
+    };
+  }
+
+  exportExcel(): void {
+    if (!this.topProducts.length) {
+      this.showError('Không có dữ liệu để xuất');
+      return;
+    }
+
+    const dataForExport = [
+      {
+        'Chỉ tiêu': 'Tổng doanh thu',
+        'Giá trị': `${(this.totalRevenue / 1000000).toFixed(2)}M đ`,
+      },
+      {
+        'Chỉ tiêu': 'Tổng lợi nhuận',
+        'Giá trị': `${(this.totalProfit / 1000000).toFixed(2)}M đ`,
+      },
+      {
+        'Chỉ tiêu': 'Tỷ suất lợi nhuận',
+        'Giá trị': `${this.profitMargin.toFixed(2)}%`,
+      },
+      { 'Chỉ tiêu': '', 'Giá trị': '' },
+      ...this.topProducts.map((product, index) => ({
+        STT: index + 1,
+        'Tên sản phẩm': product.name,
+        'Số lượng': product.quantity,
+        'Doanh thu': `${(product.revenue / 1000000).toFixed(2)}M đ`,
+      })),
+    ];
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
+    ws['!cols'] = [{ wch: 25 }, { wch: 20 }];
+
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Báo cáo kinh doanh');
+
+    const fileName = `BaoCao_KinhDoanh_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    this.showSuccess('Xuất báo cáo Excel thành công!');
+  }
+
+  exportPDF(): void {
+    this.showError('Chức năng xuất PDF đang phát triển');
+  }
+
+  printReport(): void {
+    window.print();
+  }
+
+  private showSuccess(message: string): void {
     this.message.add({
-      severity: 'info',
-      summary: 'Thông báo',
-      detail: 'Đang xuất báo cáo PDF...',
+      severity: 'success',
+      summary: 'Thành công',
+      detail: message,
       life: 3000,
     });
   }
 
-  exportExcel() {
+  private showError(message: string): void {
     this.message.add({
-      severity: 'info',
-      summary: 'Thông báo',
-      detail: 'Đang xuất báo cáo Excel...',
+      severity: 'error',
+      summary: 'Lỗi',
+      detail: message,
       life: 3000,
     });
-  }
-
-  printReport() {
-    this.message.add({
-      severity: 'info',
-      summary: 'Thông báo',
-      detail: 'Đang chuẩn bị in báo cáo...',
-      life: 3000,
-    });
-  }
-
-  calculateProfitMargin(revenue: number, profit: number): number {
-    return revenue > 0 ? (profit / revenue) * 100 : 0;
-  }
-
-  getMarginSeverity(margin: number): string {
-    if (margin >= 30) return 'success';
-    if (margin >= 20) return 'info';
-    if (margin >= 10) return 'warn';
-    return 'danger';
   }
 }

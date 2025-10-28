@@ -23,6 +23,7 @@ export class Service {
   private readonly CREATE_DEBIT = environment.apiDebit + 'create/debit/';
   private readonly PAY_DEBIT = environment.apiDebit + 'pay/debit/';
   private readonly DELETE_CUSTOMER = environment.apiDebit + 'delete/customer/';
+  private readonly GET_BUSINESS_REPORT = environment.apiReport + 'get/';
 
   constructor(private _http: HttpClient) {}
 
@@ -116,5 +117,19 @@ export class Service {
         customer_code: customer_code,
       },
     });
+  }
+
+  getBusinessReport(params: any): Observable<any> {
+    let queryParams = new HttpParams();
+
+    if (params.period === 'custom') {
+      queryParams = queryParams.set('period', 'custom');
+      queryParams = queryParams.set('date_from', params.date_from);
+      queryParams = queryParams.set('date_to', params.date_to);
+    } else {
+      queryParams = queryParams.set('period', params.period);
+    }
+
+    return this._http.get(this.GET_BUSINESS_REPORT, { params: queryParams });
   }
 }

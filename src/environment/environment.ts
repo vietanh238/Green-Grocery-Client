@@ -8,4 +8,5 @@ export const environment = {
   apiSell: apiConnectServer + 'sell/',
   apiPayment: apiConnectServer + 'payments/',
   apiDebit: apiConnectServer + 'debit/',
+  apiReport: apiConnectServer + 'report/',
 };
