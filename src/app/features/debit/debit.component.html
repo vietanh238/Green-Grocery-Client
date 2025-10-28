@@ -8,7 +8,7 @@
       <p class="page-subtitle">Theo dõi và quản lý công nợ khách hàng</p>
     </div>
     <div class="header-actions">
-      <button class="action-btn export-btn" (click)="exportData()">
+      <button class="action-btn primary-btn" (click)="exportData()">
         <i class="pi pi-download"></i>
         <span>Xuất dữ liệu</span>
       </button>
@@ -117,7 +117,6 @@
         >
           <ng-template #header>
             <tr>
-              <th>Mã KH</th>
               <th>Tên khách hàng</th>
               <th>Số điện thoại</th>
               <th>Địa chỉ</th>
@@ -129,9 +128,6 @@
           </ng-template>
           <ng-template #body let-customer>
             <tr>
-              <td>
-                <span class="customer-id">{{ customer.id }}</span>
-              </td>
               <td>
                 <div class="customer-info">
                   <strong class="customer-name">{{ customer.name }}</strong>

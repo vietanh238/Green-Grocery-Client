@@ -28,6 +28,8 @@ interface BankInfo {
 export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   @Input() transferContent: string = '';
   private sub?: Subscription;
+  private synth: SpeechSynthesisUtterance | null = null;
+
   bankInfo: BankInfo = {
     bankName: 'Vietcombank',
     accountName: 'DUONG VIET ANH',
@@ -63,6 +65,7 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
     this.items = data.items || [];
     this.cartItems = data.cartItems;
   }
+
   ngOnInit() {
     this.transactionCode = this.generateTransactionCode();
     if (sessionStorage.getItem('qrCodeUrl')) {
@@ -73,16 +76,135 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
       this.generateVietQRUrl();
     }
     this.startTimer();
-    this.sub = this.wsService.paymentSuccess$.subscribe((data) => {
-      sessionStorage.removeItem('qrCodeUrl');
-      sessionStorage.removeItem('orderCode');
-      this.dialogRef.close({ success: true, data });
-    });
+    this.subscribeToPaymentSuccess();
   }
 
   ngOnDestroy() {
     this.clearTimer();
+    this.stopSpeech();
+    if (this.sub) {
+      this.sub.unsubscribe();
+    }
   }
+
+  private subscribeToPaymentSuccess(): void {
+    this.sub = this.wsService.paymentSuccess$.subscribe((data) => {
+      this.handlePaymentWithSpeech(data);
+
+      sessionStorage.removeItem('qrCodeUrl');
+      sessionStorage.removeItem('orderCode');
+    });
+  }
+
+  private handlePaymentWithSpeech(data: any): void {
+    const closeDialogCallback = () => {
+      this.dialogRef.close({ success: true, data });
+    };
+
+    if (data?.message) {
+      const speechText = this.generatePaymentMessage(data);
+      this.speakMessage(speechText, 'vi-VN', closeDialogCallback);
+    } else {
+      closeDialogCallback();
+    }
+  }
+
+  private speakMessage(text: string, lang: string = 'vi-VN', onEndCallback?: () => void): void {
+    const SpeechSynthesisUtterance =
+      window.SpeechSynthesisUtterance || (window as any).webkitSpeechSynthesisUtterance;
+    const speechSynthesis = window.speechSynthesis || (window as any).webkitSpeechSynthesis;
+
+    if (!SpeechSynthesisUtterance || !speechSynthesis) {
+      console.warn('Trình duyệt không hỗ trợ Web Speech API');
+      if (onEndCallback) onEndCallback();
+      return;
+    }
+
+    this.stopSpeech();
+
+    this.synth = new SpeechSynthesisUtterance(text);
+    this.synth.lang = lang;
+    this.synth.rate = 1;
+    this.synth.pitch = 1;
+    this.synth.volume = 1;
+
+    this.synth.onstart = () => {
+      console.log('🔊 Phát âm thanh:', text);
+    };
+
+    this.synth.onend = () => {
+      console.log('✓ Kết thúc phát âm thanh');
+      if (onEndCallback) onEndCallback();
+    };
+
+    this.synth.onerror = (event) => {
+      console.error('❌ Lỗi phát âm thanh:', event.error);
+      if (onEndCallback) onEndCallback();
+    };
+
+    speechSynthesis.speak(this.synth);
+  }
+
+  private stopSpeech(): void {
+    const speechSynthesis = window.speechSynthesis || (window as any).webkitSpeechSynthesis;
+    if (speechSynthesis) {
+      speechSynthesis.cancel();
+    }
+  }
+
+  private generatePaymentMessage(data: any): string {
+    const amount = this.formatCurrencyForSpeech(data.amount);
+    const baseMessage = `Thanh toán thành công ${amount} đồng`;
+
+    if (data.orderCode) {
+      const orderCode = this.formatNumberForSpeech(data.orderCode);
+      return `${baseMessage}. Mã đơn hàng: ${orderCode}`;
+    }
+
+    if (data.transactionId) {
+      const txnId = this.formatNumberForSpeech(data.transactionId);
+      return `${baseMessage}. Mã giao dịch: ${txnId}`;
+    }
+
+    return baseMessage;
+  }
+
+  private formatCurrencyForSpeech(amount: number): string {
+    if (amount >= 1000000) {
+      const millions = Math.floor(amount / 1000000);
+      const remainder = amount % 1000000;
+      if (remainder === 0) {
+        return `${millions} triệu`;
+      } else {
+        return `${millions} triệu ${this.formatNumberForSpeech(remainder)}`;
+      }
+    } else if (amount >= 1000) {
+      return `${Math.floor(amount / 1000)} nghìn`;
+    }
+    return amount.toString();
+  }
+
+  private formatNumberForSpeech(num: string | number): string {
+    const numStr = num.toString();
+    const digitMap: { [key: string]: string } = {
+      '0': 'không',
+      '1': 'một',
+      '2': 'hai',
+      '3': 'ba',
+      '4': 'bốn',
+      '5': 'năm',
+      '6': 'sáu',
+      '7': 'bảy',
+      '8': 'tám',
+      '9': 'chín',
+    };
+
+    return numStr
+      .split('')
+      .map((digit) => digitMap[digit] || digit)
+      .join(' ');
+  }
+
   private showError(detail: string) {
     this.message.add({
       severity: 'error',
@@ -100,20 +222,11 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
       life: 1000,
     });
   }
+
   generateVietQRUrl() {
     this.isLoadingQR = true;
     this.qrLoaded = false;
 
-    // const baseUrl = `${this.VIETQR_BASE_URL}/${this.bankInfo.bankId}-${this.bankInfo.accountNumber}-${this.QR_TEMPLATE}.jpg`;
-
-    // const params = new URLSearchParams({
-    //   amount: this.amount.toString(),
-    //   addInfo: this.transferContent || this.transactionCode,
-    //   accountName: this.bankInfo.accountName,
-    // });
-    // this.qrCodeUrl = `${baseUrl}?${params.toString()}`;
-
-    // use qr code of payos
     const orderCode = Date.now();
     const params = {
       orderCode: orderCode,
@@ -283,19 +396,6 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((result: any) => {
       if (result) {
-        // result chứa thông tin ghi nợ:
-        // {
-        //   customerName: string,
-        //   phoneNumber: string | null,
-        //   debitAmount: number,
-        //   paidAmount: number,
-        //   totalAmount: number,
-        //   note: string | null,
-        //   dueDate: string | null,
-        //   createdAt: string,
-        //   status: 'pending'
-        // }
-
         console.log('Thông tin ghi nợ:', result);
         this.showSuccess(
           `Đã ghi nợ ${this.formatCurrency(result.debitAmount)} cho khách hàng ${
@@ -303,7 +403,6 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
           }`
         );
 
-        // Clear giỏ hàng sau khi ghi nợ thành công
         this.cartItems = [];
       }
     });

@@ -19,6 +19,10 @@ export class Service {
   private readonly DELETE_PAYMENT = environment.apiPayment + 'delete/';
   private readonly GET_CUSTOMER = environment.apiDebit + 'get/customer/';
   private readonly GET_DEBIT = environment.apiDebit + 'get/debit/';
+  private readonly CREATE_CUSTOMER = environment.apiDebit + 'create/customer/';
+  private readonly CREATE_DEBIT = environment.apiDebit + 'create/debit/';
+  private readonly PAY_DEBIT = environment.apiDebit + 'pay/debit/';
+  private readonly DELETE_CUSTOMER = environment.apiDebit + 'delete/customer/';
 
   constructor(private _http: HttpClient) {}
 
@@ -79,5 +83,38 @@ export class Service {
   }
   getDebit(): Observable<any> {
     return this._http.get(this.GET_DEBIT);
+  }
+
+  createCustomer(params: any): Observable<any> {
+    return this._http.post(this.CREATE_CUSTOMER, {
+      name: params.name,
+      phone: params.phone,
+      address: params.address || '',
+    });
+  }
+
+  createDebit(params: any): Observable<any> {
+    return this._http.post(this.CREATE_DEBIT, {
+      customer_code: params.customer_code,
+      debit_amount: params.debit_amount,
+      due_date: params.due_date,
+      note: params.note || '',
+    });
+  }
+
+  payDebit(params: any): Observable<any> {
+    return this._http.post(this.PAY_DEBIT, {
+      customer_code: params.customer_code,
+      paid_amount: params.paid_amount,
+      note: params.note || '',
+    });
+  }
+
+  deleteCustomer(customer_code: string): Observable<any> {
+    return this._http.delete(this.DELETE_CUSTOMER, {
+      body: {
+        customer_code: customer_code,
+      },
+    });
   }
 }

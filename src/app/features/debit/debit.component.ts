@@ -15,7 +15,10 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 import moment from 'moment';
+import * as XLSX from 'xlsx';
 
 interface Customer {
   id: string;
@@ -102,13 +105,23 @@ export class DebtComponent implements OnInit {
   amountDisplay: string = '';
   loading: boolean = false;
 
-  constructor(private message: MessageService, private service: Service) {}
+  constructor(
+    private message: MessageService,
+    private service: Service,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit() {
     this.getCustomer();
     this.getDebit();
   }
-
+  private getCurrentDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
   getCustomer() {
     this.service.getCustomer().subscribe(
       (rs: any) => {
@@ -260,23 +273,52 @@ export class DebtComponent implements OnInit {
       this.message.add({
         severity: 'error',
         summary: 'Lỗi',
-        detail: 'Vui lòng nhập đầy đủ thông tin',
+        detail: 'Vui lòng nhập tên và số điện thoại khách hàng',
         life: 3000,
       });
       return;
     }
 
-    this.message.add({
-      severity: 'success',
-      summary: 'Thành công',
-      detail: 'Thêm khách hàng thành công',
-      life: 3000,
-    });
+    const params = {
+      name: this.newCustomer.name.trim(),
+      phone: this.newCustomer.phone.trim(),
+      address: this.newCustomer.address.trim(),
+    };
 
-    this.showAddCustomerDialog = false;
-    this.resetCustomerForm();
+    this.loading = true;
+    this.service.createCustomer(params).subscribe(
+      (rs: any) => {
+        this.loading = false;
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.message.add({
+            severity: 'success',
+            summary: 'Thành công',
+            detail: 'Thêm khách hàng thành công',
+            life: 3000,
+          });
+          this.showAddCustomerDialog = false;
+          this.resetCustomerForm();
+          this.getCustomer();
+        } else {
+          this.message.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: rs.error_message || 'Thêm khách hàng thất bại',
+            life: 3000,
+          });
+        }
+      },
+      (error: any) => {
+        this.loading = false;
+        this.message.add({
+          severity: 'error',
+          summary: 'Lỗi hệ thống',
+          detail: 'Không thể thêm khách hàng. Vui lòng thử lại',
+          life: 3000,
+        });
+      }
+    );
   }
-
   addDebt() {
     if (!this.newDebt.customerId || !this.newDebt.amount) {
       this.message.add({
@@ -288,15 +330,47 @@ export class DebtComponent implements OnInit {
       return;
     }
 
-    this.message.add({
-      severity: 'success',
-      summary: 'Thành công',
-      detail: 'Ghi nợ thành công',
-      life: 3000,
-    });
+    const params = {
+      customer_code: this.newDebt.customerId,
+      debit_amount: this.newDebt.amount,
+      due_date: this.getCurrentDate(),
+      note: this.newDebt.note.trim(),
+    };
 
-    this.showAddDebtDialog = false;
-    this.resetDebtForm();
+    this.loading = true;
+    this.service.createDebit(params).subscribe(
+      (rs: any) => {
+        this.loading = false;
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.message.add({
+            severity: 'success',
+            summary: 'Thành công',
+            detail: 'Ghi nợ thành công',
+            life: 3000,
+          });
+          this.showAddDebtDialog = false;
+          this.resetDebtForm();
+          this.getCustomer();
+          this.getDebit();
+        } else {
+          this.message.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: rs.error_message || 'Ghi nợ thất bại',
+            life: 3000,
+          });
+        }
+      },
+      (error: any) => {
+        this.loading = false;
+        this.message.add({
+          severity: 'error',
+          summary: 'Lỗi hệ thống',
+          detail: 'Không thể ghi nợ. Vui lòng thử lại',
+          life: 3000,
+        });
+      }
+    );
   }
 
   addPayment() {
@@ -310,15 +384,107 @@ export class DebtComponent implements OnInit {
       return;
     }
 
-    this.message.add({
-      severity: 'success',
-      summary: 'Thành công',
-      detail: 'Ghi nhận thanh toán thành công',
-      life: 3000,
-    });
+    const params = {
+      customer_code: this.newPayment.customerId,
+      paid_amount: this.newPayment.amount,
+      note: this.newPayment.note.trim(),
+    };
 
-    this.showPaymentDialog = false;
-    this.resetPaymentForm();
+    this.loading = true;
+    this.service.payDebit(params).subscribe(
+      (rs: any) => {
+        this.loading = false;
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.message.add({
+            severity: 'success',
+            summary: 'Thành công',
+            detail: 'Ghi nhận thanh toán thành công',
+            life: 3000,
+          });
+          this.showPaymentDialog = false;
+          this.resetPaymentForm();
+          this.getCustomer();
+          this.getDebit();
+        } else {
+          this.message.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: rs.error_message || 'Thanh toán thất bại',
+            life: 3000,
+          });
+        }
+      },
+      (error: any) => {
+        this.loading = false;
+        this.message.add({
+          severity: 'error',
+          summary: 'Lỗi hệ thống',
+          detail: 'Không thể thanh toán. Vui lòng thử lại',
+          life: 3000,
+        });
+      }
+    );
+  }
+
+  deleteCustomer(customer: Customer) {
+    const dialog = this.dialog.open(ConfirmDialogComponent, {
+      disableClose: true,
+      data: {
+        title: 'Xác nhận xóa sản phẩm',
+        buttons: [
+          {
+            label: 'Hủy',
+            class: 'default',
+            value: false,
+            color: '',
+            background: '',
+          },
+          {
+            label: 'Xác nhận',
+            class: 'primary',
+            value: true,
+            color: '',
+            background: '',
+          },
+        ],
+      },
+    });
+    dialog.afterClosed().subscribe((result: any) => {
+      if (result) {
+        this.loading = true;
+        this.service.deleteCustomer(customer.id).subscribe(
+          (rs: any) => {
+            this.loading = false;
+            if (rs.status === ConstantDef.STATUS_SUCCESS) {
+              this.message.add({
+                severity: 'success',
+                summary: 'Thành công',
+                detail: 'Đã xóa khách hàng',
+                life: 3000,
+              });
+              this.getCustomer();
+              this.getDebit();
+            } else {
+              this.message.add({
+                severity: 'error',
+                summary: 'Lỗi',
+                detail: rs.error_message || 'Xóa khách hàng thất bại',
+                life: 3000,
+              });
+            }
+          },
+          (error: any) => {
+            this.loading = false;
+            this.message.add({
+              severity: 'error',
+              summary: 'Lỗi hệ thống',
+              detail: 'Không thể xóa khách hàng. Vui lòng thử lại',
+              life: 3000,
+            });
+          }
+        );
+      }
+    });
   }
 
   resetCustomerForm() {
@@ -408,22 +574,66 @@ export class DebtComponent implements OnInit {
     return cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
 
-  deleteCustomer(customer: Customer) {
-    if (confirm(`Bạn có chắc muốn xóa khách hàng "${customer.name}"?`)) {
+  exportData() {
+    if (!this.filteredCustomers || this.filteredCustomers.length === 0) {
       this.message.add({
-        severity: 'success',
-        summary: 'Thành công',
-        detail: 'Đã xóa khách hàng',
+        severity: 'error',
+        summary: 'Thông báo',
+        detail: 'Không có dữ liệu để xuất',
         life: 3000,
       });
+      return;
     }
-  }
 
-  exportData() {
+    const dataForExport = this.filteredCustomers.map((customer, index) => ({
+      STT: index + 1,
+      'Mã KH': customer.id,
+      'Tên khách hàng': customer.name,
+      'Số điện thoại': customer.phone,
+      'Địa chỉ': customer.address || '',
+      'Tổng nợ (VNĐ)': customer.totalDebt,
+      'Giao dịch cuối': customer.lastTransaction,
+      'Trạng thái': this.getStatusLabel(customer.status),
+    }));
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
+
+    const colWidths = [
+      { wch: 5 },
+      { wch: 20 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 15 },
+    ];
+    ws['!cols'] = colWidths;
+
+    const headerStyle = {
+      fill: { fgColor: { rgb: 'FFD966' } },
+      font: { bold: true },
+      alignment: { horizontal: 'center', vertical: 'center' },
+    };
+
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!ws[cellAddress]) continue;
+      ws[cellAddress].s = headerStyle;
+    }
+
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'DanhSachKhachHang');
+
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const fileName = `BaoCao_CongNo_${timestamp}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
     this.message.add({
-      severity: 'info',
+      severity: 'success',
       summary: 'Thông báo',
-      detail: 'Đang xuất dữ liệu...',
+      detail: 'Xuất báo cáo Excel thành công!',
       life: 3000,
     });
   }

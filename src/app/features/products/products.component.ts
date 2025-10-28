@@ -13,6 +13,7 @@ import { ConstantDef } from '../../core/constanDef';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 import { ProductDetailDialogComponent } from './productDetailDialog/producDetailDialog.component';
 import { AddEditProductDialogComponent } from './addProductDialog/addProductDialog.component';
+import * as XLSX from 'xlsx';
 
 interface Product {
   id?: number;
@@ -273,6 +274,44 @@ export class ProductsComponent implements OnInit {
       this.showError('Không có dữ liệu để xuất');
       return;
     }
+
+    const dataForExport = this.filteredProducts.map((product, index) => ({
+      STT: index + 1,
+      'Tên sản phẩm': product.name,
+      SKU: product.sku,
+      Barcode: product.bar_code || '',
+      'Phân loại': product.name_category,
+      'Giá nhập (VNĐ)': product.cost_price,
+      'Giá bán (VNĐ)': product.price,
+      'Tồn kho': product.stock_quantity,
+      'Đơn vị': product.unit,
+      'Link ảnh': product.image || '',
+    }));
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
+
+    const colWidths = [
+      { wch: 5 },
+      { wch: 40 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 30 },
+    ];
+    ws['!cols'] = colWidths;
+
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'DanhSachSanPham');
+
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const fileName = `BaoCao_SanPham_${timestamp}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    this.showSuccess('Xuất báo cáo Excel thành công!');
   }
 
   onImageError(event: any): void {
