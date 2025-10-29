@@ -339,4 +339,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
       console.log('Searching for:', this.searchQuery);
     }
   }
+
+  navigateToPayOS(): void {
+    const payosUrl = 'https://my.payos.vn/d7ecd9f4a37f11f08d570242ac110002/dashboard';
+    window.open(payosUrl, '_blank');
+  }
 }

@@ -13,13 +13,20 @@
           [(ngModel)]="selectedPeriod"
           [options]="periodOptions"
           optionLabel="label"
+          optionValue="value"
           (onChange)="onPeriodChange()"
           styleClass="period-select"
+          placeholder="Chọn khoảng thời gian"
         />
-        <button class="action-btn refresh-btn" (click)="refreshData()">
-          <i class="pi pi-refresh"></i>
+        <button class="action-btn refresh-btn" (click)="refreshData()" [disabled]="loading">
+          <i
+            class="pi"
+            [class.pi-refresh]="!loading"
+            [class.pi-spin]="loading"
+            [class.loading]="loading"
+          ></i>
         </button>
-        <button class="action-btn export-btn" (click)="exportReport()">
+        <button class="action-btn export-btn" (click)="exportReport()" [disabled]="loading">
           <i class="pi pi-download"></i>
           <span>Xuất báo cáo</span>
         </button>
@@ -27,21 +34,26 @@
     </div>
   </div>
 
-  <div class="stats-grid">
+  <div class="stats-grid" *ngIf="!loading">
     <div class="stat-card revenue">
       <div class="stat-header">
         <div class="stat-icon">
           <i class="pi pi-dollar"></i>
         </div>
-        <div class="stat-trend up">
-          <i class="pi pi-arrow-up"></i>
-          <span>12.5%</span>
+        <div class="stat-trend" [class.up]="revenueGrowth >= 0" [class.down]="revenueGrowth < 0">
+          <i [class]="revenueGrowth >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"></i>
+          <span>{{ Math.abs(revenueGrowth) }}%</span>
         </div>
       </div>
       <div class="stat-body">
-        <p class="stat-label">Doanh thu hôm nay</p>
+        <p class="stat-label">Doanh thu</p>
         <h3 class="stat-value">{{ todayRevenue | number : '1.0-0' }} đ</h3>
-        <p class="stat-compare">So với hôm qua: +1.2M đ</p>
+        <p class="stat-compare">
+          <span [class.positive]="revenueComparison >= 0" [class.negative]="revenueComparison < 0">
+            {{ revenueComparison >= 0 ? '+' : '' }}{{ revenueComparison | number : '1.0-0' }} đ
+          </span>
+          so với {{ comparisonPeriod }}
+        </p>
       </div>
     </div>
 
@@ -50,15 +62,20 @@
         <div class="stat-icon">
           <i class="pi pi-shopping-cart"></i>
         </div>
-        <div class="stat-trend up">
-          <i class="pi pi-arrow-up"></i>
-          <span>8.3%</span>
+        <div class="stat-trend" [class.up]="orderGrowth >= 0" [class.down]="orderGrowth < 0">
+          <i [class]="orderGrowth >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"></i>
+          <span>{{ Math.abs(orderGrowth) }}%</span>
         </div>
       </div>
       <div class="stat-body">
         <p class="stat-label">Đơn hàng</p>
         <h3 class="stat-value">{{ todayOrders }}</h3>
-        <p class="stat-compare">Trung bình: 42 đơn/ngày</p>
+        <p class="stat-compare">
+          <span [class.positive]="orderComparison >= 0" [class.negative]="orderComparison < 0">
+            {{ orderComparison >= 0 ? '+' : '' }}{{ orderComparison }}
+          </span>
+          so với {{ comparisonPeriod }}
+        </p>
       </div>
     </div>
 
@@ -67,15 +84,15 @@
         <div class="stat-icon">
           <i class="pi pi-chart-line"></i>
         </div>
-        <div class="stat-trend up">
-          <i class="pi pi-arrow-up"></i>
-          <span>15.2%</span>
+        <div class="stat-trend" [class.up]="profitGrowth >= 0" [class.down]="profitGrowth < 0">
+          <i [class]="profitGrowth >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"></i>
+          <span>{{ Math.abs(profitGrowth) }}%</span>
         </div>
       </div>
       <div class="stat-body">
         <p class="stat-label">Lợi nhuận</p>
         <h3 class="stat-value">{{ todayProfit | number : '1.0-0' }} đ</h3>
-        <p class="stat-compare">Tỷ suất: 27%</p>
+        <p class="stat-compare">Tỷ suất: {{ profitMargin.toFixed(1) }}%</p>
       </div>
     </div>
 
@@ -84,46 +101,56 @@
         <div class="stat-icon">
           <i class="pi pi-users"></i>
         </div>
-        <div class="stat-trend up">
-          <i class="pi pi-arrow-up"></i>
-          <span>5.7%</span>
+        <div class="stat-trend" [class.up]="customerGrowth >= 0" [class.down]="customerGrowth < 0">
+          <i [class]="customerGrowth >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"></i>
+          <span>{{ Math.abs(customerGrowth) }}%</span>
         </div>
       </div>
       <div class="stat-body">
         <p class="stat-label">Khách hàng</p>
         <h3 class="stat-value">{{ todayCustomers }}</h3>
-        <p class="stat-compare">Khách mới: 8 người</p>
+        <p class="stat-compare">Khách mới: {{ newCustomers }} người</p>
       </div>
     </div>
   </div>
 
-  <div class="content-grid d-flex gap-3">
-    <div class="chart-section revenue-chart col-sm-7">
-      <div class="section-header">
-        <h3 class="section-title">
+  <div class="charts-wrapper" *ngIf="!loading">
+    <div class="chart-card revenue-chart">
+      <div class="chart-header">
+        <h3 class="chart-title">
           <i class="pi pi-chart-line"></i>
           Biểu đồ doanh thu
         </h3>
       </div>
-      <div class="chart-container">
-        <p-chart type="line" [data]="revenueChartData" [options]="revenueChartOptions" />
+      <div class="chart-body">
+        <p-chart
+          type="line"
+          [data]="revenueChartData"
+          [options]="revenueChartOptions"
+          [style]="{ position: 'relative', height: '320px', width: '100%' }"
+        />
       </div>
     </div>
 
-    <div class="chart-section category-chart col-sm-5">
-      <div class="section-header">
-        <h3 class="section-title">
+    <div class="chart-card category-chart">
+      <div class="chart-header">
+        <h3 class="chart-title">
           <i class="pi pi-chart-pie"></i>
           Doanh thu theo danh mục
         </h3>
       </div>
-      <div class="chart-container">
-        <p-chart type="doughnut" [data]="categoryChartData" [options]="categoryChartOptions" />
+      <div class="chart-body">
+        <p-chart
+          type="doughnut"
+          [data]="categoryChartData"
+          [options]="pieChartOptions"
+          [style]="{ position: 'relative', height: '320px' }"
+        />
       </div>
     </div>
   </div>
 
-  <div class="data-grid">
+  <div class="data-grid" *ngIf="!loading">
     <div class="data-section recent-sales">
       <div class="section-header">
         <h3 class="section-title">
@@ -136,37 +163,45 @@
         </button>
       </div>
       <div class="table-wrapper">
-        <p-table [value]="recentSales" styleClass="sales-table">
+        <p-table [value]="recentSales" [rows]="5" styleClass="sales-table">
           <ng-template #header>
             <tr>
-              <th>Mã đơn</th>
-              <th>Thời gian</th>
+              <th style="width: 100px">Mã đơn</th>
+              <th style="width: 80px">Thời gian</th>
               <th>Khách hàng</th>
-              <th class="text-right">Số tiền</th>
-              <th>Thanh toán</th>
-              <th class="text-center">Trạng thái</th>
+              <th class="text-right" style="width: 120px">Số tiền</th>
+              <th style="width: 110px">Thanh toán</th>
+              <th class="text-center" style="width: 100px">Trạng thái</th>
             </tr>
           </ng-template>
           <ng-template #body let-sale>
             <tr>
               <td>
-                <span class="order-id">{{ sale.id }}</span>
+                <span class="order-id">{{ sale.order_code }}</span>
               </td>
               <td>
-                <span class="time">{{ sale.time }}</span>
+                <span class="time">{{ sale.created_at | date : 'HH:mm' }}</span>
               </td>
               <td>
-                <span class="customer-name">{{ sale.customer }}</span>
+                <span class="customer-name">{{ sale.buyer_name || 'Khách lẻ' }}</span>
               </td>
               <td class="text-right">
                 <span class="amount">{{ sale.amount | number : '1.0-0' }} đ</span>
               </td>
               <td>
-                <span class="payment-method">{{ sale.payment }}</span>
+                <span class="payment-method">{{ getPaymentMethod(sale.status) }}</span>
               </td>
               <td class="text-center">
-                <p-tag [value]="getStatusLabel(sale.status)" />
+                <p-tag
+                  [value]="getStatusLabel(sale.status)"
+                  [severity]="getStatusSeverity(sale.status)"
+                />
               </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="6" class="text-center">Không có đơn hàng</td>
             </tr>
           </ng-template>
         </p-table>
@@ -186,7 +221,7 @@
       </div>
       <div class="products-list">
         <div class="product-item" *ngFor="let product of topProducts; let i = index">
-          <div class="product-rank">{{ i + 1 }}</div>
+          <div class="product-rank" [class.top3]="i < 3">{{ i + 1 }}</div>
           <div class="product-info">
             <h4 class="product-name">{{ product.name }}</h4>
             <div class="product-stats">
@@ -198,6 +233,9 @@
             </div>
           </div>
         </div>
+        <div class="empty-state" *ngIf="!topProducts || topProducts.length === 0">
+          <p>Không có dữ liệu sản phẩm</p>
+        </div>
       </div>
     </div>
   </div>
@@ -208,22 +246,24 @@
       Thao tác nhanh
     </h3>
     <div class="actions-grid">
-      <button class="quick-action-btn">
+      <button class="quick-action-btn" (click)="navigateTo('/page/sell')">
         <i class="pi pi-plus-circle"></i>
         <span>Tạo đơn hàng</span>
       </button>
-      <button class="quick-action-btn">
+      <button class="quick-action-btn" (click)="navigateTo('/page/products')">
         <i class="pi pi-shopping-bag"></i>
         <span>Thêm sản phẩm</span>
       </button>
-      <button class="quick-action-btn">
+      <button class="quick-action-btn" (click)="navigateTo('/page/debit')">
         <i class="pi pi-user-plus"></i>
         <span>Thêm khách hàng</span>
       </button>
-      <button class="quick-action-btn">
+      <button class="quick-action-btn" (click)="navigateTo('/page/report')">
         <i class="pi pi-file-pdf"></i>
-        <span>In báo cáo</span>
+        <span>Xem báo cáo</span>
       </button>
     </div>
   </div>
+
+  <p-toast position="top-right" />
 </div>

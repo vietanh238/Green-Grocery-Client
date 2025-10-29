@@ -24,6 +24,7 @@ export class Service {
   private readonly PAY_DEBIT = environment.apiDebit + 'pay/debit/';
   private readonly DELETE_CUSTOMER = environment.apiDebit + 'delete/customer/';
   private readonly GET_BUSINESS_REPORT = environment.apiReport + 'get/';
+  private readonly GET_DASHBOARD = environment.apiHome + 'get/dashboard/';
 
   constructor(private _http: HttpClient) {}
 
@@ -131,5 +132,12 @@ export class Service {
     }
 
     return this._http.get(this.GET_BUSINESS_REPORT, { params: queryParams });
+  }
+
+  getDashboardData(period: string = 'today'): Observable<any> {
+    let queryParams = new HttpParams();
+    queryParams = queryParams.set('period', period);
+
+    return this._http.get(this.GET_DASHBOARD, { params: queryParams });
   }
 }
