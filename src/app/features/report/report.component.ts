@@ -13,6 +13,8 @@ import { TagModule } from 'primeng/tag';
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface TopProduct {
   name: string;
@@ -327,7 +329,65 @@ export class ReportComponent implements OnInit {
   }
 
   exportPDF(): void {
-    this.showError('Chức năng xuất PDF đang phát triển');
+    // 1. Lấy element HTML bằng ID bạn đã đặt
+    const reportElement = document.getElementById('reportContent');
+
+    if (!reportElement) {
+      this.showError('Không tìm thấy nội dung báo cáo để xuất.');
+      return;
+    }
+
+    this.loading = true;
+
+    // 2. Dùng html2canvas để "chụp ảnh" element
+    html2canvas(reportElement, {
+      scale: 2, // Tăng gấp đôi chất lượng ảnh
+      useCORS: true, // Cho phép tải ảnh từ các nguồn khác (nếu có)
+    })
+      .then((canvas) => {
+        try {
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = canvas.width;
+          const imgHeight = canvas.height;
+
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfPageWidth = pdf.internal.pageSize.getWidth();
+          const pdfPageHeight = pdf.internal.pageSize.getHeight();
+
+          const margin = 10;
+          const usableWidth = pdfPageWidth - margin * 2;
+          const usableHeight = pdfPageHeight - margin * 2;
+
+          const ratio = usableWidth / imgWidth;
+          const scaledImgHeight = imgHeight * ratio;
+
+          let heightLeft = scaledImgHeight;
+          let position = 0;
+          pdf.addImage(imgData, 'PNG', margin, margin, usableWidth, scaledImgHeight);
+          heightLeft -= usableHeight;
+          while (heightLeft > 0) {
+            position -= usableHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', margin, position + margin, usableWidth, scaledImgHeight);
+            heightLeft -= usableHeight;
+          }
+
+          const fileName = `BaoCao_KinhDoanh_${new Date().toISOString().slice(0, 10)}.pdf`;
+          pdf.save(fileName);
+
+          this.showSuccess('Xuất báo cáo PDF thành công!');
+        } catch (e) {
+          console.error('Lỗi khi tạo PDF:', e);
+          this.showError('Có lỗi xảy ra khi tạo file PDF.');
+        } finally {
+          this.loading = false;
+        }
+      })
+      .catch((err) => {
+        console.error('Lỗi html2canvas:', err);
+        this.showError('Không thể chụp ảnh màn hình báo cáo.');
+        this.loading = false;
+      });
   }
 
   printReport(): void {

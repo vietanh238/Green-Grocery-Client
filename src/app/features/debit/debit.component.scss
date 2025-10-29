@@ -51,18 +51,6 @@
       cursor: pointer;
       transition: all 0.3s;
 
-      &.export-btn {
-        background: white;
-        color: #6b7280;
-        border: 1px solid #e5e7eb;
-
-        &:hover {
-          background: #f9fafb;
-          border-color: #22c55e;
-          color: #22c55e;
-        }
-      }
-
       &.primary-btn {
         background: #22c55e;
         color: white;

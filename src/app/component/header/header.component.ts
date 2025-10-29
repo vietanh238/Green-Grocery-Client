@@ -15,6 +15,9 @@ import { MessageService } from 'primeng/api';
 import { WebSocketService } from '../../core/services/websocket.service';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+import { ToggleButtonModule } from 'primeng/togglebutton';
+import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 interface Notification {
@@ -28,6 +31,28 @@ interface Notification {
   bg?: string;
   color?: string;
   icon?: string;
+}
+
+interface SearchHistory {
+  id: string;
+  query: string;
+  type: string;
+  timestamp: number;
+}
+
+interface UserSettings {
+  darkMode: boolean;
+  notificationSound: boolean;
+  desktopNotifications: boolean;
+  emailNotifications: boolean;
+}
+
+interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  phone: string;
+  avatar?: string;
 }
 
 @Component({
@@ -48,6 +73,9 @@ interface Notification {
     ToastModule,
     DialogModule,
     InputTextModule,
+    ButtonModule,
+    ToggleButtonModule,
+    FormsModule,
   ],
 })
 export class HeaderComponent implements OnInit, OnDestroy {
@@ -62,7 +90,22 @@ export class HeaderComponent implements OnInit, OnDestroy {
   searchQuery: string = '';
   isHiddenIconBell: boolean = false;
 
+  searchHistory: SearchHistory[] = [];
+  userProfile: UserProfile = {
+    id: '',
+    username: '',
+    email: '',
+    phone: '',
+  };
+  userSettings: UserSettings = {
+    darkMode: false,
+    notificationSound: true,
+    desktopNotifications: true,
+    emailNotifications: false,
+  };
+
   private wsSubscription?: Subscription;
+  private notificationAudio: HTMLAudioElement | null = null;
 
   readonly PRIORITY_HIGH_COLOR = '#fef3f3';
   readonly PRIORITY_MEDIUM_COLOR = '#fefce9';
@@ -71,6 +114,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   readonly PRIORITY_MEDIUM_TEXT = '#cd8a04';
   readonly PRIORITY_LOW_TEXT = '#2563eb';
   readonly READED_COLOR = '#f9fafb';
+
+  readonly MAX_SEARCH_HISTORY = 10;
+  readonly STORAGE_KEYS = {
+    SEARCH_HISTORY: 'app_search_history',
+    USER_SETTINGS: 'app_user_settings',
+  };
 
   constructor(
     public router: Router,
@@ -86,6 +135,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.setupDrawerStyle();
     this.subscribeToWebSocket();
     this.loadInitialNotifications();
+    this.loadSearchHistory();
+    this.loadUserProfile();
+    this.loadUserSettings();
+    this.initNotificationAudio();
   }
 
   ngOnDestroy(): void {
@@ -157,6 +210,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
         };
         this.addNotification(notification);
       }
+    } else if (ms?.message_type === 'payment_success') {
+      const notification: Notification = {
+        id: ms.id || `payment_${Date.now()}`,
+        title: 'Thanh toán thành công',
+        message: ms.message || 'Đã nhận thanh toán',
+        time: ms.time || new Date().toISOString(),
+        priority: '2',
+        isRead: false,
+      };
+      this.addNotification(notification);
     } else if (ms?.message_type === 'notification') {
       const notification: Notification = {
         id: ms.id || `notif_${Date.now()}`,
@@ -176,6 +239,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.lstNotification = this.addAttribute();
     this.triggerBellAnimation();
     this.showToast(notification);
+    this.playNotificationSound();
     this.cdr.detectChanges();
   }
 
@@ -217,6 +281,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
       detail: notification.message,
       life: 5000,
     });
+  }
+
+  private playNotificationSound(): void {
+    if (this.userSettings.notificationSound && this.notificationAudio) {
+      this.notificationAudio.play().catch((err) => {
+        console.warn('Không thể phát âm thanh:', err);
+      });
+    }
+  }
+
+  private initNotificationAudio(): void {
+    this.notificationAudio = new Audio('assets/notification.mp3');
   }
 
   addAttribute() {
@@ -281,6 +357,115 @@ export class HeaderComponent implements OnInit, OnDestroy {
     return array;
   }
 
+  private loadSearchHistory(): void {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEYS.SEARCH_HISTORY);
+      this.searchHistory = stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.warn('Không thể tải lịch sử tìm kiếm:', error);
+      this.searchHistory = [];
+    }
+  }
+
+  private saveSearchHistory(): void {
+    try {
+      localStorage.setItem(this.STORAGE_KEYS.SEARCH_HISTORY, JSON.stringify(this.searchHistory));
+    } catch (error) {
+      console.warn('Không thể lưu lịch sử tìm kiếm:', error);
+    }
+  }
+
+  addToSearchHistory(query: string, type: string = 'general'): void {
+    if (!query.trim()) return;
+
+    const newItem: SearchHistory = {
+      id: `${Date.now()}`,
+      query: query.trim(),
+      type,
+      timestamp: Date.now(),
+    };
+
+    this.searchHistory = this.searchHistory.filter((item) => item.query !== query);
+    this.searchHistory.unshift(newItem);
+
+    if (this.searchHistory.length > this.MAX_SEARCH_HISTORY) {
+      this.searchHistory = this.searchHistory.slice(0, this.MAX_SEARCH_HISTORY);
+    }
+
+    this.saveSearchHistory();
+  }
+
+  clearSearchHistory(): void {
+    this.searchHistory = [];
+    localStorage.removeItem(this.STORAGE_KEYS.SEARCH_HISTORY);
+  }
+
+  private loadUserProfile(): void {
+    this.service.getUserProfile().subscribe(
+      (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.userProfile = rs.response || {};
+        }
+      },
+      (error: any) => {
+        console.error('Lỗi khi tải thông tin người dùng:', error);
+      }
+    );
+  }
+
+  private loadUserSettings(): void {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEYS.USER_SETTINGS);
+      if (stored) {
+        this.userSettings = { ...this.userSettings, ...JSON.parse(stored) };
+        this.applyDarkMode();
+      }
+    } catch (error) {
+      console.warn('Không thể tải cài đặt:', error);
+    }
+  }
+
+  private saveUserSettings(): void {
+    try {
+      localStorage.setItem(this.STORAGE_KEYS.USER_SETTINGS, JSON.stringify(this.userSettings));
+    } catch (error) {
+      console.warn('Không thể lưu cài đặt:', error);
+    }
+  }
+
+  toggleDarkMode(): void {
+    this.userSettings.darkMode = !this.userSettings.darkMode;
+    this.applyDarkMode();
+    this.saveUserSettings();
+  }
+
+  private applyDarkMode(): void {
+    if (this.userSettings.darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+
+  toggleNotificationSound(): void {
+    this.userSettings.notificationSound = !this.userSettings.notificationSound;
+    this.saveUserSettings();
+
+    if (this.userSettings.notificationSound) {
+      this.playNotificationSound();
+    }
+  }
+
+  toggleDesktopNotifications(): void {
+    this.userSettings.desktopNotifications = !this.userSettings.desktopNotifications;
+    this.saveUserSettings();
+  }
+
+  toggleEmailNotifications(): void {
+    this.userSettings.emailNotifications = !this.userSettings.emailNotifications;
+    this.saveUserSettings();
+  }
+
   openNotificationDrawer() {
     this.notificationVisible = true;
     this.addAttribute();
@@ -336,8 +521,49 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   handleSearch() {
     if (this.searchQuery.trim()) {
-      console.log('Searching for:', this.searchQuery);
+      this.addToSearchHistory(this.searchQuery, 'search');
+      console.log('Tìm kiếm:', this.searchQuery);
+      this.performSearch(this.searchQuery);
+      this.searchVisible = false;
+      this.searchQuery = '';
     }
+  }
+
+  performSearch(query: string): void {
+    this.service.quickSearch(query).subscribe(
+      (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          const results = rs.response;
+          if (
+            results.products?.length > 0 ||
+            results.orders?.length > 0 ||
+            results.customers?.length > 0
+          ) {
+            console.log('Kết quả tìm kiếm:', results);
+          } else {
+            this.message.add({
+              severity: 'info',
+              summary: 'Thông báo',
+              detail: 'Không tìm thấy kết quả',
+              life: 3000,
+            });
+          }
+        }
+      },
+      (error: any) => {
+        this.message.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: 'Lỗi tìm kiếm',
+          life: 3000,
+        });
+      }
+    );
+  }
+
+  selectFromHistory(item: SearchHistory): void {
+    this.searchQuery = item.query;
+    this.handleSearch();
   }
 
   navigateToPayOS(): void {

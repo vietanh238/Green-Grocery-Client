@@ -79,17 +79,6 @@
           animation: spin 1s linear infinite;
         }
       }
-
-      &.export-btn {
-        background: #22c55e;
-        color: white;
-        border: none;
-
-        &:hover:not(:disabled) {
-          background: #16a34a;
-          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-        }
-      }
     }
   }
 }

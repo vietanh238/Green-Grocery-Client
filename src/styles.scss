@@ -157,3 +157,46 @@ input[type='number'] {
     transform: translateY(0);
   }
 }
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &.print-btn {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+
+    &:hover {
+      background: #f9fafb;
+      border-color: #6b7280;
+    }
+  }
+
+  &.export-btn {
+    background: white;
+    color: #3b82f6;
+    border: 1px solid #dbeafe;
+
+    &:hover {
+      background: #dbeafe;
+    }
+  }
+
+  &.pdf-btn {
+    background: white;
+    color: #ef4444;
+    border: 1px solid #fee2e2;
+
+    &:hover {
+      background: #fee2e2;
+    }
+  }
+}

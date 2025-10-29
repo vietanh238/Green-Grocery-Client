@@ -5,11 +5,11 @@
       <span class="product-count">Tổng: {{ products?.length || 0 }} sản phẩm</span>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" (click)="exportExcel()">
-        <i class="pi pi-download"></i>
-        <span class="btn-text">Xuất Excel</span>
+      <button class="action-btn export-btn" (click)="exportExcel()">
+        <i class="pi pi-file-excel"></i>
+        <span>Xuất Excel</span>
       </button>
-      <button class="btn btn-primary" (click)="openAddProductDialog()">
+      <button class="action-btn print-btn" (click)="openAddProductDialog()">
         <i class="pi pi-plus"></i>
         Thêm sản phẩm
       </button>

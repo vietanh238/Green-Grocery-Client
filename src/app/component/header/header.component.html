@@ -7,7 +7,7 @@
     </ng-template>
     <ng-template #end>
       <div class="header-actions">
-        <button class="action-btn search-btn" (click)="openSearch()">
+        <button class="action-btn search-btn" (click)="openSearch()" title="Tìm kiếm">
           <i class="pi pi-search"></i>
           <span class="action-text text-hidden">Tìm kiếm</span>
         </button>
@@ -22,18 +22,19 @@
               (click)="openNotificationDrawer()"
               [class.shake]="bellShake"
               [class.bell-btn]="countNotifications > 0"
+              title="Thông báo"
             >
               <i class="pi pi-bell"></i>
             </button>
           </p-overlaybadge>
         </div>
 
-        <button class="action-btn settings-btn" (click)="openSettings()">
+        <button class="action-btn settings-btn" (click)="openSettings()" title="Cài đặt">
           <i class="pi pi-cog"></i>
           <span class="action-text text-hidden">Cài đặt</span>
         </button>
 
-        <button class="action-btn user-btn" (click)="navigateToPayOS()">
+        <button class="action-btn user-btn" (click)="navigateToPayOS()" title="Quản lý">
           <i class="pi pi-user"></i>
           <span class="action-text text-hidden">Quản lý</span>
         </button>
@@ -57,7 +58,12 @@
         Thông báo
       </h3>
       <div class="header-actions-drawer">
-        <button class="mark-all-btn" (click)="markAllAsRead()" *ngIf="lstNotification.length > 0">
+        <button
+          class="mark-all-btn"
+          (click)="markAllAsRead()"
+          *ngIf="lstNotification.length > 0"
+          title="Đánh dấu tất cả đã đọc"
+        >
           <i class="pi pi-check-circle"></i>
           <span class="text-hidden">Đọc tất cả</span>
         </button>
@@ -65,6 +71,7 @@
           class="clear-all-btn"
           (click)="clearAllNotifications()"
           *ngIf="lstNotification.length > 0"
+          title="Xóa tất cả"
         >
           <i class="pi pi-trash"></i>
         </button>
@@ -129,49 +136,122 @@
 >
   <div class="settings-content">
     <div class="setting-group">
-      <h4>
+      <h4 class="group-title">
         <i class="pi pi-user"></i>
         Thông tin tài khoản
       </h4>
       <div class="setting-item">
         <label>Tên người dùng</label>
-        <p>Admin User</p>
+        <p class="setting-value">{{ userProfile.username || 'Không có dữ liệu' }}</p>
       </div>
       <div class="setting-item">
         <label>Email</label>
-        <p>admin@example.com</p>
+        <p class="setting-value">{{ userProfile.email || 'Không có dữ liệu' }}</p>
+      </div>
+      <div class="setting-item">
+        <label>Số điện thoại</label>
+        <p class="setting-value">{{ userProfile.phone || 'Không có dữ liệu' }}</p>
       </div>
     </div>
 
+    <div class="divider"></div>
+
     <div class="setting-group">
-      <h4>
+      <h4 class="group-title">
         <i class="pi pi-palette"></i>
         Giao diện
       </h4>
       <div class="setting-item">
         <label>Chế độ tối</label>
-        <button class="toggle-btn">
-          <i class="pi pi-moon"></i>
+        <button
+          class="toggle-btn"
+          [class.active]="userSettings.darkMode"
+          (click)="toggleDarkMode()"
+          [title]="userSettings.darkMode ? 'Tắt chế độ tối' : 'Bật chế độ tối'"
+        >
+          <i
+            class="pi"
+            [class.pi-moon]="userSettings.darkMode"
+            [class.pi-sun]="!userSettings.darkMode"
+          ></i>
         </button>
       </div>
     </div>
 
+    <div class="divider"></div>
+
     <div class="setting-group">
-      <h4>
+      <h4 class="group-title">
         <i class="pi pi-bell"></i>
         Thông báo
       </h4>
       <div class="setting-item">
         <label>Âm thanh thông báo</label>
-        <button class="toggle-btn active">
-          <i class="pi pi-volume-up"></i>
+        <button
+          class="toggle-btn"
+          [class.active]="userSettings.notificationSound"
+          (click)="toggleNotificationSound()"
+          [title]="userSettings.notificationSound ? 'Tắt âm thanh' : 'Bật âm thanh'"
+        >
+          <i
+            class="pi"
+            [class.pi-volume-up]="userSettings.notificationSound"
+            [class.pi-volume-off]="!userSettings.notificationSound"
+          ></i>
         </button>
+        <p class="setting-description">
+          {{
+            userSettings.notificationSound
+              ? 'Bật - Phát âm thanh khi có thông báo'
+              : 'Tắt - Không phát âm thanh'
+          }}
+        </p>
       </div>
+
       <div class="setting-item">
         <label>Thông báo desktop</label>
-        <button class="toggle-btn active">
-          <i class="pi pi-desktop"></i>
+        <button
+          class="toggle-btn"
+          [class.active]="userSettings.desktopNotifications"
+          (click)="toggleDesktopNotifications()"
+          [title]="
+            userSettings.desktopNotifications ? 'Tắt thông báo desktop' : 'Bật thông báo desktop'
+          "
+        >
+          <i
+            class="pi"
+            [class.pi-desktop]="userSettings.desktopNotifications"
+            [class.pi-desktop-inactive]="!userSettings.desktopNotifications"
+          ></i>
         </button>
+        <p class="setting-description">
+          {{
+            userSettings.desktopNotifications
+              ? 'Bật - Hiển thị thông báo trên desktop'
+              : 'Tắt - Không hiển thị thông báo'
+          }}
+        </p>
+      </div>
+
+      <div class="setting-item">
+        <label>Thông báo email</label>
+        <button
+          class="toggle-btn"
+          [class.active]="userSettings.emailNotifications"
+          (click)="toggleEmailNotifications()"
+          [title]="userSettings.emailNotifications ? 'Tắt thông báo email' : 'Bật thông báo email'"
+        >
+          <i
+            class="pi"
+            [class.pi-envelope]="userSettings.emailNotifications"
+            [class.pi-envelope-open]="!userSettings.emailNotifications"
+          ></i>
+        </button>
+        <p class="setting-description">
+          {{
+            userSettings.emailNotifications ? 'Bật - Gửi email thông báo' : 'Tắt - Không gửi email'
+          }}
+        </p>
       </div>
     </div>
   </div>
@@ -185,6 +265,7 @@
   styleClass="search-dialog"
   [showHeader]="false"
   [style]="{ width: '600px' }"
+  (onHide)="searchQuery = ''"
 >
   <div class="search-content">
     <div class="search-input-wrapper">
@@ -194,22 +275,48 @@
         pInputText
         placeholder="Tìm kiếm sản phẩm, đơn hàng, khách hàng..."
         class="search-input"
+        [(ngModel)]="searchQuery"
         (keyup.enter)="handleSearch()"
+        (keyup.escape)="searchVisible = false"
         autofocus
       />
-      <button class="close-search" (click)="searchVisible = false">
+      <button class="close-search" (click)="searchVisible = false" *ngIf="searchQuery">
         <i class="pi pi-times"></i>
       </button>
     </div>
-    <div class="search-suggestions">
-      <p class="suggestion-title">Tìm kiếm gần đây</p>
-      <div class="suggestion-item">
-        <i class="pi pi-history"></i>
-        <span>Sản phẩm A</span>
+
+    <div class="search-content-area">
+      <div class="search-history" *ngIf="searchHistory.length > 0 && !searchQuery">
+        <div class="history-header">
+          <p class="suggestion-title">Tìm kiếm gần đây</p>
+          <button class="clear-history-btn" (click)="clearSearchHistory()" title="Xóa lịch sử">
+            <i class="pi pi-trash"></i>
+          </button>
+        </div>
+        <div
+          class="suggestion-item"
+          *ngFor="let item of searchHistory.slice(0, 5)"
+          (click)="selectFromHistory(item)"
+        >
+          <i class="pi pi-history"></i>
+          <span>{{ item.query }}</span>
+        </div>
       </div>
-      <div class="suggestion-item">
-        <i class="pi pi-history"></i>
-        <span>Đơn hàng #12345</span>
+
+      <div class="search-suggestions" *ngIf="!searchQuery && searchHistory.length === 0">
+        <p class="suggestion-title">Gợi ý tìm kiếm</p>
+        <div class="suggestion-item">
+          <i class="pi pi-shopping-bag"></i>
+          <span>Tìm sản phẩm theo tên hoặc SKU</span>
+        </div>
+        <div class="suggestion-item">
+          <i class="pi pi-shopping-cart"></i>
+          <span>Tìm đơn hàng theo mã số</span>
+        </div>
+        <div class="suggestion-item">
+          <i class="pi pi-users"></i>
+          <span>Tìm khách hàng theo tên hoặc SĐT</span>
+        </div>
       </div>
     </div>
   </div>
