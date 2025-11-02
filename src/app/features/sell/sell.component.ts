@@ -57,8 +57,11 @@ export class SellComponent implements OnInit {
     this.service.getProducts().subscribe(
       (rs: any) => {
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.products = rs.response;
-          this.allProducts = this.products;
+          this.products = rs.response.map((product: any) => ({
+            ...product,
+            original_stock_quantity: product.stock_quantity,
+          }));
+          this.allProducts = this.products.map((p: any) => ({ ...p }));
         }
       },
       (_error: any) => {
@@ -72,16 +75,30 @@ export class SellComponent implements OnInit {
   }
 
   increaseQuantity(item: CartItem) {
-    item.quantity++;
+    const product = this.findProductBySku(item.sku);
+
+    if (!product) {
+      this.showError('Không tìm thấy sản phẩm');
+      return;
+    }
+
+    if (product.stock_quantity > 0) {
+      item.quantity++;
+      this.updateProductStock(product.sku, -1);
+    } else {
+      this.showError('Sản phẩm đã hết hàng');
+    }
   }
 
   decreaseQuantity(item: CartItem) {
     if (item.quantity > 1) {
       item.quantity--;
+      this.updateProductStock(item.sku, 1);
     }
   }
 
   removeItem(item: CartItem) {
+    this.updateProductStock(item.sku, item.quantity);
     this.cartItems = this.cartItems.filter((i) => i.sku !== item.sku);
     this.showSuccess('Đã xóa sản phẩm khỏi giỏ hàng');
   }
@@ -96,11 +113,22 @@ export class SellComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: any) => {
       if (result && 'success' in result && result.success === true) {
-        this.showSuccess('Thanh toán thành công');
+        this.cartItems.forEach((item) => {
+          const product = this.findProductBySku(item.sku);
+          if (product) {
+            product.original_stock_quantity = product.stock_quantity;
+          }
+          const allProduct = this.allProducts.find((p) => p.sku === item.sku);
+          if (allProduct) {
+            allProduct.original_stock_quantity = allProduct.stock_quantity;
+          }
+        });
         this.cartItems = [];
+        this.showSuccess('Thanh toán thành công');
       }
       if (result && 'cancel' in result && result.cancel === true) {
-        this.showSuccess('hủy mã thành công');
+        this.resetCart();
+        this.showSuccess('Hủy mã thành công');
       }
     });
   }
@@ -131,12 +159,19 @@ export class SellComponent implements OnInit {
   }
 
   handleAddToCart(product: any) {
+    if (product.stock_quantity <= 0) {
+      this.showError('Sản phẩm đã hết hàng');
+      return;
+    }
+
     const existing = this.cartItems.find((item) => item.sku === product.sku);
     if (existing) {
       existing.quantity += 1;
     } else {
       this.cartItems.push({ ...product, quantity: 1 });
     }
+
+    this.updateProductStock(product.sku, -1);
   }
 
   filterProducts(event: any): void {
@@ -156,6 +191,7 @@ export class SellComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
   }
+
   openScanner() {
     const dialogRef = this.dialog.open(ScannerComponent, {});
     dialogRef.afterClosed().subscribe((result: any) => {
@@ -198,9 +234,12 @@ export class SellComponent implements OnInit {
           this.cartItems.push(result);
           this.showSuccess(`Đã thêm ${result.name} vào giỏ hàng`);
         }
+
+        this.updateProductStock(result.sku, -result.quantity);
       }
     });
   }
+
   close() {
     const dialog = this.dialog.open(ConfirmDialogComponent, {
       disableClose: true,
@@ -226,9 +265,32 @@ export class SellComponent implements OnInit {
     });
     dialog.afterClosed().subscribe((result: any) => {
       if (result) {
-        this.cartItems = [];
+        this.resetCart();
         this.showSuccess('Xóa giỏ hàng thành công');
       }
     });
+  }
+
+  private updateProductStock(sku: string, delta: number): void {
+    const product = this.products.find((p) => p.sku === sku);
+    if (product) {
+      product.stock_quantity = Math.max(0, product.stock_quantity + delta);
+    }
+
+    const allProduct = this.allProducts.find((p) => p.sku === sku);
+    if (allProduct) {
+      allProduct.stock_quantity = Math.max(0, allProduct.stock_quantity + delta);
+    }
+  }
+
+  private findProductBySku(sku: string): any {
+    return this.products.find((p) => p.sku === sku);
+  }
+
+  private resetCart(): void {
+    this.cartItems.forEach((item) => {
+      this.updateProductStock(item.sku, item.quantity);
+    });
+    this.cartItems = [];
   }
 }

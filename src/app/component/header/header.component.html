@@ -7,7 +7,7 @@
     </ng-template>
     <ng-template #end>
       <div class="header-actions">
-        <button class="action-btn search-btn" (click)="openSearch()" title="Tìm kiếm">
+        <button class="action-btn-hd search-btn" (click)="openSearch()" title="Tìm kiếm">
           <i class="pi pi-search"></i>
           <span class="action-text text-hidden">Tìm kiếm</span>
         </button>
@@ -18,7 +18,7 @@
             [severity]="countNotifications > 9 ? 'danger' : 'success'"
           >
             <button
-              class="action-btn"
+              class="action-btn-hd"
               (click)="openNotificationDrawer()"
               [class.shake]="bellShake"
               [class.bell-btn]="countNotifications > 0"
@@ -29,12 +29,12 @@
           </p-overlaybadge>
         </div>
 
-        <button class="action-btn settings-btn" (click)="openSettings()" title="Cài đặt">
+        <button class="action-btn-hd settings-btn" (click)="openSettings()" title="Cài đặt">
           <i class="pi pi-cog"></i>
           <span class="action-text text-hidden">Cài đặt</span>
         </button>
 
-        <button class="action-btn user-btn" (click)="navigateToPayOS()" title="Quản lý">
+        <button class="action-btn-hd user-btn" (click)="navigateToPayOS()" title="Quản lý">
           <i class="pi pi-user"></i>
           <span class="action-text text-hidden">Quản lý</span>
         </button>

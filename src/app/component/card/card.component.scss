@@ -22,9 +22,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.3s ease;
   border: 1px solid #f0f0f0;
+
+  &.out-of-stock {
+    opacity: 0.7;
+    border: 2px solid #dc2626;
+    background: #fef2f2;
+  }
 }
 
-// Product Image Section
 .product-image {
   position: relative;
   width: 100%;
@@ -51,7 +56,6 @@
   }
 }
 
-// Stock Badge
 .stock-badge {
   position: absolute;
   top: 10px;
@@ -73,7 +77,6 @@
   }
 }
 
-// Product Info Section
 .product-info {
   padding: 16px;
   display: flex;
@@ -97,6 +100,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-height: 1.8em;
+
+  &.out-of-stock-text {
+    color: #dc2626;
+  }
 }
 
 .product-sku {
@@ -107,9 +114,14 @@
   padding: 2px 8px;
   border-radius: 4px;
   font-family: 'Courier New', monospace;
+
+  &.out-of-stock-sku {
+    background: #fee2e2;
+    color: #dc2626;
+    font-weight: 600;
+  }
 }
 
-// Product Footer
 .product-footer {
   display: flex;
   justify-content: space-between;
@@ -137,7 +149,6 @@
   color: #e74c3c;
 }
 
-// Add to Cart Button
 .add-to-cart-btn {
   display: flex;
   align-items: center;
@@ -163,10 +174,11 @@
   }
 
   &:disabled {
-    background: #e0e0e0;
-    color: #9e9e9e;
+    background: #dc2626;
+    color: white;
     cursor: not-allowed;
     box-shadow: none;
+    opacity: 0.9;
   }
 
   i {
@@ -178,7 +190,6 @@
   }
 }
 
-// Pulse Animation for Available Products
 @keyframes pulse {
   0% {
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
@@ -195,7 +206,6 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
-// Responsive
 @media (max-width: 576px) {
   .product-image {
     height: 150px;

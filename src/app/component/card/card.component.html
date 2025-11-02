@@ -1,26 +1,18 @@
 <div class="product-card">
-  <div class="product-card-content">
-    <!-- Product Image -->
-    <!-- <div class="product-image">
-      @if (product.image) {
-      <img [src]="product.image" [alt]="product.name" />
-      } @else {
-      <div class="image-placeholder">
-        <i class="pi pi-image"></i>
-      </div>
-      }
-      @if (product.stock <= 10 && product.stock > 0) {
-      <span class="stock-badge low-stock">Còn {{ product.stock }}</span>
-      } @else if (product.stock === 0) {
-      <span class="stock-badge out-of-stock">Hết hàng</span>
-      }
-    </div> -->
-
-    <!-- Product Info -->
+  <div class="product-card-content" [class.out-of-stock]="product.stock_quantity === 0">
     <div class="product-info">
       <div class="product-header">
-        <h4 class="product-name">{{ product.name }}</h4>
-        <span class="product-sku">SKU: {{ product.sku }}</span>
+        <h4 class="product-name" [class.out-of-stock-text]="product.stock_quantity === 0">
+          {{ product.name }}
+        </h4>
+        <div class="d-flex justify-content-between">
+          <span class="product-sku" [class.out-of-stock-sku]="product.stock_quantity === 0">
+            SKU: {{ product.sku }}
+          </span>
+          <span class="product-sku" [class.out-of-stock-sku]="product.stock_quantity === 0">
+            Số lượng: {{ product.stock_quantity }}
+          </span>
+        </div>
       </div>
 
       <div class="product-footer">
@@ -39,8 +31,13 @@
           class="add-to-cart-btn"
           [class.pulse]="product.stock_quantity > 0"
         >
+          @if (product.stock_quantity === 0) {
+          <i class="pi pi-times"></i>
+          <span>Hết hàng</span>
+          } @else {
           <i class="pi pi-plus"></i>
           <span>Thêm</span>
+          }
         </button>
       </div>
     </div>

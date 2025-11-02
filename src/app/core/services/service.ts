@@ -25,7 +25,7 @@ export class Service {
   private readonly DELETE_CUSTOMER = environment.apiDebit + 'delete/customer/';
   private readonly GET_BUSINESS_REPORT = environment.apiReport + 'get/';
   private readonly GET_DASHBOARD = environment.apiHome + 'get/dashboard/';
-  private readonly GET_USER_PROFILE = environment.apiAuth + 'user/profile/';
+  private readonly GET_USER_PROFILE = environment.apiHome + 'user/profile/';
   private readonly QUICK_SEARCH = environment.apiHome + 'quick/search/';
 
   constructor(private _http: HttpClient) {}

@@ -33,7 +33,7 @@
   padding: 0 10px;
 }
 
-.action-btn {
+.action-btn-hd {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -532,11 +532,11 @@
     display: block;
   }
 
-  .action-btn .action-text {
+  .action-btn-hd .action-text {
     display: inline;
   }
 
-  .action-btn {
+  .action-btn-hd {
     &.bell-btn .action-text {
       display: none;
     }
@@ -560,7 +560,7 @@
 }
 
 @media (max-width: 767px) {
-  .action-btn {
+  .action-btn-hd {
     padding: 10px;
 
     &.search-btn,
