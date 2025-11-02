@@ -32,14 +32,13 @@
           />
         </div>
         <div class="error-message" *ngIf="isFieldInvalid('customerName')">
-          Vui lòng nhập tên khách hàng
+          Vui lòng nhập tên khách hàng (tối thiểu 2 ký tự)
         </div>
       </div>
 
       <div class="form-group">
         <label for="phoneNumber" class="form-label">
-          Số điện thoại
-          <span class="optional">(Tùy chọn)</span>
+          Số điện thoại <span class="required">*</span>
         </label>
         <div class="input-icon-wrapper">
           <i class="pi pi-phone input-icon"></i>
@@ -55,6 +54,23 @@
         </div>
         <div class="error-message" *ngIf="isFieldInvalid('phoneNumber')">
           Số điện thoại không hợp lệ (10-11 số)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="address" class="form-label">
+          Địa chỉ
+          <span class="optional">(Tùy chọn)</span>
+        </label>
+        <div class="input-icon-wrapper">
+          <i class="pi pi-map-marker input-icon"></i>
+          <input
+            id="address"
+            type="text"
+            class="form-control with-icon"
+            formControlName="address"
+            placeholder="Nhập địa chỉ khách hàng"
+          />
         </div>
       </div>
 
@@ -110,20 +126,6 @@
       </div>
 
       <div class="form-group">
-        <label for="note" class="form-label">
-          Ghi chú
-          <span class="optional">(Tùy chọn)</span>
-        </label>
-        <textarea
-          id="note"
-          class="form-control textarea"
-          formControlName="note"
-          placeholder="Thêm ghi chú về khoản nợ này..."
-          rows="3"
-        ></textarea>
-      </div>
-
-      <div class="form-group">
         <label for="dueDate" class="form-label">
           Ngày hẹn trả
           <span class="optional">(Tùy chọn)</span>
@@ -138,6 +140,20 @@
             [min]="minDate"
           />
         </div>
+      </div>
+
+      <div class="form-group">
+        <label for="note" class="form-label">
+          Ghi chú
+          <span class="optional">(Tùy chọn)</span>
+        </label>
+        <textarea
+          id="note"
+          class="form-control textarea"
+          formControlName="note"
+          placeholder="Thêm ghi chú về khoản nợ này..."
+          rows="3"
+        ></textarea>
       </div>
     </form>
 

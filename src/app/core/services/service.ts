@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environment/environment';
 import { Observable } from 'rxjs';
-import { param } from 'jquery';
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +16,7 @@ export class Service {
   private readonly UPDATE_PRODUCT = environment.apiProduct + 'update/';
   private readonly CREATE_PAYMENT = environment.apiPayment + 'create/';
   private readonly DELETE_PAYMENT = environment.apiPayment + 'delete/';
+  private readonly CASH_PAYMENT = environment.apiPayment + 'cash/';
   private readonly GET_CUSTOMER = environment.apiDebit + 'get/customer/';
   private readonly GET_DEBIT = environment.apiDebit + 'get/debit/';
   private readonly CREATE_CUSTOMER = environment.apiDebit + 'create/customer/';
@@ -72,6 +72,10 @@ export class Service {
     return this._http.delete(url);
   }
 
+  cashPayment(params: any): Observable<any> {
+    return this._http.post(this.CASH_PAYMENT, params);
+  }
+
   deleteProduct(barCode: string): Observable<any> {
     const url = this.DELETE_RPODUCT + barCode + '/';
     return this._http.delete(url);
@@ -85,6 +89,7 @@ export class Service {
   getCustomer(): Observable<any> {
     return this._http.get(this.GET_CUSTOMER);
   }
+
   getDebit(): Observable<any> {
     return this._http.get(this.GET_DEBIT);
   }
@@ -98,12 +103,7 @@ export class Service {
   }
 
   createDebit(params: any): Observable<any> {
-    return this._http.post(this.CREATE_DEBIT, {
-      customer_code: params.customer_code,
-      debit_amount: params.debit_amount,
-      due_date: params.due_date,
-      note: params.note || '',
-    });
+    return this._http.post(this.CREATE_DEBIT, params);
   }
 
   payDebit(params: any): Observable<any> {
@@ -142,6 +142,7 @@ export class Service {
 
     return this._http.get(this.GET_DASHBOARD, { params: queryParams });
   }
+
   getUserProfile(): Observable<any> {
     return this._http.get(this.GET_USER_PROFILE);
   }

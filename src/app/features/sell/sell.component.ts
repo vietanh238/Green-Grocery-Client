@@ -133,6 +133,70 @@ export class SellComponent implements OnInit {
     });
   }
 
+  cashPayment() {
+    if (this.cartItems.length === 0) {
+      this.showError('Giỏ hàng trống');
+      return;
+    }
+
+    const dialog = this.dialog.open(ConfirmDialogComponent, {
+      disableClose: true,
+      data: {
+        title: 'Xác nhận thanh toán tiền mặt',
+        buttons: [
+          {
+            label: 'Hủy',
+            class: 'default',
+            value: false,
+            color: '',
+            background: '',
+          },
+          {
+            label: 'Xác nhận',
+            class: 'primary',
+            value: true,
+            color: '',
+            background: '',
+          },
+        ],
+      },
+    });
+
+    dialog.afterClosed().subscribe((result: any) => {
+      if (result) {
+        const paymentData = {
+          amount: this.totalAmount,
+          items: this.cartItems,
+          payment_method: 'cash',
+        };
+
+        this.service.cashPayment(paymentData).subscribe(
+          (rs: any) => {
+            if (rs.status === ConstantDef.STATUS_SUCCESS) {
+              this.cartItems.forEach((item) => {
+                const product = this.findProductBySku(item.sku);
+                if (product) {
+                  product.original_stock_quantity = product.stock_quantity;
+                }
+                const allProduct = this.allProducts.find((p) => p.sku === item.sku);
+                if (allProduct) {
+                  allProduct.original_stock_quantity = allProduct.stock_quantity;
+                }
+              });
+              this.cartItems = [];
+              this.showSuccess('Thanh toán tiền mặt thành công');
+            } else {
+              this.showError('Thanh toán thất bại');
+            }
+          },
+          (_error: any) => {
+            this.showError('Lỗi hệ thống');
+          }
+        );
+      }
+    });
+  }
+
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',

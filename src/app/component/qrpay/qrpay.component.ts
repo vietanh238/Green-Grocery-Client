@@ -380,7 +380,6 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   }
 
   debit() {
-    this.dialogRef.close();
     if (this.cartItems.length === 0) {
       this.showError('Giỏ hàng trống, vui lòng thêm sản phẩm trước');
       return;
@@ -390,20 +389,27 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
       disableClose: true,
       data: {
         totalAmount: this.amount,
-        qrCodeUrl: this.qrCodeUrl,
+        cartItems: this.cartItems,
       },
     });
 
     dialogRef.afterClosed().subscribe((result: any) => {
-      if (result) {
-        console.log('Thông tin ghi nợ:', result);
+      if (result && result.success) {
+        this.dialogRef.close({ success: true });
         this.showSuccess(
-          `Đã ghi nợ ${this.formatCurrency(result.debitAmount)} cho khách hàng ${
-            result.customerName
+          `Đã ghi nợ ${this.formatCurrency(result.debit.debit_amount)} cho khách hàng ${
+            result.customer.name
           }`
         );
 
-        this.cartItems = [];
+        if (this.orderCode) {
+          this.service.deletePayment(this.orderCode).subscribe((rs: any) => {
+            if (rs.status === ConstantDef.STATUS_SUCCESS) {
+              sessionStorage.removeItem('qrCodeUrl');
+              sessionStorage.removeItem('orderCode');
+            }
+          });
+        }
       }
     });
   }

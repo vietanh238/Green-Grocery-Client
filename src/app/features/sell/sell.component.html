@@ -104,13 +104,18 @@
             <span class="total-amount">{{ formatCurrency(totalAmount) }}</span>
           </div>
 
-          <div class="d-flex gap-1 justify-content-between align-items-center">
-            <button class="debit" (click)="close()" style="width: 150px">
-              <span class="">Xóa</span>
+          <div class="d-flex gap-2 flex-column">
+            <button class="debit" (click)="close()">
+              <i class="pi pi-trash"></i>
+              <span>Xóa đơn hàng</span>
+            </button>
+            <button pButton class="checkout-btn cash-btn" (click)="cashPayment()">
+              <i class="pi pi-money-bill"></i>
+              <span>Thanh toán tiền mặt</span>
             </button>
             <button pButton class="checkout-btn" (click)="createPaymentQR()">
               <i class="pi pi-qrcode"></i>
-              <span class="text-hidden">Tạo QR Thanh toán</span>
+              <span>Tạo QR Thanh toán</span>
             </button>
           </div>
         </div>

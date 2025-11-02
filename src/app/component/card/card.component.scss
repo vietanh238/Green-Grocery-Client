@@ -164,11 +164,6 @@
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-  }
-
   &:active:not(:disabled) {
     transform: translateY(0);
   }

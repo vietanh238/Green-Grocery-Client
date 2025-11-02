@@ -279,7 +279,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         notification.priority === '1' ? 'error' : notification.priority === '2' ? 'warn' : 'info',
       summary: notification.title,
       detail: notification.message,
-      life: 5000,
+      life: 3000,
     });
   }
 

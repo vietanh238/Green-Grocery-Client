@@ -1,58 +1,53 @@
-<div class="scanner-container">
-  <div class="scanner-header">
-    <h4 class="scanner-title">
-      <i class="pi pi-qrcode"></i>
-      Quét mã vạch / QR Code
-    </h4>
-  </div>
+<div class="scanner-overlay">
+  <div class="scanner-container">
+    <div class="scanner-header">
+      <h3 class="scanner-title">
+        <i class="pi pi-camera"></i>
+        Quét mã sản phẩm
+      </h3>
+      <button class="close-btn" (click)="closeScanner()">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
 
-  <div class="scanner-preview">
-    <div class="scanner-frame">
-      <zxing-scanner
-        [formats]="allowedFormats"
-        (scanSuccess)="onScanSuccess($event)"
-        (camerasFound)="onCamerasFound($event)"
-        [device]="currentDevice"
-        [autostart]="true"
-        [tryHarder]="true"
-        [torch]="false"
-        [previewFitMode]="'contain'"
-      ></zxing-scanner>
-      <div class="scan-overlay">
-        <div class="scan-box">
+    <div class="scanner-body">
+      <div class="camera-wrapper" #cameraWrapper>
+        <video #video autoplay playsinline></video>
+        <canvas #canvas style="display: none"></canvas>
+
+        <div class="scan-frame">
           <div class="corner corner-tl"></div>
           <div class="corner corner-tr"></div>
           <div class="corner corner-bl"></div>
           <div class="corner corner-br"></div>
+          <div class="scan-line"></div>
+        </div>
+
+        <div class="scanner-overlay-text">
+          <p>Đưa mã vạch vào khung hình</p>
         </div>
       </div>
-    </div>
-    <p class="scan-instruction">Đưa mã vào khung hình để quét</p>
-  </div>
 
-  <div class="scanner-result">
-    <label class="result-label">Kết quả quét:</label>
-    <div class="result-input-group">
-      <input
-        type="text"
-        class="result-input"
-        [(ngModel)]="barcodeResult"
-        disabled
-        placeholder="Chưa có kết quả..."
-      />
-      <button
-        class="btn-clear"
-        [disabled]="!barcodeResult"
-        (click)="resetBarcode()"
-        title="Xoá kết quả"
-      >
-        <i class="pi pi-times"></i>
-      </button>
-    </div>
-  </div>
+      <div class="scanner-info" *ngIf="lastScannedCode">
+        <div class="info-icon success">
+          <i class="pi pi-check-circle"></i>
+        </div>
+        <div class="info-content">
+          <span class="info-label">Mã đã quét:</span>
+          <span class="info-value">{{ lastScannedCode }}</span>
+        </div>
+      </div>
 
-  <div class="scanner-actions d-flex justify-content-between">
-    <p-button label="Hủy" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Lưu" [disabled]="!barcodeResult" (click)="save()" />
+      <div class="scanner-controls">
+        <button class="control-btn" (click)="toggleFlash()" *ngIf="hasFlash">
+          <i [class]="flashOn ? 'pi pi-sun' : 'pi pi-moon'"></i>
+          <span>{{ flashOn ? 'Tắt đèn' : 'Bật đèn' }}</span>
+        </button>
+        <button class="control-btn" (click)="switchCamera()" *ngIf="hasMultipleCameras">
+          <i class="pi pi-refresh"></i>
+          <span>Đổi camera</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
