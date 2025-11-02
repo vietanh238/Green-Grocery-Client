@@ -5,24 +5,24 @@ $danger-hover: #dc2626;
 $secondary-color: #6b7280;
 $secondary-hover: #4b5563;
 $border-color: #e5e7eb;
-$text-primary: #111827;
+$text-primary: #1f2937;
 $text-secondary: #6b7280;
-$bg-hover: #f1f6fb;
+$bg-hover: #f9fafb;
 $shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
 .product-management-container {
-  padding: 1.5rem;
-  background: #ffffff;
+  padding: 24px;
+  background: #f9fafb;
   min-height: calc(100vh - 80px);
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 16px;
   }
 
   @media (max-width: 480px) {
-    padding: 0.75rem;
+    padding: 12px;
   }
 }
 
@@ -30,79 +30,104 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 32px;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 16px;
 
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 12px;
   }
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
   flex-wrap: wrap;
-}
 
-.page-title {
-  color: $primary-color;
-  font-weight: 700;
-  font-size: 1.75rem;
-  margin: 0;
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-primary;
 
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
+    @media (max-width: 768px) {
+      font-size: 24px;
+    }
 
-  @media (max-width: 480px) {
-    font-size: 1.25rem;
+    @media (max-width: 480px) {
+      font-size: 20px;
+    }
   }
 }
 
 .product-count {
-  background: #f0fdf4;
+  background: #dcfce7;
   color: $primary-color;
-  padding: 0.375rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
 
   @media (max-width: 480px) {
-    font-size: 0.8125rem;
-    padding: 0.25rem 0.625rem;
+    font-size: 13px;
+    padding: 4px 12px;
   }
 }
 
 .header-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
 
   @media (max-width: 768px) {
     width: 100%;
 
-    .btn {
+    .action-btn {
       flex: 1;
     }
   }
 }
 
-.btn {
+.action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
+  gap: 8px;
+  padding: 10px 16px;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   font-weight: 500;
-  font-size: 0.9375rem;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
   white-space: nowrap;
+
+  &.export-btn {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: $primary-color;
+
+    &:hover {
+      background: linear-gradient(135deg, #bbf7d0, #86efac);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+  }
+
+  &.print-btn {
+    background: $primary-color;
+    color: white;
+
+    &:hover {
+      background: $primary-hover;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    }
+  }
 
   &:disabled {
     opacity: 0.5;
@@ -110,89 +135,43 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
   i {
-    font-size: 1rem;
+    font-size: 16px;
   }
 
   @media (max-width: 576px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 8px 12px;
+    font-size: 13px;
 
-    .btn-text {
+    span {
       display: none;
     }
 
     i {
-      font-size: 1.125rem;
+      font-size: 18px;
     }
-  }
-}
-
-.btn-primary {
-  background: $primary-color;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover:not(:disabled) {
-    background: $primary-hover;
-    box-shadow: $shadow-md;
-  }
-}
-
-.btn-secondary {
-  background: white;
-  color: $text-primary;
-  border: 1px solid $border-color;
-
-  &:hover:not(:disabled) {
-    background: $bg-hover;
-    border-color: $secondary-color;
-  }
-}
-
-.btn-outline {
-  background: white;
-  color: $primary-color;
-  border: 1px solid $primary-color;
-
-  &:hover:not(:disabled) {
-    background: $primary-color;
-    color: white;
-  }
-}
-
-.btn-danger {
-  background: $danger-color;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: $danger-hover;
-    box-shadow: $shadow-md;
   }
 }
 
 .search-filter-section {
   background: white;
-  padding: 1.25rem;
-  border-radius: 0.75rem;
+  padding: 20px;
+  border-radius: 12px;
   border: 1px solid $border-color;
-  margin-bottom: 1.5rem;
+  margin-bottom: 24px;
   box-shadow: $shadow-sm;
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 16px;
   }
 
   @media (max-width: 480px) {
-    padding: 0.75rem;
+    padding: 12px;
   }
 }
 
 .search-box {
   position: relative;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 
   @media (min-width: 769px) {
     max-width: 500px;
@@ -201,19 +180,19 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
 .search-icon {
   position: absolute;
-  left: 1rem;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: $text-secondary;
-  font-size: 1.125rem;
+  font-size: 16px;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 2.75rem 0.75rem 3rem;
+  padding: 10px 44px 10px 44px;
   border: 1px solid $border-color;
-  border-radius: 0.5rem;
-  font-size: 0.9375rem;
+  border-radius: 8px;
+  font-size: 14px;
   transition: all 0.2s;
 
   &:focus {
@@ -227,19 +206,19 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
   @media (max-width: 480px) {
-    padding: 0.65rem 2.5rem 0.65rem 2.75rem;
-    font-size: 0.875rem;
+    padding: 8px 40px 8px 40px;
+    font-size: 13px;
   }
 }
 
 .clear-icon {
   position: absolute;
-  right: 1rem;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: $text-secondary;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 14px;
 
   &:hover {
     color: $danger-color;
@@ -248,7 +227,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
 .filter-controls {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
   flex-wrap: wrap;
 
   @media (max-width: 576px) {
@@ -266,10 +245,16 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
 .table-container {
   background: white;
-  border-radius: 0.75rem;
-  border: 1px solid $border-color;
-  overflow: hidden;
+  border-radius: 12px;
+  padding: 20px;
   box-shadow: $shadow-sm;
+  border: 1px solid $border-color;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 :host ::ng-deep {
@@ -277,29 +262,29 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     .p-datatable-header {
       background: white;
       border: none;
-      padding: 1rem;
+      padding: 0;
+      margin-bottom: 16px;
     }
 
     .p-datatable-thead > tr > th {
       background: #f9fafb;
-      color: $text-primary;
+      color: $text-secondary;
       font-weight: 600;
-      padding: 1rem;
-      border-bottom: 2px solid $border-color;
-      font-size: 0.875rem;
+      padding: 14px 16px;
+      border: none;
+      font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 0.025em;
       white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
+
       @media (max-width: 768px) {
-        padding: 0.75rem 0.5rem;
-        font-size: 0.8125rem;
+        padding: 12px 8px;
+        font-size: 12px;
       }
     }
 
     .p-datatable-tbody > tr {
-      transition: background 0.2s;
+      transition: all 0.2s;
 
       &:hover {
         background: $bg-hover;
@@ -314,14 +299,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
       }
 
       > td {
-        padding: 1rem;
-        border-bottom: 1px solid $border-color;
+        padding: 16px;
+        border-bottom: 1px solid #f3f4f6;
         color: $text-primary;
-        font-size: 0.9375rem;
+        font-size: 14px;
 
         @media (max-width: 768px) {
-          padding: 0.75rem 0.5rem;
-          font-size: 0.8125rem;
+          padding: 12px 8px;
+          font-size: 13px;
         }
       }
     }
@@ -329,41 +314,80 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     .p-paginator {
       background: white;
       border-top: 1px solid $border-color;
-      padding: 1rem;
+      padding: 16px;
+      margin-top: 16px;
 
       .p-paginator-current {
         color: $text-secondary;
-        font-size: 0.875rem;
+        font-size: 14px;
 
         @media (max-width: 576px) {
-          font-size: 0.75rem;
+          font-size: 12px;
         }
       }
 
       .p-paginator-pages {
         .p-paginator-page {
-          min-width: 2.5rem;
-          height: 2.5rem;
-          border-radius: 0.375rem;
+          min-width: 36px;
+          height: 36px;
+          border-radius: 6px;
+          color: $text-secondary;
 
           &.p-highlight {
             background: $primary-color;
             border-color: $primary-color;
+            color: white;
+          }
+
+          &:hover {
+            background: $bg-hover;
           }
 
           @media (max-width: 576px) {
-            min-width: 2rem;
-            height: 2rem;
-            font-size: 0.8125rem;
+            min-width: 32px;
+            height: 32px;
+            font-size: 13px;
           }
+        }
+      }
+
+      .p-paginator-first,
+      .p-paginator-prev,
+      .p-paginator-next,
+      .p-paginator-last {
+        min-width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        color: $text-secondary;
+
+        &:hover {
+          background: $bg-hover;
+        }
+
+        @media (max-width: 576px) {
+          min-width: 32px;
+          height: 32px;
         }
       }
     }
   }
 
   .p-select {
+    border: 1px solid $border-color;
+    border-radius: 8px;
+
     .p-select-label {
-      padding: 0.625rem 0.875rem;
+      padding: 10px 14px;
+      color: $text-primary;
+    }
+
+    &:hover {
+      border-color: $primary-color;
+    }
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
     }
   }
 }
@@ -371,7 +395,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 .product-image {
   width: 50px;
   height: 50px;
-  border-radius: 0.375rem;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid $border-color;
   display: flex;
@@ -394,23 +418,24 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 .product-name-cell {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
 .product-name {
-  font-weight: 500;
+  font-weight: 600;
   color: $text-primary;
 }
 
 .stock-warning {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
   color: #dc2626;
-  font-size: 0.75rem;
+  font-size: 12px;
+  font-weight: 500;
 
   i {
-    font-size: 0.75rem;
+    font-size: 12px;
   }
 }
 
@@ -418,41 +443,41 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   display: inline-block;
   background: #f3f4f6;
   color: $text-secondary;
-  padding: 0.25rem 0.625rem;
-  border-radius: 0.25rem;
-  font-size: 0.8125rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
   font-family: monospace;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .category-tag {
   display: inline-block;
-  background: #e0f2fe;
+  background: #dbeafe;
   color: #0369a1;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .price-text {
-  font-weight: 500;
+  font-weight: 600;
   color: $text-primary;
 
   &.price-sell {
     color: $primary-color;
-    font-weight: 600;
+    font-weight: 700;
   }
 }
 
 .stock-badge {
   display: inline-block;
-  background: #d1fae5;
+  background: #dcfce7;
   color: #065f46;
-  padding: 0.375rem 0.75rem;
-  border-radius: 1rem;
-  font-weight: 600;
-  font-size: 0.875rem;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
 
   &.stock-low {
     background: #fee2e2;
@@ -470,116 +495,122 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
 .action-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
   justify-content: center;
 
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 4px;
   }
 }
 
 .btn-action {
-  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: none;
-  border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s;
   background: transparent;
 
   i {
-    font-size: 0.875rem;
-  }
-
-  &:hover {
-    box-shadow: $shadow-sm;
+    font-size: 14px;
   }
 
   @media (max-width: 768px) {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 28px;
+    height: 28px;
 
     i {
-      font-size: 0.75rem;
+      font-size: 12px;
     }
   }
 }
 
 .btn-edit {
+  background: #dbeafe;
   color: #0284c7;
 
   &:hover {
-    background: #e0f2fe;
+    background: #0284c7;
+    color: white;
   }
 }
 
 .btn-delete {
+  background: #fee2e2;
   color: $danger-color;
 
   &:hover {
-    background: #fee2e2;
+    background: $danger-color;
+    color: white;
   }
 }
 
 .btn-info {
+  background: #ede9fe;
   color: #7c3aed;
 
   &:hover {
-    background: #ede9fe;
+    background: #7c3aed;
+    color: white;
   }
 }
 
 .empty-message {
-  padding: 3rem 1rem !important;
+  padding: 60px 20px !important;
 
   @media (max-width: 480px) {
-    padding: 2rem 1rem !important;
+    padding: 40px 16px !important;
   }
 }
 
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   color: $text-secondary;
 
   .empty-icon {
-    font-size: 4rem;
+    font-size: 64px;
     color: #d1d5db;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
 
     @media (max-width: 480px) {
-      font-size: 3rem;
-      margin-bottom: 0.75rem;
+      font-size: 48px;
+      margin-bottom: 12px;
     }
   }
 
   p {
-    font-size: 1rem;
+    font-size: 16px;
     margin: 0;
+    color: $text-secondary;
 
     @media (max-width: 480px) {
-      font-size: 0.9375rem;
+      font-size: 14px;
     }
   }
 }
 
 .table-container {
   &::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
+    height: 6px;
+    width: 6px;
   }
 
   &::-webkit-scrollbar-track {
     background: #f1f5f9;
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #cbd5e1;
-    border-radius: 4px;
+    border-radius: 3px;
 
     &:hover {
       background: #94a3b8;
@@ -637,8 +668,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     border: 1px solid currentColor;
   }
 
-  .btn-primary,
-  .btn-danger {
+  .action-btn {
     border: 2px solid transparent;
   }
 }
@@ -650,53 +680,6 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .product-management-container {
-    color: #f9fafb;
-  }
-
-  .search-filter-section,
-  .table-container {
-    background: white;
-    border-color: #374151;
-  }
-
-  :host ::ng-deep {
-    .p-datatable {
-      .p-datatable-thead > tr > th {
-        background: #22c55e;
-        color: #f9fafb;
-        border-color: #374151;
-      }
-
-      .p-datatable-tbody > tr {
-        &:hover {
-          background: #f8f6f6;
-        }
-
-        > td {
-          color: #374151;
-          border-color: #374151;
-        }
-      }
-    }
-  }
-
-  .form-input,
-  .search-input {
-    background: white;
-    color: black;
-    border-color: #374151;
-  }
-
-  .btn-secondary,
-  .btn-outline {
-    background: #1f2937;
-    color: #f9fafb;
-    border-color: #374151;
   }
 }
 
