@@ -110,11 +110,6 @@ export class HomeComponent implements OnInit {
   }
 
   private initializeChartOptions(): void {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color');
-    const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
-    const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
-
     this.revenueChartOptions = {
       maintainAspectRatio: false,
       responsive: true,
@@ -122,31 +117,43 @@ export class HomeComponent implements OnInit {
         legend: {
           display: false,
         },
-        filler: {
-          propagate: true,
+        tooltip: {
+          callbacks: {
+            label: (context: any) => {
+              return `Doanh thu: ${this.formatCurrency(context.parsed.y)}`;
+            },
+          },
         },
       },
       scales: {
         x: {
           ticks: {
-            color: textColorSecondary,
+            color: '#6b7280',
             font: { size: 11 },
           },
           grid: {
-            color: surfaceBorder,
+            color: '#f3f4f6',
             drawBorder: false,
           },
         },
         y: {
           ticks: {
-            color: textColorSecondary,
+            color: '#6b7280',
             font: { size: 11 },
-            callback: (value: any) => `${(value / 1000000).toFixed(1)}M`,
+            callback: (value: any) => {
+              if (value >= 1000000) {
+                return `${(value / 1000000).toFixed(1)}M`;
+              } else if (value >= 1000) {
+                return `${(value / 1000).toFixed(0)}K`;
+              }
+              return value;
+            },
           },
           grid: {
-            color: surfaceBorder,
+            color: '#f3f4f6',
             drawBorder: false,
           },
+          beginAtZero: true,
         },
       },
     };
@@ -158,10 +165,19 @@ export class HomeComponent implements OnInit {
         legend: {
           position: 'bottom',
           labels: {
-            color: textColor,
+            color: '#1f2937',
             font: { size: 12 },
             usePointStyle: true,
             padding: 15,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context: any) => {
+              const label = context.label || '';
+              const value = context.parsed || 0;
+              return `${label}: ${this.formatCurrency(value)}`;
+            },
           },
         },
       },
@@ -176,7 +192,7 @@ export class HomeComponent implements OnInit {
         this.loading = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
           this.processDashboardData(rs.response);
-          this.initializeCharts();
+          this.initializeCharts(rs.response);
         } else {
           this.showError('Không thể tải dữ liệu dashboard');
         }
@@ -226,27 +242,70 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  private initializeCharts(): void {
-    this.initRevenueChart();
+  private initializeCharts(data: DashboardData): void {
+    this.initRevenueChart(data);
     this.initCategoryChart();
   }
 
-  private initRevenueChart(): void {
-    const labels = this.recentSales.map((sale) =>
-      new Date(sale.created_at).toLocaleTimeString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    );
+  private initRevenueChart(data: DashboardData): void {
+    let labels: string[] = [];
+    let chartData: number[] = [];
 
-    const data = this.recentSales.map((sale) => sale.amount / 1000000);
+    if (data.hourly_revenue && data.hourly_revenue.length > 0) {
+      const revenueData = data.hourly_revenue;
+
+      labels = revenueData.map((item: any) => {
+        if (this.selectedPeriod === 'today') {
+          return `${item.hour}:00`;
+        } else if (this.selectedPeriod === 'week') {
+          const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+          return days[new Date(item.date).getDay()];
+        } else {
+          return new Date(item.date).getDate().toString();
+        }
+      });
+
+      chartData = revenueData.map((item: any) => item.revenue || 0);
+    } else if (this.recentSales && this.recentSales.length > 0) {
+      const salesByTime: { [key: string]: number } = {};
+
+      this.recentSales.forEach((sale) => {
+        const date = new Date(sale.created_at);
+        let timeKey: string;
+
+        if (this.selectedPeriod === 'today') {
+          timeKey = `${date.getHours()}:00`;
+        } else if (this.selectedPeriod === 'week') {
+          const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+          timeKey = days[date.getDay()];
+        } else {
+          timeKey = date.getDate().toString();
+        }
+
+        salesByTime[timeKey] = (salesByTime[timeKey] || 0) + sale.amount;
+      });
+
+      labels = Object.keys(salesByTime);
+      chartData = Object.values(salesByTime);
+    }
+
+    if (labels.length === 0) {
+      if (this.selectedPeriod === 'today') {
+        labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+      } else if (this.selectedPeriod === 'week') {
+        labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+      } else {
+        labels = Array.from({ length: 30 }, (_, i) => (i + 1).toString());
+      }
+      chartData = new Array(labels.length).fill(0);
+    }
 
     this.revenueChartData = {
       labels,
       datasets: [
         {
           label: 'Doanh thu',
-          data,
+          data: chartData,
           fill: true,
           backgroundColor: 'rgba(34, 197, 94, 0.1)',
           borderColor: '#22c55e',
@@ -256,16 +315,29 @@ export class HomeComponent implements OnInit {
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           pointRadius: 4,
+          pointHoverRadius: 6,
         },
       ],
     };
   }
 
   private initCategoryChart(): void {
-    const labels = this.topProducts.slice(0, 5).map((p) => p.name);
+    if (!this.topProducts || this.topProducts.length === 0) {
+      this.categoryChartData = {
+        labels: ['Chưa có dữ liệu'],
+        datasets: [
+          {
+            data: [1],
+            backgroundColor: ['#e5e7eb'],
+          },
+        ],
+      };
+      return;
+    }
 
-    const data = this.topProducts.slice(0, 5).map((p) => p.revenue);
-
+    const topFive = this.topProducts.slice(0, 5);
+    const labels = topFive.map((p) => p.name);
+    const data = topFive.map((p) => p.revenue);
     const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
 
     this.categoryChartData = {
@@ -273,11 +345,27 @@ export class HomeComponent implements OnInit {
       datasets: [
         {
           data,
-          backgroundColor: colors,
-          hoverBackgroundColor: colors.map((c) => c.replace('1', '0.8')),
+          backgroundColor: colors.slice(0, data.length),
+          hoverBackgroundColor: colors.slice(0, data.length).map((c) => this.adjustColor(c, -10)),
         },
       ],
     };
+  }
+
+  private adjustColor(color: string, amount: number): string {
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amount));
+    const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amount));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
+
+  private formatCurrency(value: number): string {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(value);
   }
 
   onPeriodChange(): void {
@@ -298,21 +386,6 @@ export class HomeComponent implements OnInit {
 
       const wb: XLSX.WorkBook = XLSX.utils.book_new();
 
-      const headerStyle = {
-        fill: { fgColor: { rgb: 'FFD966' } },
-        font: { bold: true },
-        alignment: { horizontal: 'center', vertical: 'center' },
-      };
-
-      const applyHeaderStyle = (ws: XLSX.WorkSheet) => {
-        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-        for (let col = range.s.c; col <= range.e.c; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-          if (!ws[cellAddress]) continue;
-          ws[cellAddress].s = headerStyle;
-        }
-      };
-
       const overviewData = [
         { 'Chỉ số': 'Doanh thu', 'Giá trị': this.todayRevenue },
         { 'Chỉ số': 'Đơn hàng', 'Giá trị': this.todayOrders },
@@ -326,7 +399,6 @@ export class HomeComponent implements OnInit {
       ];
       const ws_overview: XLSX.WorkSheet = XLSX.utils.json_to_sheet(overviewData);
       ws_overview['!cols'] = [{ wch: 20 }, { wch: 18 }];
-      applyHeaderStyle(ws_overview);
       XLSX.utils.book_append_sheet(wb, ws_overview, 'Tổng quan');
 
       if (this.recentSales && this.recentSales.length > 0) {
@@ -349,7 +421,6 @@ export class HomeComponent implements OnInit {
           { wch: 15 },
           { wch: 15 },
         ];
-        applyHeaderStyle(ws_sales);
         XLSX.utils.book_append_sheet(wb, ws_sales, 'Đơn hàng gần đây');
       }
 
@@ -362,7 +433,6 @@ export class HomeComponent implements OnInit {
         }));
         const ws_products: XLSX.WorkSheet = XLSX.utils.json_to_sheet(productsData);
         ws_products['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
-        applyHeaderStyle(ws_products);
         XLSX.utils.book_append_sheet(wb, ws_products, 'Sản phẩm bán chạy');
       }
 
