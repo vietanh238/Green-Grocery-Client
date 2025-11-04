@@ -191,7 +191,7 @@
               <td>
                 <span class="payment-method">{{ getPaymentMethod(sale.status) }}</span>
               </td>
-              <td class="text-center">
+              <td class="text-center text-hidden">
                 <p-tag
                   [value]="getStatusLabel(sale.status)"
                   [severity]="getStatusSeverity(sale.status)"

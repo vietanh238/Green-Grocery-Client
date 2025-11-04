@@ -1,4 +1,11 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ChangeDetectorRef,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { MenubarModule } from 'primeng/menubar';
 import { MenuItem } from 'primeng/api';
 import { Menubar } from 'primeng/menubar';
@@ -79,6 +86,8 @@ interface UserProfile {
   ],
 })
 export class HeaderComponent implements OnInit, OnDestroy {
+  @ViewChild('searchInput') searchInputRef?: ElementRef;
+
   items: MenuItem[] = [];
   notificationVisible: boolean = false;
   settingsVisible: boolean = false;
@@ -477,6 +486,28 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   openSearch() {
     this.searchVisible = true;
+    // Focus vào input sau khi dialog mở
+    setTimeout(() => {
+      if (this.searchInputRef) {
+        this.searchInputRef.nativeElement.focus();
+      }
+    }, 100);
+  }
+
+  closeSearch() {
+    this.searchVisible = false;
+    this.searchQuery = '';
+  }
+
+  clearSearchInput() {
+    this.searchQuery = '';
+    if (this.searchInputRef) {
+      this.searchInputRef.nativeElement.focus();
+    }
+  }
+
+  onSearchDialogHide() {
+    this.searchQuery = '';
   }
 
   markAsRead(notification: Notification, event: Event) {
@@ -524,8 +555,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.addToSearchHistory(this.searchQuery, 'search');
       console.log('Tìm kiếm:', this.searchQuery);
       this.performSearch(this.searchQuery);
-      this.searchVisible = false;
-      this.searchQuery = '';
+      this.closeSearch();
     }
   }
 

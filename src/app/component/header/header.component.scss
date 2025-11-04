@@ -298,114 +298,185 @@
   }
 }
 
+// ============= SETTINGS DIALOG - REDESIGNED =============
 .settings-content {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 20px 10px;
+  padding: 24px;
 
   .setting-group {
-    h4 {
+    .group-title {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin: 0 0 16px 0;
+      gap: 10px;
+      margin: 0 0 20px 0;
       font-size: 16px;
       font-weight: 600;
       color: #1f2937;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f3f4f6;
 
       i {
         color: #22c55e;
+        font-size: 18px;
       }
     }
 
     .setting-item {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px;
       background: #f9fafb;
-      border-radius: 8px;
-      margin-bottom: 8px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
 
-      label {
-        font-size: 14px;
-        color: #4b5563;
-        font-weight: 500;
+      &:hover {
+        background: #f3f4f6;
       }
 
-      p {
-        margin: 0;
-        font-size: 14px;
-        color: #1f2937;
-        font-weight: 600;
-      }
+      .setting-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
 
-      .toggle-btn {
-        padding: 8px 16px;
-        border: 2px solid #e5e7eb;
-        border-radius: 6px;
-        background: white;
-        cursor: pointer;
-        transition: all 0.2s;
-
-        i {
-          font-size: 16px;
-          color: #6b7280;
+        label {
+          font-size: 14px;
+          color: #1f2937;
+          font-weight: 600;
+          margin: 0;
         }
 
-        &.active {
-          background: #22c55e;
-          border-color: #22c55e;
+        .setting-value {
+          margin: 0;
+          font-size: 14px;
+          color: #6b7280;
+          font-weight: 500;
+        }
+
+        .toggle-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px 12px;
+          min-width: 44px;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          background: white;
+          cursor: pointer;
+          transition: all 0.3s ease;
 
           i {
-            color: white;
+            font-size: 18px;
+            color: #6b7280;
+            transition: all 0.3s ease;
+          }
+
+          &.active {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-color: #22c55e;
+            transform: scale(1.05);
+
+            i {
+              color: white;
+            }
+          }
+
+          &:hover:not(.active) {
+            border-color: #22c55e;
+            background: #f0fdf4;
+
+            i {
+              color: #22c55e;
+            }
+          }
+
+          &:active {
+            transform: scale(0.95);
           }
         }
+      }
+
+      .setting-description {
+        margin: 0;
+        font-size: 12px;
+        color: #9ca3af;
+        line-height: 1.5;
+        padding-left: 4px;
+      }
+
+      // Style cho info items (username, email, phone)
+      &.info-item {
+        background: white;
+        border: 1px solid #e5e7eb;
 
         &:hover {
+          background: white;
           border-color: #22c55e;
+        }
+
+        .setting-header {
+          label {
+            color: #6b7280;
+            font-weight: 500;
+            font-size: 13px;
+          }
+
+          .setting-value {
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 14px;
+          }
         }
       }
     }
   }
+
+  .divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 8px 0;
+  }
 }
 
+// ============= SEARCH DIALOG - REDESIGNED =============
 .search-content {
-  padding: 10px;
+  padding: 0;
 
-  .search-input-wrapper {
+  .search-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px;
-    background: #f9fafb;
-    border-radius: 12px;
-    margin-bottom: 20px;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
 
-    .search-icon {
-      font-size: 20px;
-      color: #9ca3af;
-    }
+    .search-header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
 
-    .search-input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      font-size: 16px;
-      outline: none;
-
-      &::placeholder {
-        color: #9ca3af;
+      i {
+        color: #22c55e;
+        font-size: 20px;
       }
     }
 
-    .close-search {
-      padding: 6px;
+    .close-dialog-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
       border: none;
-      background: transparent;
+      background: #f3f4f6;
+      border-radius: 8px;
       cursor: pointer;
-      border-radius: 4px;
       transition: all 0.2s;
 
       i {
@@ -415,18 +486,132 @@
 
       &:hover {
         background: #e5e7eb;
+        transform: rotate(90deg);
+
+        i {
+          color: #ef4444;
+        }
       }
     }
   }
 
-  .search-suggestions {
-    .suggestion-title {
-      font-size: 12px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      font-weight: 600;
-      margin: 0 0 12px 0;
-      letter-spacing: 0.5px;
+  .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+
+    .search-icon {
+      font-size: 20px;
+      color: #22c55e;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      outline: none;
+      color: #1f2937;
+      font-weight: 500;
+
+      &::placeholder {
+        color: #9ca3af;
+        font-weight: 400;
+      }
+    }
+
+    .clear-input {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      background: #e5e7eb;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      i {
+        font-size: 14px;
+        color: #6b7280;
+      }
+
+      &:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+
+        i {
+          color: white;
+        }
+      }
+    }
+  }
+
+  .search-content-area {
+    padding: 20px 24px;
+    max-height: 400px;
+    overflow-y: auto;
+
+    .search-history {
+      .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+
+        .suggestion-title {
+          font-size: 12px;
+          color: #9ca3af;
+          text-transform: uppercase;
+          font-weight: 600;
+          margin: 0;
+          letter-spacing: 0.5px;
+        }
+
+        .clear-history-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          border: none;
+          background: #f3f4f6;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 12px;
+          color: #6b7280;
+          font-weight: 500;
+
+          i {
+            font-size: 14px;
+          }
+
+          &:hover {
+            background: #fef2f2;
+            color: #dc2626;
+
+            i {
+              color: #dc2626;
+            }
+          }
+        }
+      }
+    }
+
+    .search-suggestions {
+      .suggestion-title {
+        font-size: 12px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin: 0 0 16px 0;
+        letter-spacing: 0.5px;
+      }
     }
 
     .suggestion-item {
@@ -437,28 +622,42 @@
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
+      margin-bottom: 8px;
 
       i {
         font-size: 16px;
         color: #9ca3af;
+        transition: all 0.2s;
       }
 
       span {
         font-size: 14px;
         color: #4b5563;
+        transition: all 0.2s;
       }
 
       &:hover {
-        background: #f3f4f6;
+        background: #f0fdf4;
 
         i {
           color: #22c55e;
+          transform: scale(1.1);
         }
+
+        span {
+          color: #1f2937;
+          font-weight: 500;
+        }
+      }
+
+      &:active {
+        transform: scale(0.98);
       }
     }
   }
 }
 
+// ============= PRIMENG OVERRIDES =============
 :host ::ng-deep {
   .p-menubar {
     border: none;
@@ -504,29 +703,94 @@
     padding: 16px;
   }
 
-  .settings-dialog,
-  .search-dialog {
+  // Settings Dialog Styles
+  .settings-dialog {
     .p-dialog-header {
       padding: 20px 24px;
       border-bottom: 1px solid #e5e7eb;
-    }
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
 
-    .p-dialog-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1f2937;
+      .p-dialog-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        &::before {
+          content: '\e96d';
+          font-family: 'primeicons';
+          color: #22c55e;
+          font-size: 22px;
+        }
+      }
+
+      .p-dialog-header-icons {
+        .p-dialog-header-close {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          transition: all 0.2s;
+
+          &:hover {
+            background: rgba(239, 68, 68, 0.1);
+
+            .p-dialog-header-close-icon {
+              color: #ef4444;
+            }
+          }
+        }
+      }
     }
 
     .p-dialog-content {
       padding: 0;
+      background: white;
     }
   }
 
-  .search-dialog .p-dialog-content {
-    padding: 20px;
+  // Search Dialog Styles
+  .search-dialog {
+    .p-dialog-header {
+      display: none;
+    }
+
+    .p-dialog-content {
+      padding: 0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    // Cho phép đóng khi click overlay
+    .p-dialog-mask {
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  // Custom scrollbar
+  .search-content-area {
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f3f4f6;
+      border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+
+      &:hover {
+        background: #9ca3af;
+      }
+    }
   }
 }
 
+// ============= RESPONSIVE DESIGN =============
 @media (min-width: 768px) {
   .logo-container .brand-name {
     display: block;
@@ -569,11 +833,64 @@
     }
   }
 
-  .search-content .search-input-wrapper {
-    padding: 12px;
+  .search-content {
+    .search-header {
+      padding: 16px 20px;
+    }
 
-    .search-input {
-      font-size: 14px;
+    .search-input-wrapper {
+      padding: 16px 20px;
+
+      .search-input {
+        font-size: 14px;
+      }
+    }
+
+    .search-content-area {
+      padding: 16px 20px;
+    }
+  }
+
+  .settings-content {
+    padding: 20px 16px;
+
+    .setting-group {
+      .setting-item {
+        padding: 14px;
+      }
+    }
+  }
+
+  :host ::ng-deep {
+    .settings-dialog,
+    .search-dialog {
+      .p-dialog {
+        width: 95vw !important;
+        max-width: 95vw !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-content {
+    .setting-group {
+      .setting-item {
+        .setting-header {
+          label {
+            font-size: 13px;
+          }
+
+          .toggle-btn {
+            min-width: 40px;
+            padding: 6px 10px;
+
+            i {
+              font-size: 16px;
+            }
+          }
+        }
+      }
     }
   }
 }

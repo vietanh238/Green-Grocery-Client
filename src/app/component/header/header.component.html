@@ -43,6 +43,7 @@
   </p-menubar>
 </div>
 
+<!-- NOTIFICATION DRAWER -->
 <p-drawer
   [(visible)]="notificationVisible"
   position="right"
@@ -125,131 +126,158 @@
   </div>
 </p-drawer>
 
+<!-- SETTINGS DIALOG - REDESIGNED -->
 <p-dialog
   [(visible)]="settingsVisible"
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
+  [dismissableMask]="true"
   styleClass="settings-dialog"
   header="Cài đặt"
-  [style]="{ width: '500px' }"
+  [style]="{ width: '550px', maxWidth: '95vw' }"
 >
   <div class="settings-content">
+    <!-- Thông tin tài khoản -->
     <div class="setting-group">
       <h4 class="group-title">
         <i class="pi pi-user"></i>
         Thông tin tài khoản
       </h4>
-      <div class="setting-item">
-        <label>Tên người dùng</label>
-        <p class="setting-value">{{ userProfile.username || 'Không có dữ liệu' }}</p>
+      <div class="setting-item info-item">
+        <div class="setting-header">
+          <label>Tên người dùng</label>
+          <p class="setting-value">{{ userProfile.username || 'Chưa cập nhật' }}</p>
+        </div>
       </div>
-      <div class="setting-item">
-        <label>Email</label>
-        <p class="setting-value">{{ userProfile.email || 'Không có dữ liệu' }}</p>
+      <div class="setting-item info-item">
+        <div class="setting-header">
+          <label>Email</label>
+          <p class="setting-value">{{ userProfile.email || 'Chưa cập nhật' }}</p>
+        </div>
       </div>
-      <div class="setting-item">
-        <label>Số điện thoại</label>
-        <p class="setting-value">{{ userProfile.phone || 'Không có dữ liệu' }}</p>
+      <div class="setting-item info-item">
+        <div class="setting-header">
+          <label>Số điện thoại</label>
+          <p class="setting-value">{{ userProfile.phone || 'Chưa cập nhật' }}</p>
+        </div>
       </div>
     </div>
 
     <div class="divider"></div>
 
+    <!-- Giao diện -->
     <div class="setting-group">
       <h4 class="group-title">
         <i class="pi pi-palette"></i>
         Giao diện
       </h4>
       <div class="setting-item">
-        <label>Chế độ tối</label>
-        <button
-          class="toggle-btn"
-          [class.active]="userSettings.darkMode"
-          (click)="toggleDarkMode()"
-          [title]="userSettings.darkMode ? 'Tắt chế độ tối' : 'Bật chế độ tối'"
-        >
-          <i
-            class="pi"
-            [class.pi-moon]="userSettings.darkMode"
-            [class.pi-sun]="!userSettings.darkMode"
-          ></i>
-        </button>
+        <div class="setting-header">
+          <label>Chế độ tối</label>
+          <button
+            class="toggle-btn"
+            [class.active]="userSettings.darkMode"
+            (click)="toggleDarkMode()"
+            [title]="userSettings.darkMode ? 'Tắt chế độ tối' : 'Bật chế độ tối'"
+          >
+            <i
+              class="pi"
+              [class.pi-moon]="userSettings.darkMode"
+              [class.pi-sun]="!userSettings.darkMode"
+            ></i>
+          </button>
+        </div>
+        <p class="setting-description">
+          {{ userSettings.darkMode ? 'Đang sử dụng chế độ tối' : 'Đang sử dụng chế độ sáng' }}
+        </p>
       </div>
     </div>
 
     <div class="divider"></div>
 
+    <!-- Thông báo -->
     <div class="setting-group">
       <h4 class="group-title">
         <i class="pi pi-bell"></i>
         Thông báo
       </h4>
+
       <div class="setting-item">
-        <label>Âm thanh thông báo</label>
-        <button
-          class="toggle-btn"
-          [class.active]="userSettings.notificationSound"
-          (click)="toggleNotificationSound()"
-          [title]="userSettings.notificationSound ? 'Tắt âm thanh' : 'Bật âm thanh'"
-        >
-          <i
-            class="pi"
-            [class.pi-volume-up]="userSettings.notificationSound"
-            [class.pi-volume-off]="!userSettings.notificationSound"
-          ></i>
-        </button>
+        <div class="setting-header">
+          <label>Âm thanh thông báo</label>
+          <button
+            class="toggle-btn"
+            [class.active]="userSettings.notificationSound"
+            (click)="toggleNotificationSound()"
+            [title]="userSettings.notificationSound ? 'Tắt âm thanh' : 'Bật âm thanh'"
+          >
+            <i
+              class="pi"
+              [class.pi-volume-up]="userSettings.notificationSound"
+              [class.pi-volume-off]="!userSettings.notificationSound"
+            ></i>
+          </button>
+        </div>
         <p class="setting-description">
           {{
             userSettings.notificationSound
-              ? 'Bật - Phát âm thanh khi có thông báo'
-              : 'Tắt - Không phát âm thanh'
+              ? 'Phát âm thanh khi có thông báo mới'
+              : 'Tắt âm thanh thông báo'
           }}
         </p>
       </div>
 
       <div class="setting-item">
-        <label>Thông báo desktop</label>
-        <button
-          class="toggle-btn"
-          [class.active]="userSettings.desktopNotifications"
-          (click)="toggleDesktopNotifications()"
-          [title]="
-            userSettings.desktopNotifications ? 'Tắt thông báo desktop' : 'Bật thông báo desktop'
-          "
-        >
-          <i
-            class="pi"
-            [class.pi-desktop]="userSettings.desktopNotifications"
-            [class.pi-desktop-inactive]="!userSettings.desktopNotifications"
-          ></i>
-        </button>
+        <div class="setting-header">
+          <label>Thông báo desktop</label>
+          <button
+            class="toggle-btn"
+            [class.active]="userSettings.desktopNotifications"
+            (click)="toggleDesktopNotifications()"
+            [title]="
+              userSettings.desktopNotifications ? 'Tắt thông báo desktop' : 'Bật thông báo desktop'
+            "
+          >
+            <i
+              class="pi"
+              [class.pi-desktop]="userSettings.desktopNotifications"
+              [class.pi-times-circle]="!userSettings.desktopNotifications"
+            ></i>
+          </button>
+        </div>
         <p class="setting-description">
           {{
             userSettings.desktopNotifications
-              ? 'Bật - Hiển thị thông báo trên desktop'
-              : 'Tắt - Không hiển thị thông báo'
+              ? 'Hiển thị thông báo trên desktop'
+              : 'Không hiển thị thông báo desktop'
           }}
         </p>
       </div>
 
       <div class="setting-item">
-        <label>Thông báo email</label>
-        <button
-          class="toggle-btn"
-          [class.active]="userSettings.emailNotifications"
-          (click)="toggleEmailNotifications()"
-          [title]="userSettings.emailNotifications ? 'Tắt thông báo email' : 'Bật thông báo email'"
-        >
-          <i
-            class="pi"
-            [class.pi-envelope]="userSettings.emailNotifications"
-            [class.pi-envelope-open]="!userSettings.emailNotifications"
-          ></i>
-        </button>
+        <div class="setting-header">
+          <label>Thông báo email</label>
+          <button
+            class="toggle-btn"
+            [class.active]="userSettings.emailNotifications"
+            (click)="toggleEmailNotifications()"
+            [title]="
+              userSettings.emailNotifications ? 'Tắt thông báo email' : 'Bật thông báo email'
+            "
+          >
+            <i
+              class="pi"
+              [class.pi-envelope]="userSettings.emailNotifications"
+              [class.pi-send]="!userSettings.emailNotifications"
+            ></i>
+          </button>
+        </div>
         <p class="setting-description">
           {{
-            userSettings.emailNotifications ? 'Bật - Gửi email thông báo' : 'Tắt - Không gửi email'
+            userSettings.emailNotifications
+              ? 'Nhận thông báo qua email'
+              : 'Không nhận thông báo qua email'
           }}
         </p>
       </div>
@@ -257,17 +285,32 @@
   </div>
 </p-dialog>
 
+<!-- SEARCH DIALOG - REDESIGNED -->
 <p-dialog
   [(visible)]="searchVisible"
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
+  [dismissableMask]="true"
+  [closeOnEscape]="true"
   styleClass="search-dialog"
   [showHeader]="false"
-  [style]="{ width: '600px' }"
-  (onHide)="searchQuery = ''"
+  [style]="{ width: '650px', maxWidth: '95vw' }"
+  (onHide)="onSearchDialogHide()"
 >
   <div class="search-content">
+    <!-- Search Header with Close Button -->
+    <div class="search-header">
+      <h3 class="search-header-title">
+        <i class="pi pi-search"></i>
+        Tìm kiếm nhanh
+      </h3>
+      <button class="close-dialog-btn" (click)="closeSearch()" title="Đóng">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+
+    <!-- Search Input -->
     <div class="search-input-wrapper">
       <i class="pi pi-search search-icon"></i>
       <input
@@ -277,20 +320,23 @@
         class="search-input"
         [(ngModel)]="searchQuery"
         (keyup.enter)="handleSearch()"
-        (keyup.escape)="searchVisible = false"
-        autofocus
+        (keyup.escape)="closeSearch()"
+        #searchInput
       />
-      <button class="close-search" (click)="searchVisible = false" *ngIf="searchQuery">
+      <button class="clear-input" (click)="clearSearchInput()" *ngIf="searchQuery" title="Xóa">
         <i class="pi pi-times"></i>
       </button>
     </div>
 
+    <!-- Search Content Area -->
     <div class="search-content-area">
+      <!-- Search History -->
       <div class="search-history" *ngIf="searchHistory.length > 0 && !searchQuery">
         <div class="history-header">
           <p class="suggestion-title">Tìm kiếm gần đây</p>
           <button class="clear-history-btn" (click)="clearSearchHistory()" title="Xóa lịch sử">
             <i class="pi pi-trash"></i>
+            Xóa tất cả
           </button>
         </div>
         <div
@@ -303,6 +349,7 @@
         </div>
       </div>
 
+      <!-- Search Suggestions -->
       <div class="search-suggestions" *ngIf="!searchQuery && searchHistory.length === 0">
         <p class="suggestion-title">Gợi ý tìm kiếm</p>
         <div class="suggestion-item">
@@ -322,4 +369,5 @@
   </div>
 </p-dialog>
 
+<!-- Toast Notifications -->
 <p-toast position="top-right" />
