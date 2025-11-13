@@ -1,37 +1,119 @@
 <div
   class="container-fluid d-flex justify-content-center align-items-center min-vh-100 login-container"
 >
-  <div class="form col-sm-3">
-    <div class="d-flex flex-column justify-content-center align-items-center mb-5">
+  <div class="form col-sm-4">
+    <div class="d-flex flex-column justify-content-center align-items-center mb-4">
       <div>
         <img src="assets/icon.png" alt="" style="width: 50px; height: 50px" />
       </div>
       <h4 class="text-header">BÁCH HÓA XANH</h4>
     </div>
-    <form>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation mb-4">
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'login'"
+        (click)="switchTab('login')"
+      >
+        Đăng nhập
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'register'"
+        (click)="switchTab('register')"
+      >
+        Đăng ký
+      </button>
+    </div>
+
+    <!-- Login Form -->
+    <form *ngIf="activeTab === 'login'">
       <div class="mb-3">
-        <label for="exampleInputEmail1" class="form-label label">Số điện thoại</label>
+        <label for="loginPhoneNum" class="form-label label">Số điện thoại</label>
         <input
-          type="number"
+          type="text"
           class="form-control"
-          id="phoneNum"
+          id="loginPhoneNum"
           name="phoneNum"
           (keydown)="validateInput($event)"
           [(ngModel)]="phoneNum"
         />
       </div>
       <div class="mb-3">
-        <label for="exampleInputPassword1" class="form-label label">Mật khẩu</label>
+        <label for="loginPassword" class="form-label label">Mật khẩu</label>
         <input
           type="password"
           class="form-control"
           name="password"
-          id="exampleInputPassword1"
+          id="loginPassword"
           [(ngModel)]="password"
         />
       </div>
       <div class="d-flex justify-content-center">
-        <button type="submit" class="btn btn-green" (click)="login()">Đăng nhập</button>
+        <button type="submit" class="btn btn-green" (click)="login()" [disabled]="isLoading">
+          {{ isLoading ? 'Đang xử lý...' : 'Đăng nhập' }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Register Form -->
+    <form *ngIf="activeTab === 'register'">
+      <div class="mb-3">
+        <label for="registerPhoneNum" class="form-label label">Số điện thoại</label>
+        <input
+          type="number"
+          class="form-control"
+          id="registerPhoneNum"
+          name="registerPhoneNum"
+          (keydown)="validateInput($event)"
+          [(ngModel)]="registerData.phone_number"
+        />
+      </div>
+      <div class="mb-3">
+        <label for="registerPassword" class="form-label label">Mật khẩu</label>
+        <input
+          type="password"
+          class="form-control"
+          name="registerPassword"
+          id="registerPassword"
+          [(ngModel)]="registerData.password"
+        />
+      </div>
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label label">Xác nhận mật khẩu</label>
+        <input
+          type="password"
+          class="form-control"
+          name="confirmPassword"
+          id="confirmPassword"
+          [(ngModel)]="registerData.confirm_password"
+        />
+      </div>
+      <div class="mb-3">
+        <label for="firstName" class="form-label label">Họ</label>
+        <input
+          type="text"
+          class="form-control"
+          name="firstName"
+          id="firstName"
+          [(ngModel)]="registerData.first_name"
+        />
+      </div>
+      <div class="mb-3">
+        <label for="lastName" class="form-label label">Tên</label>
+        <input
+          type="text"
+          class="form-control"
+          name="lastName"
+          id="lastName"
+          [(ngModel)]="registerData.last_name"
+        />
+      </div>
+      <div class="d-flex justify-content-center">
+        <button type="submit" class="btn btn-green" (click)="register()" [disabled]="isLoading">
+          {{ isLoading ? 'Đang xử lý...' : 'Đăng ký' }}
+        </button>
       </div>
     </form>
   </div>

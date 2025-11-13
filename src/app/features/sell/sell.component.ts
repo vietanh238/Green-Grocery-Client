@@ -46,6 +46,7 @@ export class SellComponent implements OnInit {
   cartItems: CartItem[] = [];
   allProducts: any[] = [];
   isProductNotFound: boolean = false;
+  keyFilter: string = '';
 
   constructor(
     private service: Service,
@@ -127,7 +128,7 @@ export class SellComponent implements OnInit {
         this.showSuccess('Thanh toán thành công');
       }
       if (result && 'cancel' in result && result.cancel === true) {
-        this.resetCart();
+        // this.resetCart();
         this.showSuccess('Hủy mã thành công');
       }
     });
@@ -268,6 +269,7 @@ export class SellComponent implements OnInit {
   filterData(keyFilter: string): void {
     this.isProductNotFound = false;
     if (keyFilter) {
+      this.keyFilter = keyFilter;
       this.products = this.allProducts.filter(
         (item: any) =>
           this.normalize(item.name)?.includes(keyFilter) ||

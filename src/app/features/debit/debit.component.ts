@@ -450,7 +450,7 @@ export class DebtComponent implements OnInit {
     const dialog = this.dialog.open(ConfirmDialogComponent, {
       disableClose: true,
       data: {
-        title: 'Xác nhận xóa sản phẩm',
+        title: 'Xác nhận xóa khách hàng',
         buttons: [
           {
             label: 'Hủy',

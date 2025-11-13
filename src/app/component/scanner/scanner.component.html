@@ -1,53 +1,128 @@
 <div class="scanner-overlay">
   <div class="scanner-container">
+    <!-- Header -->
     <div class="scanner-header">
       <h3 class="scanner-title">
         <i class="pi pi-camera"></i>
         Quét mã sản phẩm
       </h3>
-      <button class="close-btn" (click)="closeScanner()">
+      <button class="close-btn" (click)="closeScanner()" title="Đóng">
         <i class="pi pi-times"></i>
       </button>
     </div>
 
     <div class="scanner-body">
-      <div class="camera-wrapper" #cameraWrapper>
-        <video #video autoplay playsinline></video>
-        <canvas #canvas style="display: none"></canvas>
-
-        <div class="scan-frame">
-          <div class="corner corner-tl"></div>
-          <div class="corner corner-tr"></div>
-          <div class="corner corner-bl"></div>
-          <div class="corner corner-br"></div>
-          <div class="scan-line"></div>
+      <!-- INITIALIZING STATE -->
+      <div class="state-message" *ngIf="currentState === ScannerState.INITIALIZING">
+        <div class="state-icon loading">
+          <i class="pi pi-spin pi-spinner"></i>
         </div>
-
-        <div class="scanner-overlay-text">
-          <p>Đưa mã vạch vào khung hình</p>
-        </div>
+        <h4 class="state-title">Đang khởi động camera...</h4>
+        <p class="state-description">Vui lòng chờ trong giây lát</p>
       </div>
 
-      <div class="scanner-info" *ngIf="lastScannedCode">
-        <div class="info-icon success">
-          <i class="pi pi-check-circle"></i>
+      <!-- PERMISSION DENIED STATE -->
+      <div class="state-message error" *ngIf="currentState === ScannerState.PERMISSION_DENIED">
+        <div class="state-icon error">
+          <i class="pi pi-lock"></i>
         </div>
-        <div class="info-content">
-          <span class="info-label">Mã đã quét:</span>
-          <span class="info-value">{{ lastScannedCode }}</span>
-        </div>
-      </div>
-
-      <div class="scanner-controls">
-        <button class="control-btn" (click)="toggleFlash()" *ngIf="hasFlash">
-          <i [class]="flashOn ? 'pi pi-sun' : 'pi pi-moon'"></i>
-          <span>{{ flashOn ? 'Tắt đèn' : 'Bật đèn' }}</span>
+        <h4 class="state-title">Không có quyền truy cập camera</h4>
+        <p class="state-description">
+          Ứng dụng cần quyền truy cập camera để quét mã vạch. Vui lòng cấp quyền và thử lại.
+        </p>
+        <button class="retry-btn" (click)="openSettings()">
+          <i class="pi pi-cog"></i>
+          Mở cài đặt
         </button>
-        <button class="control-btn" (click)="switchCamera()" *ngIf="hasMultipleCameras">
+      </div>
+
+      <!-- NO CAMERA STATE -->
+      <div class="state-message error" *ngIf="currentState === ScannerState.NO_CAMERA">
+        <div class="state-icon error">
+          <i class="pi pi-video"></i>
+        </div>
+        <h4 class="state-title">Không tìm thấy camera</h4>
+        <p class="state-description">Vui lòng kiểm tra kết nối camera và thử lại.</p>
+        <button class="retry-btn" (click)="retryInitialization()">
           <i class="pi pi-refresh"></i>
-          <span>Đổi camera</span>
+          Thử lại
         </button>
       </div>
+
+      <!-- ERROR STATE -->
+      <div class="state-message error" *ngIf="currentState === ScannerState.ERROR && error">
+        <div class="state-icon error">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <h4 class="state-title">Đã xảy ra lỗi</h4>
+        <p class="state-description">{{ error.message }}</p>
+        <button class="retry-btn" (click)="retryInitialization()" *ngIf="error.canRetry">
+          <i class="pi pi-refresh"></i>
+          Thử lại
+        </button>
+      </div>
+
+      <!-- CAMERA VIEW - Only show when ready or scanning -->
+      <ng-container
+        *ngIf="currentState === ScannerState.READY || currentState === ScannerState.SCANNING"
+      >
+        <div class="camera-wrapper" #cameraWrapper>
+          <video #video autoplay playsinline muted></video>
+          <canvas #canvas style="display: none"></canvas>
+
+          <!-- Scan Frame -->
+          <div class="scan-frame">
+            <div class="corner corner-tl"></div>
+            <div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div>
+            <div class="corner corner-br"></div>
+            <div class="scan-line" *ngIf="isScanning"></div>
+          </div>
+
+          <!-- Overlay Instructions -->
+          <div class="scanner-overlay-text" *ngIf="!lastScannedCode">
+            <p>
+              <i class="pi pi-qrcode"></i>
+              Đưa mã vạch vào khung hình
+            </p>
+          </div>
+        </div>
+
+        <!-- Scanned Code Info -->
+        <div class="scanner-info success" *ngIf="lastScannedCode">
+          <div class="info-icon success">
+            <i class="pi pi-check-circle"></i>
+          </div>
+          <div class="info-content">
+            <span class="info-label">Mã đã quét thành công:</span>
+            <span class="info-value">{{ lastScannedCode }}</span>
+          </div>
+        </div>
+
+        <!-- Camera Controls -->
+        <div class="scanner-controls">
+          <button
+            class="control-btn"
+            (click)="toggleFlash()"
+            *ngIf="hasFlash"
+            [class.active]="flashOn"
+            [title]="flashOn ? 'Tắt đèn flash' : 'Bật đèn flash'"
+          >
+            <i [class]="flashOn ? 'pi pi-sun' : 'pi pi-moon'"></i>
+            <span>{{ flashOn ? 'Tắt đèn' : 'Bật đèn' }}</span>
+          </button>
+
+          <button
+            class="control-btn"
+            (click)="switchCamera()"
+            *ngIf="hasMultipleCameras"
+            title="Chuyển camera"
+          >
+            <i class="pi pi-refresh"></i>
+            <span>Đổi camera</span>
+          </button>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

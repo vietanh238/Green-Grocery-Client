@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 })
 export class Service {
   private readonly LOGIN_URL = environment.apiAuth + 'login/';
+  private readonly REGISTER_URL = environment.apiAuth + 'register/'; // NEW
   private readonly NOTIFICATION_URL = environment.apiHome + 'notifications/';
   private readonly CREATE_PRODUCT_URL = environment.apiProduct + 'create/';
   private readonly GET_CATEGORIES_URL = environment.apiProduct + 'categories/';
@@ -34,6 +35,16 @@ export class Service {
     return this._http.post(this.LOGIN_URL, {
       phone_number: params.phone_number,
       password: params.password,
+    });
+  }
+
+  // NEW: Register method
+  register(params: any): Observable<any> {
+    return this._http.post(this.REGISTER_URL, {
+      phone_number: params.phone_number,
+      password: params.password,
+      first_name: params.first_name,
+      last_name: params.last_name,
     });
   }
 
