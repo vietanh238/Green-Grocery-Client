@@ -14,7 +14,6 @@ import { ScannerComponent } from '../../component/scanner/scanner.component';
 import { Skeleton } from 'primeng/skeleton';
 import { PaymentQrDialogComponent } from '../../component/qrpay/qrpay.component';
 import { AddManualOrder } from './addManualOrder/addManualOrder.component';
-import { DebitComponent } from './debit/debit.component';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 
 interface CartItem {
@@ -23,6 +22,7 @@ interface CartItem {
   price: number;
   quantity: number;
   sku: string;
+  stock_quantity?: number;
 }
 
 @Component({
@@ -42,11 +42,12 @@ interface CartItem {
   ],
 })
 export class SellComponent implements OnInit {
-  products!: any[];
+  products: any[] = [];
   cartItems: CartItem[] = [];
   allProducts: any[] = [];
   isProductNotFound: boolean = false;
   keyFilter: string = '';
+  loading: boolean = true;
 
   constructor(
     private service: Service,
@@ -55,8 +56,14 @@ export class SellComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadProducts();
+  }
+
+  loadProducts(): void {
+    this.loading = true;
     this.service.getProducts().subscribe(
       (rs: any) => {
+        this.loading = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
           this.products = rs.response.map((product: any) => ({
             ...product,
@@ -66,6 +73,7 @@ export class SellComponent implements OnInit {
         }
       },
       (_error: any) => {
+        this.loading = false;
         this.showError('Lỗi hệ thống');
       }
     );
@@ -73,6 +81,14 @@ export class SellComponent implements OnInit {
 
   get totalAmount(): number {
     return this.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }
+
+  get productsCount(): number {
+    return this.products?.length || 0;
+  }
+
+  get cartItemsCount(): number {
+    return this.cartItems.length;
   }
 
   increaseQuantity(item: CartItem) {
@@ -105,13 +121,20 @@ export class SellComponent implements OnInit {
   }
 
   createPaymentQR() {
+    if (this.cartItems.length === 0) {
+      this.showError('Giỏ hàng trống');
+      return;
+    }
+
     const dialogRef = this.dialog.open(PaymentQrDialogComponent, {
       disableClose: false,
+      width: '500px',
       data: {
         amount: this.totalAmount,
         cartItems: this.cartItems,
       },
     });
+
     dialogRef.afterClosed().subscribe((result: any) => {
       if (result && 'success' in result && result.success === true) {
         this.cartItems.forEach((item) => {
@@ -128,7 +151,6 @@ export class SellComponent implements OnInit {
         this.showSuccess('Thanh toán thành công');
       }
       if (result && 'cancel' in result && result.cancel === true) {
-        // this.resetCart();
         this.showSuccess('Hủy mã thành công');
       }
     });
@@ -142,22 +164,18 @@ export class SellComponent implements OnInit {
 
     const dialog = this.dialog.open(ConfirmDialogComponent, {
       disableClose: true,
+      width: '400px',
       data: {
         title: 'Xác nhận thanh toán tiền mặt',
+        message: `Tổng tiền: ${this.formatCurrency(this.totalAmount)}`,
         buttons: [
           {
             label: 'Hủy',
-            class: 'default',
             value: false,
-            color: '',
-            background: '',
           },
           {
             label: 'Xác nhận',
-            class: 'primary',
             value: true,
-            color: '',
-            background: '',
           },
         ],
       },
@@ -205,24 +223,6 @@ export class SellComponent implements OnInit {
     }).format(amount);
   }
 
-  private showError(detail: string) {
-    this.message.add({
-      severity: 'error',
-      summary: 'Thông báo',
-      detail,
-      life: 1000,
-    });
-  }
-
-  private showSuccess(detail: string) {
-    this.message.add({
-      severity: 'success',
-      summary: 'Thành công',
-      detail,
-      life: 1000,
-    });
-  }
-
   handleAddToCart(product: any) {
     if (product.stock_quantity <= 0) {
       this.showError('Sản phẩm đã hết hàng');
@@ -233,7 +233,10 @@ export class SellComponent implements OnInit {
     if (existing) {
       existing.quantity += 1;
     } else {
-      this.cartItems.push({ ...product, quantity: 1 });
+      this.cartItems.push({
+        ...product,
+        quantity: 1,
+      });
     }
 
     this.updateProductStock(product.sku, -1);
@@ -241,13 +244,7 @@ export class SellComponent implements OnInit {
 
   filterProducts(event: any): void {
     const value = event.target.value;
-    if (value) {
-      const keyFilter: string = String(value.trim()).toLowerCase();
-      this.filterData(keyFilter);
-    } else {
-      const keyFilter: string = String(value.trim()).toLowerCase();
-      this.filterData(keyFilter);
-    }
+    this.filterData(value);
   }
 
   private normalize(str: string): string {
@@ -258,9 +255,12 @@ export class SellComponent implements OnInit {
   }
 
   openScanner() {
-    const dialogRef = this.dialog.open(ScannerComponent, {});
+    const dialogRef = this.dialog.open(ScannerComponent, {
+      width: '400px',
+    });
+
     dialogRef.afterClosed().subscribe((result: any) => {
-      if (result) {
+      if (result && result[0]) {
         this.filterData(result[0]);
       }
     });
@@ -270,23 +270,24 @@ export class SellComponent implements OnInit {
     this.isProductNotFound = false;
     if (keyFilter) {
       this.keyFilter = keyFilter;
+      const searchTerm = this.normalize(keyFilter);
       this.products = this.allProducts.filter(
         (item: any) =>
-          this.normalize(item.name)?.includes(keyFilter) ||
-          item?.sku?.toLowerCase()?.includes(keyFilter) ||
-          item?.bar_code?.includes(keyFilter)
+          this.normalize(item.name)?.includes(searchTerm) ||
+          item?.sku?.toLowerCase()?.includes(searchTerm) ||
+          item?.bar_code?.includes(searchTerm)
       );
-      if (this.products.length == 0) {
-        this.isProductNotFound = true;
-      }
+      this.isProductNotFound = this.products.length === 0;
     } else {
       this.products = [...this.allProducts];
+      this.isProductNotFound = false;
     }
   }
 
   addManualOrder() {
     const dialogRef = this.dialog.open(AddManualOrder, {
       disableClose: true,
+      width: '500px',
     });
 
     dialogRef.afterClosed().subscribe((result: any) => {
@@ -306,29 +307,31 @@ export class SellComponent implements OnInit {
     });
   }
 
-  close() {
+  clearCart() {
+    if (this.cartItems.length === 0) {
+      this.showError('Giỏ hàng trống');
+      return;
+    }
+
     const dialog = this.dialog.open(ConfirmDialogComponent, {
       disableClose: true,
+      width: '400px',
       data: {
-        title: 'Xác nhận xóa đơn hàng',
+        title: 'Xác nhận xóa giỏ hàng',
+        message: 'Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?',
         buttons: [
           {
             label: 'Hủy',
-            class: 'default',
             value: false,
-            color: '',
-            background: '',
           },
           {
             label: 'Xác nhận',
-            class: 'primary',
             value: true,
-            color: '',
-            background: '',
           },
         ],
       },
     });
+
     dialog.afterClosed().subscribe((result: any) => {
       if (result) {
         this.resetCart();
@@ -358,5 +361,23 @@ export class SellComponent implements OnInit {
       this.updateProductStock(item.sku, item.quantity);
     });
     this.cartItems = [];
+  }
+
+  private showError(detail: string) {
+    this.message.add({
+      severity: 'error',
+      summary: 'Thông báo',
+      detail,
+      life: 3000,
+    });
+  }
+
+  private showSuccess(detail: string) {
+    this.message.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail,
+      life: 3000,
+    });
   }
 }

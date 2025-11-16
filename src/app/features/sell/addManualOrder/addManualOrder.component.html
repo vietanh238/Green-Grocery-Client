@@ -23,13 +23,15 @@
           placeholder="VD: Thịt lợn nạc"
           [class.is-invalid]="isFieldInvalid('name')"
         />
-        <div class="error-message" *ngIf="isFieldInvalid('name')">Vui lòng nhập tên sản phẩm</div>
+        <div class="error-message" *ngIf="isFieldInvalid('name')">
+          Vui lòng nhập tên sản phẩm (tối thiểu 2 ký tự)
+        </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="quantity" class="form-label">
-            Số lượng/Khối lượng <span class="required">*</span>
+            Số lượng <span class="required">*</span>
           </label>
           <div class="input-with-unit">
             <input
@@ -43,20 +45,18 @@
               [class.is-invalid]="isFieldInvalid('quantity')"
             />
             <p-select
-              id="unit"
-              class="unit-select"
               [options]="lstUnit"
               formControlName="unit"
               optionLabel="name"
-              class=""
-              style="height: 50px"
-              appendTo="body"
-              [filter]="true"
+              placeholder="Chọn đơn vị"
+              [class.is-invalid]="isFieldInvalid('unit')"
+              class="unit-select"
             />
           </div>
           <div class="error-message" *ngIf="isFieldInvalid('quantity')">
             Số lượng phải lớn hơn 0
           </div>
+          <div class="error-message" *ngIf="isFieldInvalid('unit')">Vui lòng chọn đơn vị</div>
         </div>
 
         <div class="form-group">
@@ -72,7 +72,6 @@
               step="1000"
               [class.is-invalid]="isFieldInvalid('price')"
             />
-
             <span class="currency">₫</span>
           </div>
           <div class="error-message" *ngIf="isFieldInvalid('price')">Giá phải lớn hơn 0</div>
@@ -83,7 +82,7 @@
         <label for="note" class="form-label">Ghi chú</label>
         <textarea
           id="note"
-          class="form-control textarea"
+          class="form-control"
           formControlName="note"
           placeholder="Thêm ghi chú về sản phẩm (tùy chọn)"
           rows="3"
@@ -95,14 +94,14 @@
           <span>Số lượng:</span>
           <span class="preview-value">
             {{ manualOrderForm.get('quantity')?.value || 0 }}
-            {{ manualOrderForm.get('unit')?.value }}
+            {{ manualOrderForm.get('unit')?.value?.name || '' }}
           </span>
         </div>
         <div class="preview-row">
           <span>Đơn giá:</span>
-          <span class="preview-value">{{
-            formatCurrency(manualOrderForm.get('price')?.value || 0)
-          }}</span>
+          <span class="preview-value">
+            {{ formatCurrency(manualOrderForm.get('price')?.value || 0) }}
+          </span>
         </div>
         <div class="preview-row total">
           <span>Thành tiền:</span>
@@ -112,8 +111,10 @@
     </form>
   </div>
 
-  <div class="dialog-footer d-flex justify-content-between">
-    <p-button label="Hủy" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Lưu" [disabled]="!manualOrderForm.valid" (click)="saveManualOrder()" />
+  <div class="dialog-footer">
+    <button class="btn btn-cancel" (click)="closeDialog()">Hủy</button>
+    <button class="btn btn-save" [disabled]="!manualOrderForm.valid" (click)="saveManualOrder()">
+      Lưu
+    </button>
   </div>
 </div>

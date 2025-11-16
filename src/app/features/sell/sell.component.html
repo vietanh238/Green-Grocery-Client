@@ -1,126 +1,125 @@
-<div class="container-fluid mt-2">
-  <div class="row">
-    <div class="col-sm-8">
-      <div class="d-flex w-100 justify-content-between gap-1 mb-3">
-        <p-inputgroup>
-          <p-inputgroup-addon>
-            <i class="pi pi-search"></i>
-          </p-inputgroup-addon>
-          <input
-            pInputText
-            placeholder="Tìm kiếm sản phẩm"
-            style="width: 100%"
-            (input)="filterProducts($event)"
-            [(ngModel)]="keyFilter"
-          />
-        </p-inputgroup>
-        <button pButton class="scan-button" (click)="openScanner()">
-          <i class="pi pi-camera"></i>
-          <span>Quét mã sản phẩm</span>
-        </button>
+<div class="sell-container">
+  <div class="search-section">
+    <div class="search-row">
+      <div class="search-input-wrapper">
+        <i class="pi pi-search search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Tìm kiếm sản phẩm theo tên, SKU, barcode..."
+          (input)="filterProducts($event)"
+          [(ngModel)]="keyFilter"
+        />
       </div>
-      <h4 *ngIf="isProductNotFound" class="product-not-found">Không tìm thấy sản phẩm phù hợp</h4>
-      <div class="cards" *ngIf="products; else skeleton">
-        @for (product of products; track product.sku) {
-        <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
-        }
+      <button class="scan-button" (click)="openScanner()">
+        <i class="pi pi-camera"></i>
+        Quét mã
+      </button>
+      <button class="manual-order-btn" (click)="addManualOrder()">
+        <i class="pi pi-plus"></i>
+        Thêm thủ công
+      </button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="products-section">
+      <div class="products-header">
+        <h3 class="products-title">
+          <i class="pi pi-shopping-bag"></i>
+          Sản phẩm
+        </h3>
+        <span class="products-count">{{ productsCount }} sản phẩm</span>
       </div>
+
+      <div class="products-grid" *ngIf="!loading; else skeleton">
+        <div *ngIf="isProductNotFound" class="product-not-found">
+          <i class="pi pi-search" style="font-size: 2rem; margin-bottom: 1rem"></i>
+          <p>Không tìm thấy sản phẩm phù hợp</p>
+        </div>
+
+        <app-card
+          *ngFor="let product of products"
+          [product]="product"
+          (addToCart)="handleAddToCart($event)"
+        >
+        </app-card>
+      </div>
+
       <ng-template #skeleton>
-        <div class="cards row g-3">
-          <div class="col-sm-6 d-flex gap-1 w-100">
-            <p-skeleton height="12rem" />
-          </div>
-          <div class="col-sm-6 d-flex gap-1 w-100">
-            <p-skeleton height="12rem" />
-          </div>
-          <div class="col-sm-6 d-flex gap-1 w-100">
-            <p-skeleton height="12rem" />
-          </div>
-          <div class="col-sm-6 d-flex gap-1 w-100">
-            <p-skeleton height="12rem" />
-          </div>
-          <div class="col-sm-6 d-flex gap-1 w-100">
-            <p-skeleton height="12rem" />
-          </div>
-          <div class="col-sm-6 d-flex gap-1 w-100">
-            <p-skeleton height="12rem" />
-          </div>
+        <div class="skeleton-grid">
+          <p-skeleton *ngFor="let i of [1, 2, 3, 4, 5, 6]" class="skeleton-card" />
         </div>
       </ng-template>
     </div>
 
-    <div class="col-sm-4">
-      <div class="cart-panel">
-        <div class="cart-header d-flex justify-content-between align-items-center">
-          <h3 class="cart-title">Giỏ hàng</h3>
-          <button style="z-index: 10" class="add-to-cart-btn" (click)="addManualOrder()">
-            Thêm thủ công
-          </button>
+    <div class="cart-section">
+      <div class="cart-header">
+        <h3 class="cart-title">
+          <i class="pi pi-shopping-cart"></i>
+          Giỏ hàng
+        </h3>
+        <span class="cart-count">{{ cartItemsCount }} sản phẩm</span>
+      </div>
+
+      <div class="cart-body">
+        <div *ngIf="cartItems.length === 0" class="empty-cart">
+          <i class="pi pi-shopping-cart"></i>
+          <p>Giỏ hàng trống</p>
         </div>
 
-        <div class="cart-body">
-          @if (cartItems.length === 0) {
-          <div class="empty-cart">
-            <i class="pi pi-shopping-cart"></i>
-            <p>Giỏ hàng trống</p>
-          </div>
-          } @else {
-          <div class="cart-items">
-            @for (item of cartItems; track item.id) {
-            <div class="cart-item">
-              <div class="item-info">
-                <h5 class="item-name">{{ item.name }}</h5>
-                <p class="item-price">{{ formatCurrency(item.price) }}</p>
-              </div>
+        <div *ngIf="cartItems.length > 0" class="cart-items">
+          <div *ngFor="let item of cartItems" class="cart-item">
+            <div class="item-header">
+              <h4 class="item-name">{{ item.name }}</h4>
+              <span class="item-price">{{ formatCurrency(item.price) }}</span>
+            </div>
 
-              <div class="item-actions">
-                <div class="quantity-controls">
-                  <button
-                    class="quantity-btn"
-                    (click)="decreaseQuantity(item)"
-                    [disabled]="item.quantity <= 1"
-                  >
-                    <i class="pi pi-minus"></i>
-                  </button>
-                  <span class="quantity-value">{{ item.quantity }}</span>
-                  <button class="quantity-btn" (click)="increaseQuantity(item)">
-                    <i class="pi pi-plus"></i>
-                  </button>
-                </div>
-
-                <button class="delete-btn" (click)="removeItem(item)">
-                  <i class="pi pi-trash"></i>
+            <div class="item-actions">
+              <div class="quantity-controls">
+                <button
+                  class="quantity-btn"
+                  (click)="decreaseQuantity(item)"
+                  [disabled]="item.quantity <= 1"
+                >
+                  <i class="pi pi-minus"></i>
+                </button>
+                <span class="quantity-value">{{ item.quantity }}</span>
+                <button class="quantity-btn" (click)="increaseQuantity(item)">
+                  <i class="pi pi-plus"></i>
                 </button>
               </div>
+
+              <button class="delete-btn" (click)="removeItem(item)">
+                <i class="pi pi-trash"></i>
+              </button>
             </div>
-            }
-          </div>
-          }
-        </div>
-
-        @if (cartItems.length > 0) {
-        <div class="cart-footer">
-          <div class="total-section">
-            <span class="total-label">Tổng cộng:</span>
-            <span class="total-amount">{{ formatCurrency(totalAmount) }}</span>
-          </div>
-
-          <div class="d-flex gap-2 flex-column">
-            <button class="debit" (click)="close()">
-              <i class="pi pi-trash"></i>
-              <span>Xóa đơn hàng</span>
-            </button>
-            <button pButton class="checkout-btn cash-btn" (click)="cashPayment()">
-              <i class="pi pi-money-bill"></i>
-              <span>Thanh toán tiền mặt</span>
-            </button>
-            <button pButton class="checkout-btn" (click)="createPaymentQR()">
-              <i class="pi pi-qrcode"></i>
-              <span>Tạo QR Thanh toán</span>
-            </button>
           </div>
         </div>
-        }
+      </div>
+
+      <div *ngIf="cartItems.length > 0" class="cart-footer">
+        <div class="total-section">
+          <span class="total-label">Tổng cộng:</span>
+          <span class="total-amount">{{ formatCurrency(totalAmount) }}</span>
+        </div>
+
+        <div class="payment-actions">
+          <button class="payment-btn cash-btn" (click)="cashPayment()">
+            <i class="pi pi-money-bill"></i>
+            Thanh toán tiền mặt
+          </button>
+
+          <button class="payment-btn qr-btn" (click)="createPaymentQR()">
+            <i class="pi pi-qrcode"></i>
+            Tạo QR thanh toán
+          </button>
+
+          <button class="payment-btn clear-btn" (click)="clearCart()">
+            <i class="pi pi-trash"></i>
+            Xóa giỏ hàng
+          </button>
+        </div>
       </div>
     </div>
   </div>
