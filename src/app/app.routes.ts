@@ -9,6 +9,8 @@ import { ProductsComponent } from './features/products/products.component';
 import { SellComponent } from './features/sell/sell.component';
 import { DebtComponent } from './features/debit/debit.component';
 import { ReportComponent } from './features/report/report.component';
+import { HistoryComponent } from './features/history/history.component';
+import { AiReorderComponent } from './features/ai-reorder/ai-reorder.component';
 
 export const routes: Routes = [
   {
@@ -40,6 +42,14 @@ export const routes: Routes = [
       {
         path: 'report',
         component: ReportComponent,
+      },
+      {
+        path: 'history',
+        component: HistoryComponent,
+      },
+      {
+        path: 'ai-reorder',
+        component: AiReorderComponent,
       },
     ],
   },

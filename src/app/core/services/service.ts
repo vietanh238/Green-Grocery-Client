@@ -8,9 +8,10 @@ import { Observable } from 'rxjs';
 })
 export class Service {
   private readonly LOGIN_URL = environment.apiAuth + 'login/';
-  private readonly REGISTER_URL = environment.apiAuth + 'register/'; // NEW
+  private readonly REGISTER_URL = environment.apiAuth + 'register/';
   private readonly NOTIFICATION_URL = environment.apiHome + 'notifications/';
   private readonly CREATE_PRODUCT_URL = environment.apiProduct + 'create/';
+  private readonly BULK_CREATE_PRODUCTS_URL = environment.apiProduct + 'bulk-create/';
   private readonly GET_CATEGORIES_URL = environment.apiProduct + 'categories/';
   private readonly GET_PRODUCTS_URL = environment.apiProduct + 'products/';
   private readonly DELETE_RPODUCT = environment.apiProduct + 'delete/';
@@ -28,6 +29,7 @@ export class Service {
   private readonly GET_DASHBOARD = environment.apiHome + 'get/dashboard/';
   private readonly GET_USER_PROFILE = environment.apiHome + 'user/profile/';
   private readonly QUICK_SEARCH = environment.apiHome + 'quick/search/';
+  private readonly GET_TRANSACTION_HISTORY = environment.apiHome + 'transactions/history/';
 
   constructor(private _http: HttpClient) {}
 
@@ -38,7 +40,6 @@ export class Service {
     });
   }
 
-  // NEW: Register method
   register(params: any): Observable<any> {
     return this._http.post(this.REGISTER_URL, {
       phone_number: params.phone_number,
@@ -64,6 +65,10 @@ export class Service {
       barCode: params.barCode,
       stock_quantity: params.quantity,
     });
+  }
+
+  bulkCreateProducts(params: any): Observable<any> {
+    return this._http.post(this.BULK_CREATE_PRODUCTS_URL, params);
   }
 
   getCategories(): Observable<any> {
@@ -163,5 +168,43 @@ export class Service {
     queryParams = queryParams.set('q', query);
 
     return this._http.get(this.QUICK_SEARCH, { params: queryParams });
+  }
+
+  getTransactionHistory(params: any = {}): Observable<any> {
+    let queryParams = new HttpParams();
+
+    if (params.date_from) {
+      queryParams = queryParams.set('date_from', params.date_from);
+    }
+
+    if (params.date_to) {
+      queryParams = queryParams.set('date_to', params.date_to);
+    }
+
+    if (params.type) {
+      queryParams = queryParams.set('type', params.type);
+    }
+
+    if (params.status) {
+      queryParams = queryParams.set('status', params.status);
+    }
+
+    if (params.payment_method) {
+      queryParams = queryParams.set('payment_method', params.payment_method);
+    }
+
+    return this._http.get(this.GET_TRANSACTION_HISTORY, { params: queryParams });
+  }
+
+  trainAIModel(): Observable<any> {
+    return this._http.post(environment.apiHome + 'ai/train/', {});
+  }
+
+  getReorderRecommendations(): Observable<any> {
+    return this._http.get(environment.apiHome + 'ai/reorder-recommendations/');
+  }
+
+  getProductForecast(productId: number): Observable<any> {
+    return this._http.get(environment.apiHome + `ai/forecast/${productId}/`);
   }
 }

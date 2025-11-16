@@ -1,0 +1,243 @@
+<div class="ai-reorder-container">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h2 class="page-title">
+          <i class="pi pi-bolt"></i>
+          AI Dự Đoán Nhập Hàng
+        </h2>
+        <p class="page-subtitle">Hệ thống AI phân tích và đề xuất nhập hàng tự động</p>
+      </div>
+      <div class="header-actions">
+        <button class="action-btn train-btn" (click)="trainAI()" [disabled]="trainingAI || loading">
+          <i
+            class="pi"
+            [class.pi-refresh]="!trainingAI"
+            [class.pi-spin]="trainingAI"
+            [class.pi-spinner]="trainingAI"
+          ></i>
+          <span>{{ trainingAI ? 'Đang train AI...' : 'Train AI' }}</span>
+        </button>
+        <button class="action-btn refresh-btn" (click)="loadRecommendations()" [disabled]="loading">
+          <i class="pi pi-refresh" [class.pi-spin]="loading"></i>
+          <span>Làm mới</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-section">
+    <div class="summary-card total">
+      <div class="card-icon">
+        <i class="pi pi-shopping-bag"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-label">Cần nhập hàng</span>
+        <span class="card-value">{{ summary.total_products_need_reorder }}</span>
+        <span class="card-subtitle">sản phẩm</span>
+      </div>
+    </div>
+
+    <div class="summary-card urgent">
+      <div class="card-icon">
+        <i class="pi pi-exclamation-triangle"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-label">Khẩn cấp</span>
+        <span class="card-value">{{ summary.high_urgency }}</span>
+        <span class="card-subtitle">sản phẩm</span>
+      </div>
+    </div>
+
+    <div class="summary-card medium">
+      <div class="card-icon">
+        <i class="pi pi-clock"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-label">Trung bình</span>
+        <span class="card-value">{{ summary.medium_urgency }}</span>
+        <span class="card-subtitle">sản phẩm</span>
+      </div>
+    </div>
+
+    <div class="summary-card cost">
+      <div class="card-icon">
+        <i class="pi pi-wallet"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-label">Chi phí dự kiến</span>
+        <span class="card-value value-small"
+          >{{ summary.total_estimated_cost | number : '1.0-0' }} đ</span
+        >
+        <span class="card-subtitle">tổng cộng</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div class="chart-section">
+      <p-card header="Phân loại độ ưu tiên">
+        <div class="chart-container">
+          <p-chart
+            type="doughnut"
+            [data]="chartData"
+            [options]="chartOptions"
+            [style]="{ height: '300px' }"
+          />
+        </div>
+      </p-card>
+    </div>
+
+    <div class="info-section">
+      <p-card header="Thông tin AI">
+        <div class="info-content">
+          <div class="info-item">
+            <i class="pi pi-check-circle"></i>
+            <div class="info-text">
+              <strong>Model đã train</strong>
+              <span>Random Forest với 100 trees</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <i class="pi pi-calendar"></i>
+            <div class="info-text">
+              <strong>Dữ liệu phân tích</strong>
+              <span>60 ngày gần nhất</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <i class="pi pi-chart-line"></i>
+            <div class="info-text">
+              <strong>Dự đoán</strong>
+              <span>30 ngày tới</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <i class="pi pi-shield"></i>
+            <div class="info-text">
+              <strong>Safety Stock</strong>
+              <span>3 ngày dự phòng</span>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <p-card>
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>Danh sách đề xuất nhập hàng</h3>
+          <span class="product-count">{{ recommendations.length }} sản phẩm</span>
+        </div>
+      </ng-template>
+
+      <p-table
+        [value]="recommendations"
+        [rows]="10"
+        [paginator]="true"
+        [tableStyle]="{ 'min-width': '100%' }"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [loading]="loading"
+        responsiveLayout="scroll"
+        styleClass="reorder-table"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 50px">#</th>
+            <th style="width: 120px">Độ ưu tiên</th>
+            <th>Sản phẩm</th>
+            <th style="width: 100px" class="text-center">Tồn kho</th>
+            <th style="width: 100px" class="text-center">Hết hàng sau</th>
+            <th style="width: 120px" class="text-right">Nhu cầu 7 ngày</th>
+            <th style="width: 120px" class="text-right">Nhu cầu 30 ngày</th>
+            <th style="width: 130px" class="text-right">Đề xuất nhập</th>
+            <th style="width: 130px" class="text-right">Chi phí dự kiến</th>
+            <th style="width: 100px" class="text-center">Thao tác</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-item let-rowIndex="rowIndex">
+          <tr>
+            <td>{{ rowIndex + 1 }}</td>
+            <td>
+              <p-tag
+                [value]="getUrgencyLabel(item.urgency)"
+                [severity]="getUrgencySeverity(item.urgency)"
+                [icon]="
+                  item.urgency === 'high'
+                    ? 'pi pi-exclamation-triangle'
+                    : item.urgency === 'medium'
+                    ? 'pi pi-clock'
+                    : 'pi pi-check'
+                "
+              />
+            </td>
+            <td>
+              <div class="product-info">
+                <span class="product-name">{{ item.product_name }}</span>
+                <span class="product-sku">SKU: {{ item.product_sku }}</span>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="stock-value" [class.stock-low]="item.days_until_stockout <= 3">
+                {{ item.current_stock }} {{ item.unit }}
+              </span>
+            </td>
+            <td class="text-center">
+              <span
+                class="days-badge"
+                [class.danger]="item.days_until_stockout <= 3"
+                [class.warning]="item.days_until_stockout > 3 && item.days_until_stockout <= 7"
+              >
+                {{ item.days_until_stockout }} ngày
+              </span>
+            </td>
+            <td class="text-right">
+              <span class="demand-value">{{
+                item.predicted_demand_7_days | number : '1.0-2'
+              }}</span>
+            </td>
+            <td class="text-right">
+              <span class="demand-value">{{
+                item.predicted_demand_30_days | number : '1.0-2'
+              }}</span>
+            </td>
+            <td class="text-right">
+              <span class="order-quantity">
+                {{ item.optimal_order_quantity | number : '1.0-0' }} {{ item.unit }}
+              </span>
+            </td>
+            <td class="text-right">
+              <span class="cost-value">{{ item.estimated_cost | number : '1.0-0' }} đ</span>
+            </td>
+            <td class="text-center">
+              <button
+                class="btn-action btn-view"
+                (click)="viewForecast(item.product_id)"
+                title="Xem chi tiết dự đoán"
+              >
+                <i class="pi pi-chart-line"></i>
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="10" class="empty-message">
+              <div class="empty-state">
+                <i class="pi pi-check-circle empty-icon"></i>
+                <p class="empty-title">Tuyệt vời! Không có sản phẩm nào cần nhập hàng</p>
+                <p class="empty-subtitle">Tồn kho hiện tại đủ dùng cho thời gian tới</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+
+  <p-toast />
+</div>

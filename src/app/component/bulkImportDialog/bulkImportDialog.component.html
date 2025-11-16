@@ -1,0 +1,220 @@
+<div class="dialog-wrapper">
+  <h2 mat-dialog-title class="dialog-title">
+    <i class="pi pi-upload"></i>
+    Thêm sản phẩm
+  </h2>
+
+  <mat-dialog-content class="dialog-content">
+    <div class="import-container">
+      <div class="step-indicator">
+        <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
+          <div class="step-number">1</div>
+          <div class="step-label">Tải file</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
+          <div class="step-number">2</div>
+          <div class="step-label">Xem trước</div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step" [class.active]="currentStep === 3">
+          <div class="step-number">3</div>
+          <div class="step-label">Hoàn tất</div>
+        </div>
+      </div>
+
+      <div class="step-content" *ngIf="currentStep === 1">
+        <div class="upload-section">
+          <div class="upload-info">
+            <i class="pi pi-info-circle"></i>
+            <div>
+              <h4>Hướng dẫn</h4>
+              <ol>
+                <li>Tải file mẫu Excel để xem định dạng</li>
+                <li>Điền thông tin sản phẩm vào file</li>
+                <li>Tải file lên để kiểm tra</li>
+              </ol>
+            </div>
+          </div>
+
+          <button class="btn-template" (click)="downloadTemplate()">
+            <i class="pi pi-download"></i>
+            Tải file mẫu Excel
+          </button>
+
+          <div
+            class="upload-area"
+            (click)="fileInput.click()"
+            [class.dragover]="isDragOver"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            <input
+              #fileInput
+              type="file"
+              accept=".xlsx,.xls"
+              (change)="onFileSelect($event)"
+              style="display: none"
+            />
+            <div class="upload-placeholder">
+              <i class="pi pi-cloud-upload"></i>
+              <p class="upload-text">Kéo thả file Excel vào đây hoặc nhấn để chọn</p>
+              <p class="upload-hint">Hỗ trợ: .xlsx, .xls</p>
+            </div>
+          </div>
+
+          <div class="selected-file" *ngIf="selectedFile">
+            <i class="pi pi-file-excel"></i>
+            <span>{{ selectedFile.name }}</span>
+            <button class="btn-remove-file" (click)="removeFile()">
+              <i class="pi pi-times" style="color: white"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-content" *ngIf="currentStep === 2">
+        <div class="preview-section">
+          <div class="preview-stats">
+            <div class="stat-card success">
+              <i class="pi pi-check-circle"></i>
+              <div class="stat-content">
+                <span class="stat-label">Hợp lệ</span>
+                <span class="stat-value">{{ validProducts.length }}</span>
+              </div>
+            </div>
+            <div class="stat-card error" *ngIf="errors.length > 0">
+              <i class="pi pi-exclamation-triangle"></i>
+              <div class="stat-content">
+                <span class="stat-label">Lỗi</span>
+                <span class="stat-value">{{ errors.length }}</span>
+              </div>
+            </div>
+            <div class="stat-card total">
+              <i class="pi pi-list"></i>
+              <div class="stat-content">
+                <span class="stat-label">Tổng cộng</span>
+                <span class="stat-value">{{ totalRows }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="error-list" *ngIf="errors.length > 0">
+            <h4>Danh sách lỗi</h4>
+            <div class="error-item" *ngFor="let error of errors">
+              <i class="pi pi-times-circle"></i>
+              <span>Dòng {{ error.row }}, cột "{{ error.column }}": {{ error.message }}</span>
+            </div>
+          </div>
+
+          <div class="preview-table">
+            <h4>Danh sách sản phẩm hợp lệ ({{ validProducts.length }})</h4>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Tên sản phẩm</th>
+                    <th>SKU</th>
+                    <th>Barcode</th>
+                    <th>Phân loại</th>
+                    <th>Giá nhập</th>
+                    <th>Giá bán</th>
+                    <th>Số lượng</th>
+                    <th>Đơn vị</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let product of validProducts; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.sku }}</td>
+                    <td>{{ product.barCode }}</td>
+                    <td>{{ product.category }}</td>
+                    <td>{{ product.costPrice | number : '1.0-0' }}</td>
+                    <td>{{ product.price | number : '1.0-0' }}</td>
+                    <td>{{ product.quantity }}</td>
+                    <td>{{ product.unit }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-content" *ngIf="currentStep === 3">
+        <div class="result-section">
+          <div class="result-icon" [class.success]="importSuccess" [class.error]="!importSuccess">
+            <i
+              [class.pi-check-circle]="importSuccess"
+              [class.pi-times-circle]="!importSuccess"
+              class="pi"
+            ></i>
+          </div>
+          <h3>{{ importSuccess ? 'Thêm sản phẩm thành công!' : 'Có lỗi xảy ra' }}</h3>
+          <p *ngIf="importSuccess">
+            Đã thêm thành công {{ importResult.success }} sản phẩm vào hệ thống
+          </p>
+          <p *ngIf="!importSuccess">
+            Thêm thành công {{ importResult.success }}/{{ importResult.total }} sản phẩm
+          </p>
+
+          <div class="result-details" *ngIf="importResult.failed > 0">
+            <h4>Chi tiết lỗi ({{ importResult.failed }} sản phẩm)</h4>
+            <div class="error-item" *ngFor="let error of importResult.errors">
+              <i class="pi pi-times-circle"></i>
+              <span>{{ error.product }}: {{ error.message }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-actions">
+    <button class="btn-cancel" (click)="cancel()" *ngIf="currentStep !== 3">
+      <i class="pi pi-times"></i>
+      Hủy
+    </button>
+
+    <button class="btn-back" (click)="previousStep()" *ngIf="currentStep === 2">
+      <i class="pi pi-arrow-left"></i>
+      Quay lại
+    </button>
+
+    <button
+      class="btn-next"
+      (click)="processFile()"
+      *ngIf="currentStep === 1"
+      [disabled]="!selectedFile || loading"
+    >
+      <mat-spinner *ngIf="loading" diameter="20" class="spinner"></mat-spinner>
+      <span *ngIf="!loading">
+        <i class="pi pi-arrow-right"></i>
+        Tiếp tục
+      </span>
+    </button>
+
+    <button
+      class="btn-import"
+      (click)="importProducts()"
+      *ngIf="currentStep === 2"
+      [disabled]="validProducts.length === 0 || loading"
+    >
+      <mat-spinner *ngIf="loading" diameter="20" class="spinner"></mat-spinner>
+      <span *ngIf="!loading">
+        <i class="pi pi-check"></i>
+        Thêm {{ validProducts.length }} sản phẩm
+      </span>
+    </button>
+
+    <button class="btn-done" (click)="close()" *ngIf="currentStep === 3">
+      <i class="pi pi-check"></i>
+      Hoàn tất
+    </button>
+  </mat-dialog-actions>
+
+  <p-toast />
+</div>

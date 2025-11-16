@@ -1,0 +1,276 @@
+<div class="transaction-history-container">
+  <div class="page-header">
+    <div class="header-top">
+      <button class="back-btn" (click)="navigateBack()">
+        <i class="pi pi-arrow-left"></i>
+        <span class="back-text">Quay lại</span>
+      </button>
+      <div class="header-actions">
+        <button class="action-btn export-btn" (click)="exportExcel()">
+          <i class="pi pi-file-excel"></i>
+          <span>Xuất Excel</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="header-content">
+      <div class="header-left">
+        <h2 class="page-title">
+          <i class="pi pi-history"></i>
+          Lịch sử giao dịch
+        </h2>
+        <p class="page-subtitle">Theo dõi và quản lý toàn bộ giao dịch</p>
+      </div>
+    </div>
+
+    <div class="stats-overview">
+      <div class="stat-item revenue">
+        <div class="stat-icon">
+          <i class="pi pi-arrow-up"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Doanh thu</span>
+          <span class="stat-value">{{ stats.period_revenue | number : '1.0-0' }} đ</span>
+        </div>
+      </div>
+
+      <div class="stat-item expense">
+        <div class="stat-icon">
+          <i class="pi pi-arrow-down"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Chi phí</span>
+          <span class="stat-value">{{ stats.period_expenses | number : '1.0-0' }} đ</span>
+        </div>
+      </div>
+
+      <div class="stat-item net">
+        <div class="stat-icon">
+          <i class="pi pi-wallet"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Chênh lệch</span>
+          <span
+            class="stat-value"
+            [class.positive]="stats.net_amount >= 0"
+            [class.negative]="stats.net_amount < 0"
+          >
+            {{ stats.net_amount | number : '1.0-0' }} đ
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-item total">
+        <div class="stat-icon">
+          <i class="pi pi-list"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Tổng giao dịch</span>
+          <span class="stat-value">{{ stats.total_transactions }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-section">
+    <div class="search-box">
+      <i class="pi pi-search search-icon"></i>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Tìm kiếm theo mã giao dịch, khách hàng..."
+        [(ngModel)]="searchText"
+        (input)="onSearch()"
+      />
+      <i *ngIf="searchText" class="pi pi-times clear-icon" (click)="clearSearch()"></i>
+    </div>
+
+    <div class="filter-controls">
+      <p-calendar
+        [(ngModel)]="selectedDateRange"
+        selectionMode="range"
+        placeholder="Chọn khoảng thời gian"
+        dateFormat="dd/mm/yy"
+        (onSelect)="onFilterChange()"
+        (onClearClick)="onFilterChange()"
+        styleClass="filter-calendar"
+        appendTo="body"
+      />
+
+      <p-select
+        [options]="typeOptions"
+        [(ngModel)]="selectedType"
+        optionLabel="label"
+        placeholder="Loại giao dịch"
+        class="filter-select"
+        (onChange)="onFilterChange()"
+        [showClear]="true"
+        appendTo="body"
+      />
+
+      <p-select
+        [options]="statusOptions"
+        [(ngModel)]="selectedStatus"
+        optionLabel="label"
+        placeholder="Trạng thái"
+        class="filter-select"
+        (onChange)="onFilterChange()"
+        [showClear]="true"
+        appendTo="body"
+      />
+
+      <p-select
+        [options]="paymentMethodOptions"
+        [(ngModel)]="selectedPaymentMethod"
+        optionLabel="label"
+        placeholder="Phương thức"
+        class="filter-select"
+        (onChange)="onFilterChange()"
+        [showClear]="true"
+        appendTo="body"
+      />
+
+      <button
+        class="clear-filter-btn"
+        (click)="clearFilters()"
+        *ngIf="
+          selectedDateRange.length > 0 || selectedType || selectedStatus || selectedPaymentMethod
+        "
+      >
+        <i class="pi pi-filter-slash"></i>
+        <span>Xóa bộ lọc</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="custom-tab-nav">
+      <button class="tab-link" [class.active]="activeTab === 0" (click)="onTabChange(0)">
+        <span class="tab-header">
+          <i class="pi pi-list"></i>
+          <span>Tất cả</span>
+          <span class="tab-badge">{{ transactions.length }}</span>
+        </span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 1" (click)="onTabChange(1)">
+        <span class="tab-header">
+          <i class="pi pi-shopping-cart"></i>
+          <span>Bán hàng</span>
+          <span class="tab-badge success">{{ stats.total_sales }}</span>
+        </span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 2" (click)="onTabChange(2)">
+        <span class="tab-header">
+          <i class="pi pi-box"></i>
+          <span>Nhập hàng</span>
+          <span class="tab-badge info">{{ stats.total_imports }}</span>
+        </span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 3" (click)="onTabChange(3)">
+        <span class="tab-header">
+          <i class="pi pi-wallet"></i>
+          <span>Thanh toán</span>
+          <span class="tab-badge warn">{{ stats.total_payments }}</span>
+        </span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 4" (click)="onTabChange(4)">
+        <span class="tab-header">
+          <i class="pi pi-replay"></i>
+          <span>Hoàn trả</span>
+          <span class="tab-badge danger">{{ stats.total_refunds }}</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="table-container">
+      <p-table
+        [value]="filteredTransactions"
+        [rows]="20"
+        [paginator]="true"
+        [tableStyle]="{ 'min-width': '100%' }"
+        [rowsPerPageOptions]="[10, 20, 50, 100]"
+        currentPageReportTemplate="Hiển thị {first} - {last} trong tổng {totalRecords} giao dịch"
+        [showCurrentPageReport]="true"
+        [loading]="loading"
+        responsiveLayout="scroll"
+        styleClass="transaction-table"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 50px">#</th>
+            <th style="width: 150px">Mã giao dịch</th>
+            <th style="width: 120px">Loại</th>
+            <th style="width: 180px">Thời gian</th>
+            <th style="width: 200px">Khách hàng</th>
+            <th style="width: 150px" class="text-right">Số tiền</th>
+            <th style="width: 130px">Thanh toán</th>
+            <th style="width: 120px" class="text-center">Trạng thái</th>
+            <th style="width: 100px" class="text-center">Thao tác</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-transaction let-rowIndex="rowIndex">
+          <tr>
+            <td>{{ rowIndex + 1 }}</td>
+            <td>
+              <span class="transaction-code">{{ transaction.order_code }}</span>
+            </td>
+            <td>
+              <p-tag
+                [value]="getTypeLabel(transaction.type)"
+                [severity]="getTypeSeverity(transaction.type)"
+              />
+            </td>
+            <td>
+              <div class="time-info">
+                <span class="date">{{ transaction.created_at | date : 'dd/MM/yyyy' }}</span>
+                <span class="time">{{ transaction.created_at | date : 'HH:mm' }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="customer-name">{{ transaction.customer_name || 'Khách lẻ' }}</span>
+            </td>
+            <td class="text-right">
+              <span class="amount" [ngClass]="getAmountClass(transaction)">
+                {{ formatAmount(transaction) }}
+              </span>
+            </td>
+            <td>
+              <span class="payment-method">
+                {{ getPaymentMethodLabel(transaction.payment_method) }}
+              </span>
+            </td>
+            <td class="text-center">
+              <p-tag
+                [value]="getStatusLabel(transaction.status)"
+                [severity]="getStatusSeverity(transaction.status)"
+              />
+            </td>
+            <td class="text-center">
+              <button
+                class="btn-action btn-detail"
+                (click)="viewDetails(transaction)"
+                title="Chi tiết"
+              >
+                <i class="pi pi-eye"></i>
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="9" class="empty-message">
+              <div class="empty-state">
+                <i class="pi pi-inbox empty-icon"></i>
+                <p>Không tìm thấy giao dịch nào</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <p-toast />
+</div>

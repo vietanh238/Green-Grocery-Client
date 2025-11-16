@@ -447,7 +447,7 @@ export class HomeComponent implements OnInit {
   }
 
   viewAllSales(): void {
-    this.navigateTo('/page/sell');
+    this.router.navigate(['/page/history']);
   }
 
   viewAllProducts(): void {

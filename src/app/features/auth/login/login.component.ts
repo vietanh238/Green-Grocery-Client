@@ -76,7 +76,7 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
 
     const params = {
-      phone_number: this.phoneNum.trim(),
+      phone_number: String(this.phoneNum.trim()),
       password: this.password.trim(),
     };
 
@@ -89,13 +89,13 @@ export class LoginComponent implements OnInit {
           this.message.add({
             severity: 'success',
             summary: 'Thành công',
-            detail: 'Đăng nhập thành công',
+            detail: 'Đăng nhập thành công đang tải dữ liệu',
             life: 1500,
           });
 
           setTimeout(() => {
             this.router.navigate(['page/home']);
-          }, 500);
+          }, 1000);
         } else {
           this.message.add({
             severity: 'error',
@@ -124,7 +124,7 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
 
     const params = {
-      phone_number: this.registerData.phone_number.trim(),
+      phone_number: String(this.registerData.phone_number.trim()),
       password: this.registerData.password.trim(),
       first_name: this.registerData.first_name.trim(),
       last_name: this.registerData.last_name.trim(),
@@ -173,7 +173,7 @@ export class LoginComponent implements OnInit {
   }
 
   validateLogin(): boolean {
-    if (!this.phoneNum || this.phoneNum.trim() === '') {
+    if (!this.phoneNum || String(this.phoneNum.trim()) === '') {
       this.message.add({
         severity: 'warn',
         summary: 'Thông báo',
@@ -183,7 +183,7 @@ export class LoginComponent implements OnInit {
       return false;
     }
 
-    if (this.phoneNum.trim().length < 10) {
+    if (String(this.phoneNum.trim()).length < 10) {
       this.message.add({
         severity: 'warn',
         summary: 'Thông báo',
@@ -208,7 +208,7 @@ export class LoginComponent implements OnInit {
 
   validateRegister(): boolean {
     // Validate phone number
-    if (!this.registerData.phone_number || this.registerData.phone_number.trim() === '') {
+    if (!this.registerData.phone_number || String(this.registerData.phone_number.trim()) === '') {
       this.message.add({
         severity: 'warn',
         summary: 'Thông báo',
@@ -218,7 +218,7 @@ export class LoginComponent implements OnInit {
       return false;
     }
 
-    if (this.registerData.phone_number.trim().length < 10) {
+    if (String(this.registerData.phone_number.trim()).length < 10) {
       this.message.add({
         severity: 'warn',
         summary: 'Thông báo',

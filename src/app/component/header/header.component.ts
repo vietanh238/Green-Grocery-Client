@@ -184,6 +184,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
         routerLinkActiveOptions: { exact: true },
       },
       {
+        label: 'AI Nhập hàng',
+        icon: 'pi pi-bolt',
+        routerLink: ['/page/ai-reorder'],
+        routerLinkActiveOptions: { exact: true },
+        style: { color: '#f59e0b' },
+      },
+      {
         label: 'Báo cáo',
         icon: 'pi pi-chart-bar',
         routerLink: ['/page/report'],

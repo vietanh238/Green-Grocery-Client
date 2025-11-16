@@ -13,6 +13,7 @@ import { ConstantDef } from '../../core/constanDef';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 import { ProductDetailDialogComponent } from './productDetailDialog/producDetailDialog.component';
 import { AddEditProductDialogComponent } from './addProductDialog/addProductDialog.component';
+import { BulkImportDialogComponent } from '../../component/bulkImportDialog/bulkImportDialog.component';
 import * as XLSX from 'xlsx';
 
 interface Product {
@@ -149,6 +150,19 @@ export class ProductsComponent implements OnInit {
         lstCategory: this.lstCategory,
         lstUnit: this.lstUnit,
       },
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.getProducts();
+      }
+    });
+  }
+
+  openBulkImportDialog(): void {
+    const dialogRef = this.dialog.open(BulkImportDialogComponent, {
+      width: '90vw',
+      maxWidth: '600px',
+      data: {},
     });
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
