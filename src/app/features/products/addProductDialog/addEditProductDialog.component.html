@@ -1,109 +1,160 @@
 <div class="dialog-wrapper">
   <h2 mat-dialog-title class="dialog-title">
+    <i class="pi pi-box"></i>
     {{ isEditMode ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm mới' }}
   </h2>
 
   <mat-dialog-content class="dialog-content">
     <form class="product-form">
-      <div class="form-group image-upload-group">
-        <label class="form-label">Ảnh sản phẩm</label>
-        <div class="image-upload-container">
-          <div class="image-preview" (click)="fileInput.click()">
-            <img *ngIf="productImage" [src]="productImage" alt="Preview" />
-            <div *ngIf="!productImage" class="upload-placeholder">
-              <i class="pi pi-camera"></i>
-              <span>Chọn ảnh</span>
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-image"></i>
+          Hình ảnh sản phẩm
+        </h3>
+        <div class="form-group image-upload-group">
+          <div class="image-upload-container">
+            <div class="image-preview" (click)="fileInput.click()">
+              <img *ngIf="productImage" [src]="productImage" alt="Preview" />
+              <div *ngIf="!productImage" class="upload-placeholder">
+                <i class="pi pi-camera"></i>
+                <span>Chọn ảnh</span>
+                <small>Tối đa 5MB</small>
+              </div>
             </div>
+            <input
+              #fileInput
+              type="file"
+              accept="image/*"
+              (change)="onImageSelect($event)"
+              style="display: none"
+            />
+            <button
+              *ngIf="productImage"
+              type="button"
+              class="btn-remove-image"
+              (click)="removeImage(); $event.stopPropagation()"
+            >
+              <i class="pi pi-times"></i>
+            </button>
           </div>
-          <input
-            #fileInput
-            type="file"
-            accept="image/*"
-            (change)="onImageSelect($event)"
-            style="display: none"
-          />
-          <button
-            *ngIf="productImage"
-            type="button"
-            class="btn-remove-image"
-            (click)="removeImage(); $event.stopPropagation()"
-          >
-            <i class="pi pi-times"></i>
-          </button>
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label"> Tên sản phẩm <span class="require-input">*</span> </label>
-        <input
-          type="text"
-          [(ngModel)]="productName"
-          name="productName"
-          placeholder="Nhập tên sản phẩm"
-          maxlength="255"
-          [class.input-error]="errors['productName']"
-          class="form-input"
-        />
-      </div>
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-info-circle"></i>
+          Thông tin cơ bản
+        </h3>
 
-      <div class="form-group">
-        <label class="form-label"> SKU <span class="require-input">*</span> </label>
-        <input
-          type="text"
-          [(ngModel)]="sku"
-          name="sku"
-          placeholder="Nhập mã SKU"
-          maxlength="64"
-          [class.input-error]="errors['sku']"
-          class="form-input"
-        />
-      </div>
-
-      <div class="form-row">
         <div class="form-group">
-          <label class="form-label"> Giá nhập <span class="require-input">*</span> </label>
+          <label class="form-label"> Tên sản phẩm <span class="require-input">*</span> </label>
           <input
             type="text"
-            id="cost_price"
-            placeholder="0"
-            (input)="inputPrice($event, 'costPrice')"
-            (blur)="blurPrice($event, 'costPrice')"
-            (focus)="focusPrice($event, 'costPrice')"
-            (keydown)="keydownPrice($event)"
-            (paste)="pastePrice($event, 'costPrice')"
-            [class.input-error]="errors['costPrice']"
+            [(ngModel)]="productName"
+            name="productName"
+            placeholder="Nhập tên sản phẩm"
+            maxlength="255"
+            [class.input-error]="errors['productName']"
             class="form-input"
           />
         </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"> SKU <span class="require-input">*</span> </label>
+            <input
+              type="text"
+              [(ngModel)]="sku"
+              name="sku"
+              placeholder="Nhập mã SKU"
+              maxlength="64"
+              [class.input-error]="errors['sku']"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label"> Barcode <span class="require-input">*</span> </label>
+            <div class="barcode-input-group">
+              <input
+                type="text"
+                [(ngModel)]="barCode"
+                name="barCode"
+                placeholder="Nhập hoặc quét barcode"
+                maxlength="64"
+                [class.input-error]="errors['barCode']"
+                class="form-input"
+                [disabled]="isEditMode"
+                (blur)="onBarcodeBlur()"
+              />
+              <button *ngIf="!isEditMode" type="button" class="btn-scanner" (click)="openScanner()">
+                <i class="pi pi-camera"></i>
+              </button>
+              <div *ngIf="checkingBarcode" class="barcode-checking">
+                <i class="pi pi-spin pi-spinner"></i>
+              </div>
+            </div>
+            <small *ngIf="barcodeExists" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              Barcode đã tồn tại
+            </small>
+          </div>
+        </div>
+
         <div class="form-group">
-          <label class="form-label"> Giá bán <span class="require-input">*</span> </label>
-          <input
-            id="price"
-            type="text"
-            placeholder="0"
-            (input)="inputPrice($event, 'price')"
-            (blur)="blurPrice($event, 'price')"
-            (focus)="focusPrice($event, 'price')"
-            (keydown)="keydownPrice($event)"
-            (paste)="pastePrice($event, 'price')"
-            [class.input-error]="errors['price']"
-            class="form-input"
-          />
+          <label class="form-label">Mô tả sản phẩm</label>
+          <textarea
+            [(ngModel)]="description"
+            name="description"
+            placeholder="Nhập mô tả chi tiết về sản phẩm"
+            maxlength="1000"
+            rows="3"
+            class="form-input form-textarea"
+          ></textarea>
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label"> Số lượng <span class="require-input">*</span> </label>
-          <input
-            type="number"
-            [(ngModel)]="quantity"
-            name="quantity"
-            placeholder="0"
-            [class.input-error]="errors['quantity']"
-            class="form-input"
-          />
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-tag"></i>
+          Phân loại
+        </h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">
+              Nhập phân loại mới <span class="require-input">*</span>
+            </label>
+            <input
+              type="text"
+              [(ngModel)]="category"
+              name="category"
+              placeholder="Nhập tên loại mới"
+              maxlength="255"
+              [class.input-error]="errors['category']"
+              class="form-input"
+              (input)="inputNewCategory()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Hoặc chọn phân loại có sẵn</label>
+            <p-select
+              [options]="lstCategory"
+              [(ngModel)]="categorySld"
+              name="categorySld"
+              optionLabel="name"
+              placeholder="Chọn loại có sẵn"
+              [filter]="true"
+              filterBy="name"
+              (onChange)="changeCategory()"
+              [showClear]="true"
+              styleClass="form-select1"
+              appendTo="body"
+            />
+          </div>
         </div>
+
         <div class="form-group">
           <label class="form-label"> Đơn vị <span class="require-input">*</span> </label>
           <p-select
@@ -120,63 +171,183 @@
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Nhập phân loại<span class="require-input">*</span> </label>
-          <input
-            type="text"
-            [(ngModel)]="category"
-            name="category"
-            placeholder="Nhập tên loại"
-            maxlength="255"
-            [class.input-error]="errors['category']"
-            class="form-input"
-            (input)="inputNewCategory()"
-          />
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-dollar"></i>
+          Giá cả
+        </h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"> Giá nhập <span class="require-input">*</span> </label>
+            <input
+              type="text"
+              id="cost_price"
+              placeholder="0"
+              (input)="inputPrice($event, 'costPrice')"
+              (blur)="blurPrice($event, 'costPrice')"
+              (focus)="focusPrice($event, 'costPrice')"
+              (keydown)="keydownPrice($event)"
+              (paste)="pastePrice($event, 'costPrice')"
+              [class.input-error]="errors['costPrice']"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label"> Giá bán <span class="require-input">*</span> </label>
+            <input
+              id="price"
+              type="text"
+              placeholder="0"
+              (input)="inputPrice($event, 'price')"
+              (blur)="blurPrice($event, 'price')"
+              (focus)="focusPrice($event, 'price')"
+              (keydown)="keydownPrice($event)"
+              (paste)="pastePrice($event, 'price')"
+              [class.input-error]="errors['price']"
+              class="form-input"
+            />
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Phân loại đã có</label>
-          <p-select
-            [options]="lstCategory"
-            [(ngModel)]="categorySld"
-            name="categorySld"
-            optionLabel="name"
-            placeholder="Chọn loại có sẵn"
-            [filter]="true"
-            filterBy="name"
-            (onChange)="changeCategory()"
-            [showClear]="true"
-            styleClass="form-select1"
-            appendTo="body"
-          />
+
+        <div class="profit-info" *ngIf="price > 0 && costPrice > 0">
+          <div class="profit-card">
+            <i class="pi pi-chart-line"></i>
+            <div class="profit-details">
+              <span class="profit-label">Lợi nhuận/sản phẩm:</span>
+              <span class="profit-value">{{ price - costPrice | number : '1.0-0' }} VND</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label"> Barcode <span class="require-input">*</span> </label>
-        <div class="barcode-input-group d-flex">
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-building"></i>
+          Nhà cung cấp
+        </h3>
+
+        <div class="form-group">
+          <label class="form-label">Chọn nhà cung cấp chính</label>
+          <p-select
+            [options]="lstSupplier"
+            [(ngModel)]="supplierSld"
+            name="supplier"
+            optionLabel="name"
+            placeholder="Chọn nhà cung cấp"
+            [filter]="true"
+            filterBy="name"
+            [showClear]="true"
+            styleClass="form-select1"
+            appendTo="body"
+          >
+            <ng-template #item let-supplier>
+              <div class="supplier-item">
+                <strong>{{ supplier.name }}</strong>
+                <small>{{ supplier.code }}</small>
+              </div>
+            </ng-template>
+          </p-select>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-warehouse"></i>
+          Quản lý tồn kho
+        </h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"> Số lượng <span class="require-input">*</span> </label>
+            <input
+              type="number"
+              [(ngModel)]="quantity"
+              name="quantity"
+              placeholder="0"
+              min="0"
+              [class.input-error]="errors['quantity']"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label"> Điểm đặt lại <span class="require-input">*</span> </label>
+            <input
+              type="number"
+              [(ngModel)]="reorderPoint"
+              name="reorderPoint"
+              placeholder="10"
+              min="0"
+              [class.input-error]="errors['reorderPoint']"
+              class="form-input"
+            />
+            <small class="input-hint">Cảnh báo khi tồn kho dưới mức này</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label"> Tồn kho tối đa <span class="require-input">*</span> </label>
+            <input
+              type="number"
+              [(ngModel)]="maxStockLevel"
+              name="maxStockLevel"
+              placeholder="100"
+              min="1"
+              [class.input-error]="errors['maxStockLevel']"
+              class="form-input"
+            />
+            <small class="input-hint">Cảnh báo khi vượt mức này</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-clock"></i>
+          Hạn sử dụng
+        </h3>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input
+              type="checkbox"
+              id="hasExpiry"
+              [(ngModel)]="hasExpiry"
+              name="hasExpiry"
+              (change)="onExpiryChange()"
+            />
+            <label for="hasExpiry">Sản phẩm có hạn sử dụng</label>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="hasExpiry">
+          <label class="form-label">
+            Thời hạn sử dụng (ngày) <span class="require-input">*</span>
+          </label>
           <input
-            type="text"
-            [(ngModel)]="barCode"
-            name="barCode"
-            placeholder="Nhập hoặc quét barcode"
-            maxlength="64"
-            [class.input-error]="errors['barCode']"
+            type="number"
+            [(ngModel)]="shelfLifeDays"
+            name="shelfLifeDays"
+            placeholder="Nhập số ngày"
+            min="1"
+            [class.input-error]="errors['shelfLifeDays']"
             class="form-input"
-            [disabled]="isEditMode"
           />
-          <button *ngIf="!isEditMode" class="btn-scanner" (click)="openScanner()">
-            <i class="pi pi-camera scanner"></i>
-          </button>
+          <small class="input-hint">Ví dụ: 365 ngày, 30 ngày...</small>
         </div>
       </div>
     </form>
   </mat-dialog-content>
 
-  <mat-dialog-actions class="dialog-actions d-flex justify-content-between">
-    <button (click)="cancel()" class="btn-gray">Hủy</button>
-    <button color="primary" (click)="save()" [disabled]="loading" class="btn-green">
+  <mat-dialog-actions class="dialog-actions">
+    <button type="button" class="btn-cancel" (click)="cancel()">
+      <i class="pi pi-times"></i>
+      Hủy
+    </button>
+    <button type="button" class="btn-save" (click)="save()" [disabled]="loading || checkingBarcode">
       <mat-spinner *ngIf="loading" diameter="20" class="spinner"></mat-spinner>
+      <i *ngIf="!loading" class="pi pi-check"></i>
       {{ isEditMode ? 'Cập nhật' : 'Lưu' }}
     </button>
   </mat-dialog-actions>

@@ -1,44 +1,54 @@
 $primary-color: #22c55e;
 $primary-hover: #16a34a;
 $danger-color: #ef4444;
+$warning-color: #f59e0b;
+$info-color: #3b82f6;
 $border-color: #e5e7eb;
 $text-primary: #111827;
 $text-secondary: #6b7280;
-$bg-hover: #f1f6fb;
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+$bg-section: #f9fafb;
 
 .dialog-wrapper {
   min-width: 100%;
 }
 
 .dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   color: $text-primary;
   margin: 0;
+
+  i {
+    color: $primary-color;
+    font-size: 1.75rem;
+  }
 }
 
 .dialog-content {
-  padding: 1.5rem !important;
-  max-height: 70vh;
+  padding: 24px !important;
+  max-height: 75vh;
   overflow-y: auto;
 
   @media (max-width: 576px) {
-    padding: 1rem !important;
-    max-height: 60vh;
+    padding: 16px !important;
+    max-height: 70vh;
   }
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
 
   &::-webkit-scrollbar-track {
     background: #f1f5f9;
+    border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #cbd5e1;
-    border-radius: 3px;
+    border-radius: 4px;
 
     &:hover {
       background: #94a3b8;
@@ -49,22 +59,22 @@ $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 .detail-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 24px;
 }
 
 .detail-image {
   width: 100%;
-  max-width: 300px;
-  height: 300px;
-  border-radius: 0.75rem;
+  max-width: 350px;
+  height: 350px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid $border-color;
+  border: 3px solid $border-color;
   margin: 0 auto;
-  box-shadow: $shadow-md;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f9fafb;
+  background: $bg-section;
 
   img {
     width: 100%;
@@ -73,66 +83,162 @@ $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   @media (max-width: 576px) {
-    height: 200px;
+    height: 250px;
   }
 }
 
 .detail-info {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 20px;
+}
+
+.detail-section {
+  background: $bg-section;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid $border-color;
+
+  @media (max-width: 576px) {
+    padding: 16px;
+  }
+}
+
+.info-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: $text-primary;
+  padding-bottom: 12px;
+  border-bottom: 2px solid $border-color;
+
+  i {
+    color: $primary-color;
+    font-size: 1.25rem;
+  }
 }
 
 .detail-row {
   display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: $bg-hover;
-  border-radius: 0.5rem;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
   align-items: center;
+  transition: all 0.2s;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateX(4px);
+  }
 
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
-    gap: 0.25rem;
-    padding: 0.625rem;
+    gap: 6px;
+    padding: 10px;
   }
 }
 
 .detail-label {
   font-weight: 600;
   color: $text-secondary;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 
   @media (max-width: 576px) {
-    font-size: 0.8125rem;
+    font-size: 0.85rem;
   }
 }
 
 .detail-value {
-  font-weight: 500;
+  font-weight: 600;
   color: $text-primary;
   word-break: break-word;
+  font-size: 0.95rem;
+
+  &.code {
+    font-family: 'Courier New', monospace;
+    background: #f3f4f6;
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  &.price {
+    color: $primary-color;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
 
   &.profit {
     color: $primary-color;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1.1rem;
   }
 
-  &.low-stock-text {
+  &.stock-warning {
+    color: $warning-color;
+    font-weight: 700;
+  }
+
+  &.stock-danger {
     color: $danger-color;
-    font-weight: 600;
+    font-weight: 700;
+  }
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+
+  i {
+    font-size: 1rem;
+  }
+
+  &.status-success {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #065f46;
+  }
+
+  &.status-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+  }
+
+  &.status-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+  }
+
+  &.status-info {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
   }
 }
 
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  padding: 1rem 1.5rem !important;
-  border-top: 1px solid $border-color;
+  padding: 20px 24px !important;
+  border-top: 2px solid $border-color;
+  background: $bg-section;
 
   @media (max-width: 576px) {
     justify-content: stretch;
+    padding: 16px !important;
 
     button {
       width: 100%;
@@ -141,17 +247,28 @@ $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-close {
-  background: $primary-color !important;
-  color: white !important;
-  min-width: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 8px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, $primary-color 0%, $primary-hover 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba($primary-color, 0.3);
 
   &:hover {
-    background: $primary-hover !important;
-    box-shadow: $shadow-md;
+    background: linear-gradient(135deg, $primary-hover 0%, #15803d 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba($primary-color, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   i {
@@ -159,7 +276,7 @@ $shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
   @media (max-width: 576px) {
-    min-width: auto;
+    padding: 12px 24px;
   }
 }
 

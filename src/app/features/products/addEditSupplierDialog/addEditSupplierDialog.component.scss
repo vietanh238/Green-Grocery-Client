@@ -27,12 +27,12 @@ $bg-section: #f9fafb;
 
 .dialog-content {
   padding: 24px !important;
-  max-height: 75vh;
+  max-height: 70vh;
   overflow-y: auto;
 
   @media (max-width: 576px) {
     padding: 16px !important;
-    max-height: 70vh;
+    max-height: 65vh;
   }
 
   &::-webkit-scrollbar {
@@ -54,10 +54,10 @@ $bg-section: #f9fafb;
   }
 }
 
-.product-form {
+.supplier-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .form-section {
@@ -148,155 +148,17 @@ $bg-section: #f9fafb;
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 70px;
   font-family: inherit;
 }
 
 .form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
 
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
-  }
-}
-
-.image-upload-group {
-  margin-bottom: 0;
-}
-
-.image-upload-container {
-  position: relative;
-  display: inline-block;
-}
-
-.image-preview {
-  width: 180px;
-  height: 180px;
-  border: 3px dashed $border-color;
-  border-radius: 12px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: white;
-
-  &:hover {
-    border-color: $primary-color;
-    background: rgba($primary-color, 0.02);
-    transform: scale(1.02);
-  }
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.upload-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: $text-secondary;
-  text-align: center;
-  padding: 20px;
-
-  i {
-    font-size: 3rem;
-    margin-bottom: 12px;
-    color: $primary-color;
-  }
-
-  span {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-
-  small {
-    font-size: 0.75rem;
-    color: #9ca3af;
-  }
-}
-
-.btn-remove-image {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 32px;
-  height: 32px;
-  background: $danger-color;
-  color: white;
-  border: 3px solid white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba($danger-color, 0.3);
-  transition: all 0.2s;
-  padding: 0;
-
-  &:hover {
-    background: darken($danger-color, 10%);
-    transform: scale(1.1);
-  }
-
-  i {
-    font-size: 0.9rem;
-  }
-}
-
-.barcode-input-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-
-  .form-input {
-    flex: 1;
-  }
-}
-
-.btn-scanner {
-  padding: 12px;
-  border: 2px solid $primary-color;
-  border-radius: 8px;
-  background: white;
-  color: $primary-color;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 48px;
-  height: 48px;
-
-  i {
-    font-size: 1.25rem;
-  }
-
-  &:hover {
-    background: $primary-color;
-    color: white;
-    transform: scale(1.05);
-  }
-}
-
-.barcode-checking {
-  position: absolute;
-  right: 60px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: $primary-color;
-
-  i {
-    font-size: 1.25rem;
   }
 }
 
@@ -318,126 +180,7 @@ $bg-section: #f9fafb;
   color: $text-secondary;
   font-size: 0.8rem;
   margin-top: 4px;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: white;
-  border: 2px solid $border-color;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: $primary-color;
-    background: rgba($primary-color, 0.02);
-  }
-
-  input[type='checkbox'] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: $primary-color;
-  }
-
-  label {
-    font-weight: 600;
-    color: $text-primary;
-    cursor: pointer;
-    margin: 0;
-  }
-}
-
-.profit-info {
-  margin-top: 16px;
-}
-
-.profit-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: linear-gradient(135d, #d1fae5 0%, #a7f3d0 100%);
-  border-radius: 10px;
-  border: 2px solid #6ee7b7;
-
-  i {
-    font-size: 2rem;
-    color: #065f46;
-  }
-}
-
-.profit-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.profit-label {
-  font-size: 0.85rem;
-  color: #065f46;
-  font-weight: 500;
-}
-
-.profit-value {
-  font-size: 1.5rem;
-  color: #065f46;
-  font-weight: 700;
-}
-
-.supplier-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  strong {
-    color: $text-primary;
-    font-size: 0.95rem;
-  }
-
-  small {
-    color: $text-secondary;
-    font-size: 0.8rem;
-  }
-}
-
-:host ::ng-deep {
-  .form-select1 {
-    .p-select {
-      width: 100%;
-      border: 2px solid $border-color;
-      border-radius: 8px;
-      transition: all 0.2s;
-      background: white;
-
-      &:not(.p-disabled):hover {
-        border-color: $primary-color;
-      }
-
-      &.p-focus {
-        border-color: $primary-color;
-        box-shadow: 0 0 0 4px rgba($primary-color, 0.1);
-      }
-
-      .p-select-label {
-        padding: 12px 16px;
-      }
-    }
-  }
-
-  .select-error {
-    .p-select {
-      border-color: $danger-color;
-      background: rgba($danger-color, 0.05);
-
-      &:focus {
-        box-shadow: 0 0 0 4px rgba($danger-color, 0.1);
-      }
-    }
-  }
+  font-style: italic;
 }
 
 .dialog-actions {

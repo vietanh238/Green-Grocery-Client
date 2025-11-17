@@ -13,6 +13,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Select } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
@@ -24,14 +25,26 @@ interface Product {
   id?: number;
   name: string;
   sku: string;
+  bar_code?: string;
   name_category: string;
+  category_id?: number;
+  unit: string;
   cost_price: number;
   price: number;
-  unit: string;
   stock_quantity: number;
-  bar_code?: string;
+  reorder_point: number;
+  max_stock_level: number;
   image?: string;
-  category_id?: number;
+  description?: string;
+  has_expiry?: boolean;
+  shelf_life_days?: number;
+  primary_supplier_name?: string;
+}
+
+interface Supplier {
+  id: number;
+  name: string;
+  code: string;
 }
 
 @Component({
@@ -48,6 +61,7 @@ interface Product {
     MatSelectModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatCheckboxModule,
     Select,
     ToastModule,
   ],
@@ -58,21 +72,30 @@ export class AddEditProductDialogComponent implements OnInit {
   product: Product | null = null;
   lstCategory: any[] = [];
   lstUnit: any[] = [];
+  lstSupplier: Supplier[] = [];
 
   productName: string = '';
   sku: string = '';
   costPrice: number = 0;
   price: number = 0;
   quantity: number = 0;
+  reorderPoint: number = 10;
+  maxStockLevel: number = 100;
   unitSld: any = null;
   category: string = '';
   categorySld: any = null;
+  supplierSld: any = null;
   barCode: string = '';
   productImage: string = '';
+  description: string = '';
+  hasExpiry: boolean = false;
+  shelfLifeDays: number | null = null;
   selectedImageFile: File | null = null;
 
   errors: { [key: string]: boolean } = {};
   loading: boolean = false;
+  checkingBarcode: boolean = false;
+  barcodeExists: boolean = false;
   costPriceDisplay: string = '';
   priceDisplay: string = '';
 
@@ -87,6 +110,7 @@ export class AddEditProductDialogComponent implements OnInit {
     this.product = data.product || null;
     this.lstCategory = data.lstCategory || [];
     this.lstUnit = data.lstUnit || [];
+    this.lstSupplier = data.lstSupplier || [];
   }
 
   ngOnInit(): void {
@@ -103,24 +127,38 @@ export class AddEditProductDialogComponent implements OnInit {
     this.costPrice = this.product.cost_price;
     this.price = this.product.price;
     this.quantity = this.product.stock_quantity;
+    this.reorderPoint = this.product.reorder_point;
+    this.maxStockLevel = this.product.max_stock_level;
     this.category = this.product.name_category;
     this.barCode = this.product.bar_code || '';
     this.productImage = this.product.image || '';
+    this.description = this.product.description || '';
+    this.hasExpiry = this.product.has_expiry || false;
+    this.shelfLifeDays = this.product.shelf_life_days || null;
 
     this.costPriceDisplay = this.formatNumberWithDots(this.costPrice.toString());
     this.priceDisplay = this.formatNumberWithDots(this.price.toString());
-    $('#price').val(this.priceDisplay);
-    $('#cost_price').val(this.costPriceDisplay);
+
     const unit = this.lstUnit.find((u) => u.name === this.product?.unit);
     this.unitSld = unit || null;
 
     const category = this.lstCategory.find((c) => c.name === this.product?.name_category);
     this.categorySld = category || null;
+
+    if (this.product.primary_supplier_name) {
+      const supplier = this.lstSupplier.find((s) => s.name === this.product?.primary_supplier_name);
+      this.supplierSld = supplier || null;
+    }
   }
 
   onImageSelect(event: any): void {
     const file = event.target.files[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        this.showError('Kích thước ảnh không được vượt quá 5MB');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.productImage = e.target.result;
@@ -247,9 +285,44 @@ export class AddEditProductDialogComponent implements OnInit {
     }
   }
 
+  onBarcodeBlur(): void {
+    if (this.barCode && !this.isEditMode) {
+      this.checkBarcodeExists();
+    }
+  }
+
+  checkBarcodeExists(): void {
+    if (!this.barCode) return;
+
+    // this.checkingBarcode = true;
+    // this.service.checkBarcodeExists(this.barCode).subscribe({
+    //   next: (rs: any) => {
+    //     this.checkingBarcode = false;
+    //     if (rs.status === ConstantDef.STATUS_SUCCESS) {
+    //       this.barcodeExists = rs.response.exists;
+    //       if (this.barcodeExists) {
+    //         this.errors['barCode'] = true;
+    //         this.showError('Barcode đã tồn tại trong hệ thống');
+    //       } else {
+    //         delete this.errors['barCode'];
+    //       }
+    //     }
+    //   },
+    //   error: () => {
+    //     this.checkingBarcode = false;
+    //   },
+    // });
+  }
+
+  onExpiryChange(): void {
+    if (!this.hasExpiry) {
+      this.shelfLifeDays = null;
+    }
+  }
+
   validate(): boolean {
     this.errors = {};
-    console.log('price', this.price, this.costPrice);
+
     if (!this.productName?.trim()) {
       this.errors['productName'] = true;
     }
@@ -262,8 +335,18 @@ export class AddEditProductDialogComponent implements OnInit {
     if (!this.price || this.price <= 0) {
       this.errors['price'] = true;
     }
-    if (!this.quantity || this.quantity <= 0) {
+    if (this.quantity < 0) {
       this.errors['quantity'] = true;
+    }
+    if (this.reorderPoint < 0) {
+      this.errors['reorderPoint'] = true;
+    }
+    if (this.maxStockLevel <= 0) {
+      this.errors['maxStockLevel'] = true;
+    }
+    if (this.reorderPoint >= this.maxStockLevel) {
+      this.errors['reorderPoint'] = true;
+      this.showError('Điểm đặt lại phải nhỏ hơn tồn kho tối đa');
     }
     if (!this.unitSld) {
       this.errors['unit'] = true;
@@ -273,6 +356,12 @@ export class AddEditProductDialogComponent implements OnInit {
     }
     if (!this.barCode?.trim()) {
       this.errors['barCode'] = true;
+    }
+    if (this.barcodeExists && !this.isEditMode) {
+      this.errors['barCode'] = true;
+    }
+    if (this.hasExpiry && (!this.shelfLifeDays || this.shelfLifeDays <= 0)) {
+      this.errors['shelfLifeDays'] = true;
     }
 
     return Object.keys(this.errors).length === 0;
@@ -291,11 +380,19 @@ export class AddEditProductDialogComponent implements OnInit {
       costPrice: this.costPrice,
       price: this.price,
       quantity: this.quantity,
+      reorderPoint: this.reorderPoint,
+      maxStockLevel: this.maxStockLevel,
       unit: this.unitSld.name,
       category: this.category.trim(),
+      categoryId: this.categorySld?.id || null,
       barCode: this.barCode.trim(),
       image: this.productImage,
+      description: this.description.trim(),
+      hasExpiry: this.hasExpiry,
+      shelfLifeDays: this.hasExpiry ? this.shelfLifeDays : null,
+      supplierId: this.supplierSld?.id || null,
     };
+
     const request = this.isEditMode
       ? this.service.updateProduct(params)
       : this.service.createProduct(params);
@@ -309,10 +406,10 @@ export class AddEditProductDialogComponent implements OnInit {
           );
           this.dialogRef.close(true);
         } else {
-          this.showError(rs.response.error_message_vn);
+          this.showError(rs.response.error_message_vn || 'Đã có lỗi xảy ra');
         }
       },
-      error: (_error: any) => {
+      error: () => {
         this.loading = false;
         this.showError('Đã có lỗi xảy ra, vui lòng thử lại sau');
       },
@@ -350,7 +447,6 @@ export class AddEditProductDialogComponent implements OnInit {
     return fieldType === 'costPrice' ? this.costPriceDisplay : this.priceDisplay;
   }
 
-  // API CALLS
   private showSuccess(detail: string): void {
     this.message.add({
       severity: 'success',
@@ -369,14 +465,16 @@ export class AddEditProductDialogComponent implements OnInit {
     });
   }
 
-  inputNewCategory() {
-    this.categorySld = '';
+  inputNewCategory(): void {
+    this.categorySld = null;
   }
-  openScanner() {
+
+  openScanner(): void {
     const dialog = this.dialog.open(ScannerComponent, {});
     dialog.afterClosed().subscribe((result: any) => {
       if (result && result[0]) {
         this.barCode = result[0];
+        this.checkBarcodeExists();
       }
     });
   }

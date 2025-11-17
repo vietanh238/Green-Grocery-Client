@@ -121,7 +121,7 @@
               <th>Số điện thoại</th>
               <th>Địa chỉ</th>
               <th class="text-right">Tổng nợ</th>
-              <th>Giao dịch cuối</th>
+              <th>Ngày trả</th>
               <th class="text-center">Trạng thái</th>
               <th class="text-center">Thao tác</th>
             </tr>
@@ -145,7 +145,7 @@
                 </span>
               </td>
               <td>
-                <span class="date">{{ customer.lastTransaction }}</span>
+                <span class="date">{{ customer.dueDate }}</span>
               </td>
               <td class="text-center text-hidden">
                 <p-tag
@@ -458,45 +458,58 @@
       </div>
     </div>
 
+    <div class="customer-stats">
+      <div class="stat-item">
+        <span class="stat-label">Loại khách hàng</span>
+        <span class="stat-value">{{ selectedCustomer.customerType }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Tổng đơn hàng</span>
+        <span class="stat-value">{{ selectedCustomer.totalOrders }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Tổng chi tiêu</span>
+        <span class="stat-value">{{ selectedCustomer.totalSpent | number : '1.0-0' }} đ</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Mua hàng cuối</span>
+        <span class="stat-value">{{ selectedCustomer.lastPurchaseDate }}</span>
+      </div>
+    </div>
+
     <div class="transaction-history">
       <h4 class="section-title">
         <i class="pi pi-history"></i>
-        Lịch sử giao dịch
+        Lịch sử giao dịch nợ ({{ selectedCustomer.history.length }} giao dịch)
       </h4>
-      <div class="timeline">
-        <div class="timeline-item" *ngFor="let trans of customerTransactions">
-          <div
-            class="timeline-marker"
-            [class.debt]="trans.type === 'debt'"
-            [class.payment]="trans.type === 'payment'"
-          >
-            <i [class]="trans.type === 'debt' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"></i>
+      <div class="history-timeline">
+        <div
+          class="timeline-item"
+          *ngFor="let transaction of selectedCustomer.history; let i = index"
+        >
+          <div class="timeline-marker">
+            <div class="marker-dot"></div>
+            <div class="marker-line" *ngIf="i !== selectedCustomer.history.length - 1"></div>
           </div>
           <div class="timeline-content">
-            <div class="timeline-header">
-              <span
-                class="timeline-type"
-                [class.debt]="trans.type === 'debt'"
-                [class.payment]="trans.type === 'payment'"
+            <div class="transaction-header">
+              <span class="transaction-date">{{ transaction.date }}</span>
+              <span class="transaction-amount debt"
+                >+ {{ transaction.amount | number : '1.0-0' }} đ</span
               >
-                {{ getTransactionTypeLabel(trans.type) }}
-              </span>
-              <span
-                class="timeline-amount"
-                [class.debt]="trans.type === 'debt'"
-                [class.payment]="trans.type === 'payment'"
-              >
-                {{ trans.type === 'debt' ? '+' : '-' }}{{ trans.amount | number : '1.0-0' }} đ
-              </span>
             </div>
-            <p class="timeline-note">{{ trans.note }}</p>
-            <div class="timeline-footer">
-              <span class="timeline-date">{{ trans.date }}</span>
-              <span class="timeline-remaining"
-                >Còn lại: {{ trans.remainingDebt | number : '1.0-0' }} đ</span
-              >
+            <div class="transaction-note" *ngIf="transaction.note">
+              {{ transaction.note }}
+            </div>
+            <div class="transaction-type">
+              <i class="pi pi-money-bill"></i>
+              Ghi nợ
             </div>
           </div>
+        </div>
+        <div class="empty-history" *ngIf="selectedCustomer.history.length === 0">
+          <i class="pi pi-inbox"></i>
+          <p>Không có lịch sử giao dịch</p>
         </div>
       </div>
     </div>

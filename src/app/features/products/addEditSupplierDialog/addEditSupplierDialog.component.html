@@ -1,0 +1,230 @@
+<div class="dialog-wrapper">
+  <h2 mat-dialog-title class="dialog-title">
+    <i class="pi pi-building"></i>
+    {{ isEditMode ? 'Cập nhật nhà cung cấp' : 'Thêm nhà cung cấp mới' }}
+  </h2>
+
+  <mat-dialog-content class="dialog-content">
+    <form class="supplier-form">
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-info-circle"></i>
+          Thông tin cơ bản
+        </h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"> Mã nhà cung cấp <span class="require-input">*</span> </label>
+            <input
+              type="text"
+              [(ngModel)]="code"
+              name="code"
+              placeholder="Mã tự động"
+              maxlength="50"
+              [class.input-error]="errors['code']"
+              class="form-input"
+              [disabled]="isEditMode"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Tên nhà cung cấp <span class="require-input">*</span>
+            </label>
+            <input
+              type="text"
+              [(ngModel)]="name"
+              name="name"
+              placeholder="Nhập tên nhà cung cấp"
+              maxlength="255"
+              [class.input-error]="errors['name']"
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Người liên hệ</label>
+          <input
+            type="text"
+            [(ngModel)]="contactPerson"
+            name="contactPerson"
+            placeholder="Nhập tên người liên hệ"
+            maxlength="255"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-phone"></i>
+          Thông tin liên hệ
+        </h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"> Số điện thoại <span class="require-input">*</span> </label>
+            <input
+              type="tel"
+              [(ngModel)]="phoneNumber"
+              name="phoneNumber"
+              placeholder="Nhập số điện thoại"
+              maxlength="20"
+              [class.input-error]="errors['phoneNumber']"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              [(ngModel)]="email"
+              name="email"
+              placeholder="Nhập email"
+              maxlength="255"
+              [class.input-error]="errors['email']"
+              class="form-input"
+            />
+            <small *ngIf="errors['email']" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              Email không hợp lệ
+            </small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Địa chỉ</label>
+          <textarea
+            [(ngModel)]="address"
+            name="address"
+            placeholder="Nhập địa chỉ"
+            maxlength="500"
+            rows="2"
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-file"></i>
+          Thông tin thuế & ngân hàng
+        </h3>
+
+        <div class="form-group">
+          <label class="form-label">Mã số thuế</label>
+          <input
+            type="text"
+            [(ngModel)]="taxCode"
+            name="taxCode"
+            placeholder="Nhập mã số thuế"
+            maxlength="50"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Số tài khoản ngân hàng</label>
+            <input
+              type="text"
+              [(ngModel)]="bankAccount"
+              name="bankAccount"
+              placeholder="Nhập số tài khoản"
+              maxlength="50"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tên ngân hàng</label>
+            <input
+              type="text"
+              [(ngModel)]="bankName"
+              name="bankName"
+              placeholder="Nhập tên ngân hàng"
+              maxlength="255"
+              class="form-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-dollar"></i>
+          Điều khoản thanh toán
+        </h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Thời hạn thanh toán (ngày)</label>
+            <input
+              type="number"
+              [(ngModel)]="paymentTerms"
+              name="paymentTerms"
+              placeholder="Nhập số ngày"
+              min="0"
+              [class.input-error]="errors['paymentTerms']"
+              class="form-input"
+            />
+            <small class="input-hint"
+              >Ví dụ: 0 (thanh toán ngay), 30 (thanh toán sau 30 ngày)</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Hạn mức công nợ</label>
+            <input
+              type="text"
+              id="credit_limit"
+              placeholder="0"
+              (input)="inputCreditLimit($event)"
+              (blur)="blurCreditLimit($event)"
+              (focus)="focusCreditLimit($event)"
+              (keydown)="keydownPrice($event)"
+              [class.input-error]="errors['creditLimit']"
+              class="form-input"
+            />
+            <small class="input-hint">Giới hạn công nợ tối đa</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          <i class="pi pi-comment"></i>
+          Ghi chú
+        </h3>
+
+        <div class="form-group">
+          <label class="form-label">Ghi chú thêm</label>
+          <textarea
+            [(ngModel)]="notes"
+            name="notes"
+            placeholder="Nhập ghi chú về nhà cung cấp"
+            maxlength="1000"
+            rows="3"
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-actions">
+    <button type="button" class="btn-cancel" (click)="cancel()">
+      <i class="pi pi-times"></i>
+      Hủy
+    </button>
+    <button type="button" class="btn-save" (click)="save()" [disabled]="loading">
+      <mat-spinner *ngIf="loading" diameter="20" class="spinner"></mat-spinner>
+      <i *ngIf="!loading" class="pi pi-check"></i>
+      {{ isEditMode ? 'Cập nhật' : 'Lưu' }}
+    </button>
+  </mat-dialog-actions>
+
+  <p-toast />
+</div>

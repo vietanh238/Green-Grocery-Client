@@ -207,4 +207,8 @@ export class Service {
   getProductForecast(productId: number): Observable<any> {
     return this._http.get(environment.apiHome + `ai/forecast/${productId}/`);
   }
+
+  getSuppliers(): Observable<any> {
+    return this._http.get(environment.apiHome);
+  }
 }

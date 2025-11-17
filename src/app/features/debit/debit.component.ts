@@ -28,8 +28,20 @@ interface Customer {
   address: string;
   totalDebt: number;
   lastTransaction: string;
+  dueDate: string;
   status: string;
   colorStatus: string;
+  customerType: string;
+  totalOrders: number;
+  totalSpent: number;
+  lastPurchaseDate: string;
+  history: TransactionHistory[];
+}
+
+interface TransactionHistory {
+  date: string;
+  amount: number;
+  note: string;
 }
 
 interface DebtTransaction {
@@ -41,6 +53,18 @@ interface DebtTransaction {
   note: string;
   date: string;
   remainingDebt: number;
+}
+
+interface Debt {
+  id: string;
+  debt_code: string;
+  customer: string;
+  total_amount: number;
+  paid_amount: number;
+  debt_amount: number;
+  due_date: string;
+  status: string;
+  note?: string;
 }
 
 @Component({
@@ -84,7 +108,6 @@ export class DebtComponent implements OnInit {
   customers: Customer[] = [];
   filteredCustomers: Customer[] = [];
   debtTransactions: DebtTransaction[] = [];
-  customerTransactions: DebtTransaction[] = [];
 
   newCustomer = {
     name: '',
@@ -122,10 +145,12 @@ export class DebtComponent implements OnInit {
     this.getDebit();
     this.checkWindowSize();
   }
+
   @HostListener('window:resize', ['$event'])
   onResize(event: any) {
     this.checkWindowSize();
   }
+
   private getCurrentDate(): string {
     const today = new Date();
     const year = today.getFullYear();
@@ -142,6 +167,7 @@ export class DebtComponent implements OnInit {
       this.dialogWidth = '500px';
     }
   }
+
   getCustomer() {
     this.service.getCustomer().subscribe(
       (rs: any) => {
@@ -154,11 +180,21 @@ export class DebtComponent implements OnInit {
               phone: item?.phone,
               address: item?.address,
               totalDebt: item?.total_debt || 0,
-              lastTransaction: item?.last_transaction
-                ? moment(item?.last_transaction).format('DD/MM/YYYY')
+              lastTransaction: item?.last_transaction_date
+                ? moment(item?.last_transaction_date).format('DD/MM/YYYY')
                 : 'Không có giao dịch',
-              status: item?.status,
-              colorStatus: this.getColorStatus(item?.status),
+              dueDate: item?.due_date
+                ? moment(item.due_date).format('DD/MM/YYYY')
+                : 'Không có kì hạn',
+              status: item?.debt_status,
+              colorStatus: this.getColorStatus(item?.debt_status),
+              customerType: item?.customer_type,
+              totalOrders: item?.total_orders || 0,
+              totalSpent: item?.total_spent || 0,
+              lastPurchaseDate: item?.last_purchase_date
+                ? moment(item?.last_purchase_date).format('DD/MM/YYYY')
+                : 'Không có mua hàng',
+              history: item?.history || [],
             }));
             this.customers = data;
             this.filteredCustomers = [...this.customers];
@@ -174,7 +210,7 @@ export class DebtComponent implements OnInit {
   getColorStatus(status: any): string {
     let color: string = 'secondary';
     switch (status) {
-      case 'in_debt': {
+      case 'active': {
         color = 'warn';
         break;
       }
@@ -182,7 +218,7 @@ export class DebtComponent implements OnInit {
         color = 'danger';
         break;
       }
-      case 'paid_debt': {
+      case 'no_debt': {
         color = 'success';
         break;
       }
@@ -200,10 +236,10 @@ export class DebtComponent implements OnInit {
           this.totalDebt = rs.response?.total_debt || 0;
           this.change_percent = rs.response?.change_percent || 0;
           this.totalCustomers = rs.response?.customer_count || 0;
-          this.thisMonthDebt = rs.response?.debit_this_month?.this_month_amount || 0;
-          this.countTransaction = rs.response?.debit_this_month?.this_month_transactions || 0;
-          this.overdueDebt = rs.response?.debit_overdue?.overdue_amount || 0;
-          this.overdue_customers = rs.response?.debit_overdue?.overdue_customers || 0;
+          this.thisMonthDebt = rs.response?.debt_this_month?.this_month_amount || 0;
+          this.countTransaction = rs.response?.debt_this_month?.this_month_transactions || 0;
+          this.overdueDebt = rs.response?.debt_overdue?.overdue_amount || 0;
+          this.overdue_customers = rs.response?.debt_overdue?.overdue_customers || 0;
         }
       },
       (_error: any) => {
@@ -211,6 +247,7 @@ export class DebtComponent implements OnInit {
       }
     );
   }
+
   onSearch() {
     if (!this.searchValue.trim()) {
       this.filteredCustomers = [...this.customers];
@@ -248,12 +285,10 @@ export class DebtComponent implements OnInit {
     switch (status) {
       case 'no_debt':
         return 'Không nợ';
-      case 'in_debt':
+      case 'active':
         return 'Đang nợ';
       case 'overdue':
         return 'Quá hạn';
-      case 'paid_debt':
-        return 'Đã trả';
       default:
         return 'Khác';
     }
@@ -285,7 +320,6 @@ export class DebtComponent implements OnInit {
 
   viewCustomerDetail(customer: Customer) {
     this.selectedCustomer = customer;
-    this.customerTransactions = this.debtTransactions.filter((t) => t.customerId === customer.id);
     this.showCustomerDetailDialog = true;
   }
 
@@ -321,12 +355,14 @@ export class DebtComponent implements OnInit {
           this.resetCustomerForm();
           this.getCustomer();
         } else {
-          this.message.add({
-            severity: 'error',
-            summary: 'Lỗi',
-            detail: rs.error_message || 'Thêm khách hàng thất bại',
-            life: 3000,
-          });
+          if (rs.error_code == 2) {
+            this.message.add({
+              severity: 'error',
+              summary: 'Lỗi',
+              detail: 'Số điện thoại khách hàng đã được đăng kí',
+              life: 3000,
+            });
+          }
         }
       },
       (error: any) => {
@@ -340,6 +376,7 @@ export class DebtComponent implements OnInit {
       }
     );
   }
+
   addDebt() {
     if (!this.newDebt.customerId || !this.newDebt.amount) {
       this.message.add({
@@ -425,6 +462,11 @@ export class DebtComponent implements OnInit {
           this.resetPaymentForm();
           this.getCustomer();
           this.getDebit();
+
+          // Hiển thị thông tin chi tiết thanh toán nếu có
+          if (rs.response.processed_debts && rs.response.processed_debts.length > 0) {
+            console.log('Chi tiết thanh toán:', rs.response.processed_debts);
+          }
         } else {
           this.message.add({
             severity: 'error',
@@ -485,12 +527,14 @@ export class DebtComponent implements OnInit {
               this.getCustomer();
               this.getDebit();
             } else {
-              this.message.add({
-                severity: 'error',
-                summary: 'Lỗi',
-                detail: rs.error_message || 'Xóa khách hàng thất bại',
-                life: 3000,
-              });
+              if (rs.error_code == 1) {
+                this.message.add({
+                  severity: 'error',
+                  summary: 'Lỗi',
+                  detail: 'không thể xóa khách hàng vẫn còn nợ',
+                  life: 3000,
+                });
+              }
             }
           },
           (error: any) => {

@@ -14,20 +14,51 @@ import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDia
 import { ProductDetailDialogComponent } from './productDetailDialog/producDetailDialog.component';
 import { AddEditProductDialogComponent } from './addProductDialog/addProductDialog.component';
 import { BulkImportDialogComponent } from '../../component/bulkImportDialog/bulkImportDialog.component';
+import { AddEditSupplierDialogComponent } from './addEditSupplierDialog/addEditSupplierDialog.component';
 import * as XLSX from 'xlsx';
 
 interface Product {
   id?: number;
   name: string;
   sku: string;
+  bar_code?: string;
   name_category: string;
+  category_id?: number;
+  unit: string;
   cost_price: number;
   price: number;
-  unit: string;
   stock_quantity: number;
-  bar_code?: string;
+  reorder_point: number;
+  max_stock_level: number;
+  is_reorder?: boolean;
+  is_overstock?: boolean;
   image?: string;
-  category_id?: number;
+  description?: string;
+  has_expiry?: boolean;
+  shelf_life_days?: number;
+  primary_supplier_name?: string;
+  primary_supplier_cost?: number;
+  created_by_name?: string;
+  created_at_date?: string;
+}
+
+interface Supplier {
+  id?: number;
+  code: string;
+  name: string;
+  phone_number: string;
+  email: string;
+}
+
+interface Category {
+  id?: number;
+  name: string;
+  code?: string;
+}
+
+interface StockFilter {
+  name: string;
+  code: string;
 }
 
 @Component({
@@ -48,19 +79,26 @@ interface Product {
 export class ProductsComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
-  lstCategory: any[] = [];
+  lstCategory: Category[] = [];
+  lstSupplier: Supplier[] = [];
   lstUnit: any[] = [];
-  filterCategories: any[] = [];
-  stockFilters: any[] = [
+  filterCategories: Category[] = [];
+  stockFilters: StockFilter[] = [
+    { name: 'Tất cả', code: 'all' },
     { name: 'Còn hàng', code: 'in_stock' },
     { name: 'Sắp hết hàng', code: 'low_stock' },
     { name: 'Hết hàng', code: 'out_stock' },
+    { name: 'Vượt tồn kho', code: 'overstock' },
   ];
 
   searchText: string = '';
-  selectedFilterCategory: any = null;
-  selectedStockFilter: any = null;
+  selectedFilterCategory: Category | null = null;
+  selectedStockFilter: StockFilter | null = null;
   loading: boolean = false;
+
+  reorderCount: number = 0;
+  overstockCount: number = 0;
+  outOfStockCount: number = 0;
 
   constructor(
     private dialog: MatDialog,
@@ -72,6 +110,7 @@ export class ProductsComponent implements OnInit {
     this.initializeUnits();
     this.getProducts();
     this.getListCategory();
+    this.getSuppliers();
   }
 
   getProducts(): void {
@@ -83,11 +122,12 @@ export class ProductsComponent implements OnInit {
           this.products = rs.response || [];
           this.filteredProducts = [...this.products];
           this.updateFilterCategories();
+          this.calculateStockStats();
         } else {
           this.showError('Đã có lỗi xảy ra, vui lòng thử lại sau');
         }
       },
-      error: (_error: any) => {
+      error: () => {
         this.loading = false;
         this.showError('Lỗi hệ thống');
       },
@@ -98,26 +138,46 @@ export class ProductsComponent implements OnInit {
     this.service.getCategories().subscribe({
       next: (data: any) => {
         if (data.status === ConstantDef.STATUS_SUCCESS) {
-          let listCategory = data.response.data || [];
+          const listCategory = data.response.data || [];
           this.lstCategory = listCategory.map((item: any) => ({
+            id: item.id,
             name: item.name,
             code: item.id,
           }));
           this.updateFilterCategories();
         }
       },
-      error: (_error: any) => {
+      error: () => {
         this.showError('Không thể tải danh sách phân loại');
       },
     });
   }
 
+  getSuppliers(): void {
+    this.service.getSuppliers().subscribe({
+      next: (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.lstSupplier = rs.response || [];
+        }
+      },
+      error: () => {
+        this.showError('Không thể tải danh sách nhà cung cấp');
+      },
+    });
+  }
+
   updateFilterCategories(): void {
-    const categories = new Set(this.products.map((p) => p.name_category));
+    const categories = new Set(this.products.map((p) => p.name_category).filter((cat) => cat));
     this.filterCategories = Array.from(categories).map((cat, index) => ({
       name: cat,
-      code: index,
+      code: index.toString(),
     }));
+  }
+
+  calculateStockStats(): void {
+    this.reorderCount = this.products.filter((p) => p.is_reorder).length;
+    this.overstockCount = this.products.filter((p) => p.is_overstock).length;
+    this.outOfStockCount = this.products.filter((p) => p.stock_quantity === 0).length;
   }
 
   initializeUnits(): void {
@@ -144,11 +204,12 @@ export class ProductsComponent implements OnInit {
   openAddProductDialog(): void {
     const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
       width: '90vw',
-      maxWidth: '600px',
+      maxWidth: '900px',
       data: {
         isEditMode: false,
         lstCategory: this.lstCategory,
         lstUnit: this.lstUnit,
+        lstSupplier: this.lstSupplier,
       },
     });
     dialogRef.afterClosed().subscribe((result) => {
@@ -161,8 +222,11 @@ export class ProductsComponent implements OnInit {
   openBulkImportDialog(): void {
     const dialogRef = this.dialog.open(BulkImportDialogComponent, {
       width: '90vw',
-      maxWidth: '600px',
-      data: {},
+      maxWidth: '800px',
+      data: {
+        lstCategory: this.lstCategory,
+        lstSupplier: this.lstSupplier,
+      },
     });
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
@@ -171,15 +235,30 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  openAddSupplierDialog(): void {
+    const dialogRef = this.dialog.open(AddEditSupplierDialogComponent, {
+      width: '90vw',
+      maxWidth: '800px',
+      data: { isEditMode: false },
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.getSuppliers();
+        this.showSuccess('Thêm nhà cung cấp thành công. Vui lòng chọn nhà cung cấp cho sản phẩm.');
+      }
+    });
+  }
+
   editProduct(product: Product): void {
     const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
       width: '90vw',
-      maxWidth: '600px',
+      maxWidth: '900px',
       data: {
         isEditMode: true,
         product,
         lstCategory: this.lstCategory,
         lstUnit: this.lstUnit,
+        lstSupplier: this.lstSupplier,
       },
     });
     dialogRef.afterClosed().subscribe((result) => {
@@ -196,21 +275,10 @@ export class ProductsComponent implements OnInit {
         disableClose: true,
         data: {
           title: 'Xác nhận xóa sản phẩm',
+          message: `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"? Thao tác này không thể hoàn tác.`,
           buttons: [
-            {
-              label: 'Hủy',
-              class: 'default',
-              value: false,
-              color: '',
-              background: '',
-            },
-            {
-              label: 'Xác nhận',
-              class: 'primary',
-              value: true,
-              color: '',
-              background: '',
-            },
+            { label: 'Hủy', class: 'default', value: false },
+            { label: 'Xóa', class: 'warn', value: true },
           ],
         },
       });
@@ -219,8 +287,9 @@ export class ProductsComponent implements OnInit {
           this.service.deleteProduct(barCode).subscribe((rs: any) => {
             if (rs.status === ConstantDef.STATUS_SUCCESS) {
               this.showSuccess('Xóa sản phẩm thành công');
-              const productList = this.products;
-              this.filteredProducts = productList.filter((item: any) => item?.bar_code !== barCode);
+              this.getProducts();
+            } else {
+              this.showError('Không thể xóa sản phẩm');
             }
           });
         }
@@ -231,7 +300,7 @@ export class ProductsComponent implements OnInit {
   viewDetail(product: Product): void {
     this.dialog.open(ProductDetailDialogComponent, {
       width: '90vw',
-      maxWidth: '500px',
+      maxWidth: '600px',
       data: { product },
     });
   }
@@ -254,32 +323,39 @@ export class ProductsComponent implements OnInit {
 
     if (this.searchText) {
       const search = this.searchText.toLowerCase();
+      console.log('filter', search);
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(search) ||
           p.sku.toLowerCase().includes(search) ||
-          (p.bar_code && p.bar_code.toLowerCase().includes(search))
+          (p.bar_code && p.bar_code.toLowerCase().includes(search)) ||
+          (p.primary_supplier_name && p.primary_supplier_name.toLowerCase().includes(search))
       );
     }
 
     if (this.selectedFilterCategory) {
-      filtered = filtered.filter((p) => p.name_category === this.selectedFilterCategory.name);
+      filtered = filtered.filter((p) => p.name_category === this.selectedFilterCategory!.name);
     }
 
-    if (this.selectedStockFilter) {
+    if (this.selectedStockFilter && this.selectedStockFilter.code !== 'all') {
       switch (this.selectedStockFilter.code) {
         case 'in_stock':
-          filtered = filtered.filter((p) => p.stock_quantity > 10);
+          filtered = filtered.filter((p) => p.stock_quantity > p.reorder_point && !p.is_overstock);
           break;
         case 'low_stock':
-          filtered = filtered.filter((p) => p.stock_quantity > 0 && p.stock_quantity <= 10);
+          filtered = filtered.filter(
+            (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point
+          );
           break;
         case 'out_stock':
           filtered = filtered.filter((p) => p.stock_quantity === 0);
           break;
+        case 'overstock':
+          filtered = filtered.filter((p) => p.is_overstock);
+          break;
       }
     }
-
+    console.log('filtered', filtered, this.products);
     this.filteredProducts = filtered;
   }
 
@@ -295,10 +371,16 @@ export class ProductsComponent implements OnInit {
       SKU: product.sku,
       Barcode: product.bar_code || '',
       'Phân loại': product.name_category,
+      'Nhà cung cấp': product.primary_supplier_name || '',
       'Giá nhập (VNĐ)': product.cost_price,
       'Giá bán (VNĐ)': product.price,
       'Tồn kho': product.stock_quantity,
+      'Điểm đặt lại': product.reorder_point,
+      'Tồn kho tối đa': product.max_stock_level,
       'Đơn vị': product.unit,
+      'Trạng thái': this.getStockStatus(product),
+      'Có HSD': product.has_expiry ? 'Có' : 'Không',
+      'HSD (ngày)': product.shelf_life_days || '',
       'Link ảnh': product.image || '',
     }));
 
@@ -310,10 +392,16 @@ export class ProductsComponent implements OnInit {
       { wch: 15 },
       { wch: 15 },
       { wch: 20 },
+      { wch: 25 },
       { wch: 15 },
       { wch: 15 },
       { wch: 10 },
+      { wch: 12 },
+      { wch: 15 },
       { wch: 10 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 12 },
       { wch: 30 },
     ];
     ws['!cols'] = colWidths;
@@ -328,9 +416,31 @@ export class ProductsComponent implements OnInit {
     this.showSuccess('Xuất báo cáo Excel thành công!');
   }
 
+  getStockStatus(product: Product): string {
+    if (product.stock_quantity === 0) return 'Hết hàng';
+    if (product.is_overstock) return 'Vượt tồn kho';
+    if (product.is_reorder) return 'Sắp hết hàng';
+    return 'Còn hàng';
+  }
+
+  getStockStatusClass(product: Product): string {
+    if (product.stock_quantity === 0) return 'out-of-stock';
+    if (product.is_overstock) return 'overstock';
+    if (product.is_reorder) return 'low-stock';
+    return 'in-stock';
+  }
+
   onImageError(event: any): void {
     const element = event.target as HTMLImageElement;
+    element.src = 'assets/placeholder-product.png';
     element.onerror = null;
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount);
   }
 
   private showSuccess(detail: string): void {

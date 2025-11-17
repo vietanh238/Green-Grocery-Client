@@ -138,33 +138,6 @@
         gap: 8px;
         font-size: 13px;
 
-        .stat-change {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-weight: 600;
-
-          &.up {
-            background: #fee2e2;
-            color: #dc2626;
-          }
-
-          &.down {
-            background: #dcfce7;
-            color: #16a34a;
-          }
-
-          i {
-            font-size: 11px;
-          }
-        }
-
-        .stat-period {
-          color: #9ca3af;
-        }
-
         .stat-info {
           color: #6b7280;
         }
@@ -266,11 +239,6 @@
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
-  .customer-id {
-    font-weight: 600;
-    color: #3b82f6;
-  }
-
   .customer-name {
     color: #1f2937;
     font-weight: 600;
@@ -356,38 +324,6 @@
         }
       }
     }
-  }
-
-  .transaction-id {
-    font-weight: 600;
-    color: #6b7280;
-  }
-
-  .transaction-amount {
-    font-weight: 700;
-
-    &.debt {
-      color: #ef4444;
-    }
-
-    &.payment {
-      color: #22c55e;
-    }
-  }
-
-  .note {
-    color: #6b7280;
-    font-size: 13px;
-  }
-
-  .datetime {
-    color: #6b7280;
-    font-size: 13px;
-  }
-
-  .remaining {
-    font-weight: 600;
-    color: #ef4444;
   }
 
   .empty-state {
@@ -560,6 +496,33 @@
   }
 }
 
+.customer-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 0 24px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      color: #1f2937;
+      font-weight: 600;
+    }
+  }
+}
+
 .transaction-history {
   padding: 0 24px;
 
@@ -577,107 +540,116 @@
     }
   }
 
-  .timeline {
+  .history-timeline {
     position: relative;
-    padding-left: 40px;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 16px;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: #e5e7eb;
-    }
 
     .timeline-item {
+      display: flex;
+      margin-bottom: 20px;
       position: relative;
-      margin-bottom: 24px;
 
       .timeline-marker {
-        position: absolute;
-        left: -28px;
-        top: 4px;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        border: 3px solid white;
-        font-size: 14px;
+        margin-right: 16px;
+        position: relative;
 
-        &.debt {
-          background: #fee2e2;
-          color: #ef4444;
+        .marker-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #ef4444;
+          border: 2px solid white;
+          box-shadow: 0 0 0 2px #ef4444;
+          z-index: 2;
         }
 
-        &.payment {
-          background: #dcfce7;
-          color: #22c55e;
+        .marker-line {
+          width: 2px;
+          flex: 1;
+          background: #e5e7eb;
+          margin-top: 4px;
+          min-height: 40px;
         }
       }
 
       .timeline-content {
-        background: #f9fafb;
-        padding: 16px;
+        flex: 1;
+        background: #f8fafc;
         border-radius: 8px;
+        padding: 16px;
+        border-left: 4px solid #ef4444;
 
-        .timeline-header {
+        .transaction-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 8px;
 
-          .timeline-type {
-            font-weight: 600;
+          .transaction-date {
             font-size: 14px;
-
-            &.debt {
-              color: #ef4444;
-            }
-
-            &.payment {
-              color: #22c55e;
-            }
+            font-weight: 600;
+            color: #374151;
           }
 
-          .timeline-amount {
-            font-weight: 700;
+          .transaction-amount {
             font-size: 16px;
+            font-weight: 700;
 
             &.debt {
               color: #ef4444;
-            }
-
-            &.payment {
-              color: #22c55e;
             }
           }
         }
 
-        .timeline-note {
-          margin: 0 0 12px 0;
+        .transaction-note {
           font-size: 13px;
           color: #6b7280;
+          margin-bottom: 8px;
+          line-height: 1.4;
         }
 
-        .timeline-footer {
+        .transaction-type {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: 6px;
           font-size: 12px;
+          color: #6b7280;
+          font-weight: 500;
 
-          .timeline-date {
-            color: #9ca3af;
-          }
-
-          .timeline-remaining {
-            font-weight: 600;
+          i {
             color: #ef4444;
           }
         }
+      }
+
+      &:last-child {
+        .timeline-marker .marker-line {
+          display: none;
+        }
+      }
+    }
+
+    .empty-history {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 2px dashed #e5e7eb;
+
+      i {
+        font-size: 48px;
+        color: #d1d5db;
+        margin-bottom: 12px;
+      }
+
+      p {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0;
       }
     }
   }
@@ -810,6 +782,28 @@
 
     .customer-debt-badge {
       align-self: stretch;
+    }
+  }
+
+  .customer-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .transaction-history .history-timeline .timeline-item {
+    flex-direction: column;
+
+    .timeline-marker {
+      margin-right: 0;
+      margin-bottom: 8px;
+      flex-direction: row;
+      align-items: center;
+
+      .marker-line {
+        width: 40px;
+        height: 2px;
+        margin-top: 0;
+        margin-left: 4px;
+      }
     }
   }
 }

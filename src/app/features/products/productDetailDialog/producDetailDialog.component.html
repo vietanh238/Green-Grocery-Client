@@ -1,64 +1,182 @@
 <div class="dialog-wrapper">
-  <h2 mat-dialog-title class="dialog-title">Chi tiết sản phẩm</h2>
+  <h2 mat-dialog-title class="dialog-title">
+    <i class="pi pi-box"></i>
+    Chi tiết sản phẩm
+  </h2>
 
   <mat-dialog-content class="dialog-content">
     <div class="detail-container" *ngIf="product">
       <div class="detail-image">
-        <img [src]="product.image || ''" alt="Product" />
+        <img
+          [src]="product.image || 'assets/placeholder-product.png'"
+          alt="Product"
+          (error)="onImageError($event)"
+        />
       </div>
 
       <div class="detail-info">
-        <div class="detail-row">
-          <span class="detail-label">Tên sản phẩm</span>
-          <span class="detail-value">{{ product.name }}</span>
+        <div class="detail-section">
+          <h3 class="info-section-title">
+            <i class="pi pi-info-circle"></i>
+            Thông tin cơ bản
+          </h3>
+
+          <div class="detail-row">
+            <span class="detail-label">Tên sản phẩm</span>
+            <span class="detail-value">{{ product.name }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">SKU</span>
+            <span class="detail-value code">{{ product.sku }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Barcode</span>
+            <span class="detail-value code">{{ product.bar_code || 'Không có' }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Phân loại</span>
+            <span class="detail-value">{{ product.name_category }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Đơn vị</span>
+            <span class="detail-value">{{ product.unit }}</span>
+          </div>
+
+          <div class="detail-row" *ngIf="product.description">
+            <span class="detail-label">Mô tả</span>
+            <span class="detail-value">{{ product.description }}</span>
+          </div>
         </div>
 
-        <div class="detail-row">
-          <span class="detail-label">SKU</span>
-          <span class="detail-value">{{ product.sku }}</span>
+        <div class="detail-section">
+          <h3 class="info-section-title">
+            <i class="pi pi-building"></i>
+            Nhà cung cấp
+          </h3>
+
+          <div class="detail-row">
+            <span class="detail-label">Nhà cung cấp chính</span>
+            <span class="detail-value">{{ product.primary_supplier_name || 'Chưa có' }}</span>
+          </div>
+
+          <div class="detail-row" *ngIf="product.primary_supplier_cost">
+            <span class="detail-label">Giá nhập từ NCC</span>
+            <span class="detail-value"
+              >{{ product.primary_supplier_cost | number : '1.0-0' }} VND</span
+            >
+          </div>
         </div>
 
-        <div class="detail-row">
-          <span class="detail-label">Phân loại</span>
-          <span class="detail-value">{{ product.name_category }}</span>
+        <div class="detail-section">
+          <h3 class="info-section-title">
+            <i class="pi pi-dollar"></i>
+            Giá cả & Lợi nhuận
+          </h3>
+
+          <div class="detail-row">
+            <span class="detail-label">Giá nhập</span>
+            <span class="detail-value">{{ product.cost_price | number : '1.0-0' }} VND</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Giá bán</span>
+            <span class="detail-value price">{{ product.price | number : '1.0-0' }} VND</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Lợi nhuận/sản phẩm</span>
+            <span class="detail-value profit">{{ profit | number : '1.0-0' }} VND</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Tỷ lệ lợi nhuận</span>
+            <span class="detail-value profit">{{ profitMargin }}%</span>
+          </div>
         </div>
 
-        <div class="detail-row">
-          <span class="detail-label">Giá nhập</span>
-          <span class="detail-value">{{ product.cost_price | number : '1.0-0' }} VND</span>
+        <div class="detail-section">
+          <h3 class="info-section-title">
+            <i class="pi pi-warehouse"></i>
+            Quản lý tồn kho
+          </h3>
+
+          <div class="detail-row">
+            <span class="detail-label">Tồn kho hiện tại</span>
+            <span
+              class="detail-value"
+              [class.stock-warning]="product.stock_quantity <= product.reorder_point"
+              [class.stock-danger]="product.stock_quantity === 0"
+            >
+              {{ product.stock_quantity }} {{ product.unit }}
+            </span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Điểm đặt lại</span>
+            <span class="detail-value">{{ product.reorder_point }} {{ product.unit }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Tồn kho tối đa</span>
+            <span class="detail-value">{{ product.max_stock_level }} {{ product.unit }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Trạng thái</span>
+            <span class="detail-value">
+              <span class="status-badge" [ngClass]="getStockStatusClass()">
+                <i [class]="getStockStatusIcon()"></i>
+                {{ getStockStatus() }}
+              </span>
+            </span>
+          </div>
         </div>
 
-        <div class="detail-row">
-          <span class="detail-label">Giá bán</span>
-          <span class="detail-value">{{ product.price | number : '1.0-0' }} VND</span>
+        <div class="detail-section" *ngIf="product.has_expiry">
+          <h3 class="info-section-title">
+            <i class="pi pi-clock"></i>
+            Hạn sử dụng
+          </h3>
+
+          <div class="detail-row">
+            <span class="detail-label">Có hạn sử dụng</span>
+            <span class="detail-value">Có</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Thời hạn sử dụng</span>
+            <span class="detail-value">{{ product.shelf_life_days }} ngày</span>
+          </div>
         </div>
 
-        <div class="detail-row">
-          <span class="detail-label">Lợi nhuận/SP</span>
-          <span class="detail-value profit">{{ profit | number : '1.0-0' }} VND</span>
-        </div>
+        <div class="detail-section" *ngIf="product.created_by_name || product.created_at_date">
+          <h3 class="info-section-title">
+            <i class="pi pi-history"></i>
+            Thông tin hệ thống
+          </h3>
 
-        <div class="detail-row">
-          <span class="detail-label">Đơn vị</span>
-          <span class="detail-value">{{ product.unit }}</span>
-        </div>
+          <div class="detail-row" *ngIf="product.created_by_name">
+            <span class="detail-label">Người tạo</span>
+            <span class="detail-value">{{ product.created_by_name }}</span>
+          </div>
 
-        <div class="detail-row">
-          <span class="detail-label">Tồn kho</span>
-          <span class="detail-value" [class.low-stock-text]="product.stock_quantity <= 10">
-            {{ product.stock_quantity }} {{ product.unit }}
-          </span>
-        </div>
-
-        <div class="detail-row">
-          <span class="detail-label">Barcode</span>
-          <span class="detail-value">{{ product?.bar_code || 'Không có' }}</span>
+          <div class="detail-row" *ngIf="product.created_at_date">
+            <span class="detail-label">Ngày tạo</span>
+            <span class="detail-value">{{ product.created_at_date | date : 'dd/MM/yyyy' }}</span>
+          </div>
         </div>
       </div>
     </div>
   </mat-dialog-content>
 
   <mat-dialog-actions class="dialog-actions">
-    <button (click)="close()" class="btn btn-primary">Đóng</button>
+    <button class="btn-close" (click)="close()">
+      <i class="pi pi-times"></i>
+      Đóng
+    </button>
   </mat-dialog-actions>
 </div>
