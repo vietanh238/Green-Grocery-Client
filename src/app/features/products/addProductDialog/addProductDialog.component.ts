@@ -44,7 +44,7 @@ interface Product {
 interface Supplier {
   id: number;
   name: string;
-  code: string;
+  supplier_code: string;
 }
 
 @Component({
@@ -277,7 +277,6 @@ export class AddEditProductDialogComponent implements OnInit {
       }, 0);
     }
   }
-
   changeCategory(): void {
     if (this.categorySld?.name) {
       this.category = this.categorySld.name;
@@ -293,25 +292,6 @@ export class AddEditProductDialogComponent implements OnInit {
 
   checkBarcodeExists(): void {
     if (!this.barCode) return;
-
-    // this.checkingBarcode = true;
-    // this.service.checkBarcodeExists(this.barCode).subscribe({
-    //   next: (rs: any) => {
-    //     this.checkingBarcode = false;
-    //     if (rs.status === ConstantDef.STATUS_SUCCESS) {
-    //       this.barcodeExists = rs.response.exists;
-    //       if (this.barcodeExists) {
-    //         this.errors['barCode'] = true;
-    //         this.showError('Barcode đã tồn tại trong hệ thống');
-    //       } else {
-    //         delete this.errors['barCode'];
-    //       }
-    //     }
-    //   },
-    //   error: () => {
-    //     this.checkingBarcode = false;
-    //   },
-    // });
   }
 
   onExpiryChange(): void {
@@ -334,6 +314,10 @@ export class AddEditProductDialogComponent implements OnInit {
     }
     if (!this.price || this.price <= 0) {
       this.errors['price'] = true;
+    }
+    if (this.costPrice >= this.price) {
+      this.errors['price'] = true;
+      this.showError('Giá bán phải lớn hơn giá nhập');
     }
     if (this.quantity < 0) {
       this.errors['quantity'] = true;
@@ -375,6 +359,7 @@ export class AddEditProductDialogComponent implements OnInit {
 
     this.loading = true;
     const params = {
+      id: this.product?.id,
       productName: this.productName.trim(),
       sku: this.sku.trim(),
       costPrice: this.costPrice,
@@ -409,9 +394,11 @@ export class AddEditProductDialogComponent implements OnInit {
           this.showError(rs.response.error_message_vn || 'Đã có lỗi xảy ra');
         }
       },
-      error: () => {
+      error: (error) => {
         this.loading = false;
-        this.showError('Đã có lỗi xảy ra, vui lòng thử lại sau');
+        const errorMsg =
+          error?.error?.response?.error_message_vn || 'Đã có lỗi xảy ra, vui lòng thử lại sau';
+        this.showError(errorMsg);
       },
     });
   }
@@ -477,5 +464,16 @@ export class AddEditProductDialogComponent implements OnInit {
         this.checkBarcodeExists();
       }
     });
+  }
+
+  get profitPerUnit(): number {
+    return this.price - this.costPrice;
+  }
+
+  get profitMargin(): number {
+    if (this.costPrice > 0) {
+      return ((this.price - this.costPrice) / this.costPrice) * 100;
+    }
+    return 0;
   }
 }

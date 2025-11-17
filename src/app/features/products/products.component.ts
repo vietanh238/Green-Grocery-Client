@@ -44,9 +44,9 @@ interface Product {
 
 interface Supplier {
   id?: number;
-  code: string;
+  supplier_code: string;
   name: string;
-  phone_number: string;
+  phone: string;
   email: string;
 }
 
@@ -158,9 +158,12 @@ export class ProductsComponent implements OnInit {
       next: (rs: any) => {
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
           this.lstSupplier = rs.response || [];
+        } else {
+          this.showError('Không thể tải danh sách nhà cung cấp');
         }
       },
-      error: () => {
+      error: (error) => {
+        console.error('Supplier load error:', error);
         this.showError('Không thể tải danh sách nhà cung cấp');
       },
     });
@@ -244,7 +247,7 @@ export class ProductsComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.getSuppliers();
-        this.showSuccess('Thêm nhà cung cấp thành công. Vui lòng chọn nhà cung cấp cho sản phẩm.');
+        this.showSuccess('Thêm nhà cung cấp thành công');
       }
     });
   }
@@ -277,8 +280,8 @@ export class ProductsComponent implements OnInit {
           title: 'Xác nhận xóa sản phẩm',
           message: `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"? Thao tác này không thể hoàn tác.`,
           buttons: [
-            { label: 'Hủy', class: 'default', value: false },
-            { label: 'Xóa', class: 'warn', value: true },
+            { label: 'Hủy', class: 'default', value: false, color: '', background: '' },
+            { label: 'Xóa', class: 'warn', value: true, color: '', background: '' },
           ],
         },
       });
@@ -323,7 +326,6 @@ export class ProductsComponent implements OnInit {
 
     if (this.searchText) {
       const search = this.searchText.toLowerCase();
-      console.log('filter', search);
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(search) ||
@@ -355,7 +357,7 @@ export class ProductsComponent implements OnInit {
           break;
       }
     }
-    console.log('filtered', filtered, this.products);
+
     this.filteredProducts = filtered;
   }
 
@@ -381,7 +383,6 @@ export class ProductsComponent implements OnInit {
       'Trạng thái': this.getStockStatus(product),
       'Có HSD': product.has_expiry ? 'Có' : 'Không',
       'HSD (ngày)': product.shelf_life_days || '',
-      'Link ảnh': product.image || '',
     }));
 
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
@@ -402,7 +403,6 @@ export class ProductsComponent implements OnInit {
       { wch: 15 },
       { wch: 10 },
       { wch: 12 },
-      { wch: 30 },
     ];
     ws['!cols'] = colWidths;
 

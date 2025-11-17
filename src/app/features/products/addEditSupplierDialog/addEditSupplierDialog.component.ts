@@ -14,10 +14,10 @@ import { ConstantDef } from '../../../core/constanDef';
 
 interface Supplier {
   id?: number;
-  code: string;
+  supplier_code: string;
   name: string;
   contact_person: string;
-  phone_number: string;
+  phone: string;
   email: string;
   address: string;
   tax_code: string;
@@ -25,7 +25,7 @@ interface Supplier {
   bank_name: string;
   payment_terms: number;
   credit_limit: number;
-  notes: string;
+  note: string;
 }
 
 @Component({
@@ -87,10 +87,10 @@ export class AddEditSupplierDialogComponent implements OnInit {
   populateForm(): void {
     if (!this.supplier) return;
 
-    this.code = this.supplier.code;
+    this.code = this.supplier.supplier_code;
     this.name = this.supplier.name;
     this.contactPerson = this.supplier.contact_person;
-    this.phoneNumber = this.supplier.phone_number;
+    this.phoneNumber = this.supplier.phone;
     this.email = this.supplier.email;
     this.address = this.supplier.address;
     this.taxCode = this.supplier.tax_code;
@@ -98,7 +98,7 @@ export class AddEditSupplierDialogComponent implements OnInit {
     this.bankName = this.supplier.bank_name;
     this.paymentTerms = this.supplier.payment_terms;
     this.creditLimit = this.supplier.credit_limit;
-    this.notes = this.supplier.notes;
+    this.notes = this.supplier.note;
 
     this.creditLimitDisplay = this.formatNumberWithDots(this.creditLimit.toString());
   }
@@ -211,48 +211,47 @@ export class AddEditSupplierDialogComponent implements OnInit {
   }
 
   save(): void {
-    // if (!this.validate()) {
-    //   this.showError('Vui lòng điền đầy đủ các trường bắt buộc');
-    //   return;
-    // }
-    // this.loading = true;
-    // const params = {
-    //   id: this.supplier?.id,
-    //   code: this.code.trim(),
-    //   name: this.name.trim(),
-    //   contact_person: this.contactPerson.trim(),
-    //   phone_number: this.phoneNumber.trim(),
-    //   email: this.email.trim(),
-    //   address: this.address.trim(),
-    //   tax_code: this.taxCode.trim(),
-    //   bank_account: this.bankAccount.trim(),
-    //   bank_name: this.bankName.trim(),
-    //   payment_terms: this.paymentTerms,
-    //   credit_limit: this.creditLimit,
-    //   notes: this.notes.trim(),
-    // };
-    // const request = this.isEditMode
-    //   ? this.service.updateSupplier(params)
-    //   : this.service.createSupplier(params);
-    // request.subscribe({
-    //   next: (rs: any) => {
-    //     this.loading = false;
-    //     if (rs.status === ConstantDef.STATUS_SUCCESS) {
-    //       this.showSuccess(
-    //         this.isEditMode
-    //           ? 'Cập nhật nhà cung cấp thành công'
-    //           : 'Thêm nhà cung cấp thành công'
-    //       );
-    //       this.dialogRef.close(true);
-    //     } else {
-    //       this.showError(rs.response.error_message_vn || 'Đã có lỗi xảy ra');
-    //     }
-    //   },
-    //   error: () => {
-    //     this.loading = false;
-    //     this.showError('Đã có lỗi xảy ra, vui lòng thử lại sau');
-    //   },
-    // });
+    if (!this.validate()) {
+      this.showError('Vui lòng điền đầy đủ các trường bắt buộc');
+      return;
+    }
+
+    this.loading = true;
+    const params = {
+      supplier_code: this.code.trim(),
+      name: this.name.trim(),
+      contact_person: this.contactPerson.trim(),
+      phone: this.phoneNumber.trim(),
+      email: this.email.trim(),
+      address: this.address.trim(),
+      tax_code: this.taxCode.trim(),
+      payment_terms: this.paymentTerms.toString(),
+      note: this.notes.trim(),
+    };
+
+    const request = this.isEditMode
+      ? this.service.updateSupplier(params)
+      : this.service.createSupplier(params);
+
+    request.subscribe({
+      next: (rs: any) => {
+        this.loading = false;
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.showSuccess(
+            this.isEditMode ? 'Cập nhật nhà cung cấp thành công' : 'Thêm nhà cung cấp thành công'
+          );
+          this.dialogRef.close(true);
+        } else {
+          this.showError(rs.response.error_message_vn || 'Đã có lỗi xảy ra');
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        const errorMsg =
+          error?.error?.response?.error_message_vn || 'Đã có lỗi xảy ra, vui lòng thử lại sau';
+        this.showError(errorMsg);
+      },
+    });
   }
 
   cancel(): void {

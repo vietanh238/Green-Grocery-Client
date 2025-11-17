@@ -53,30 +53,10 @@ export class BulkImportDialogComponent implements OnInit {
   };
 
   private excelColumns: ExcelColumn[] = [
-    {
-      field: 'name',
-      header: 'Tên sản phẩm',
-      required: true,
-      type: 'string',
-    },
-    {
-      field: 'sku',
-      header: 'SKU',
-      required: true,
-      type: 'string',
-    },
-    {
-      field: 'barCode',
-      header: 'Barcode',
-      required: true,
-      type: 'string',
-    },
-    {
-      field: 'category',
-      header: 'Phân loại',
-      required: true,
-      type: 'string',
-    },
+    { field: 'name', header: 'Tên sản phẩm', required: true, type: 'string' },
+    { field: 'sku', header: 'SKU', required: true, type: 'string' },
+    { field: 'barCode', header: 'Barcode', required: true, type: 'string' },
+    { field: 'category', header: 'Phân loại', required: true, type: 'string' },
     {
       field: 'costPrice',
       header: 'Giá nhập',
@@ -96,14 +76,9 @@ export class BulkImportDialogComponent implements OnInit {
       header: 'Số lượng',
       required: true,
       type: 'number',
-      validator: (value: number) => value > 0,
+      validator: (value: number) => value >= 0,
     },
-    {
-      field: 'unit',
-      header: 'Đơn vị',
-      required: true,
-      type: 'string',
-    },
+    { field: 'unit', header: 'Đơn vị', required: true, type: 'string' },
   ];
 
   constructor(
