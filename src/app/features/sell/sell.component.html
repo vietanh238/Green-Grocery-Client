@@ -1,4 +1,5 @@
 <div class="sell-container">
+  <!-- Search Section -->
   <div class="search-section">
     <div class="search-row">
       <div class="search-input-wrapper">
@@ -8,7 +9,8 @@
           class="search-input"
           placeholder="Tìm kiếm sản phẩm theo tên, SKU, barcode..."
           (input)="filterProducts($event)"
-          [(ngModel)]="keyFilter"
+          [(ngModel)]="searchTerm"
+          #searchInput
         />
       </div>
       <button class="scan-button" (click)="openScanner()">
@@ -22,24 +24,37 @@
     </div>
   </div>
 
+  <!-- Main Content -->
   <div class="main-content">
+    <!-- Products Section -->
     <div class="products-section">
       <div class="products-header">
         <h3 class="products-title">
           <i class="pi pi-shopping-bag"></i>
           Sản phẩm
+          <span class="products-count">{{ productsCount }}</span>
         </h3>
-        <span class="products-count">{{ productsCount }} sản phẩm</span>
+        <div class="products-actions">
+          <button class="refresh-btn" (click)="loadProducts()" [disabled]="loading">
+            <i class="pi pi-refresh" [class.pi-spin]="loading"></i>
+          </button>
+        </div>
       </div>
 
       <div class="products-grid" *ngIf="!loading; else skeleton">
         <div *ngIf="isProductNotFound" class="product-not-found">
           <i class="pi pi-search" style="font-size: 2rem; margin-bottom: 1rem"></i>
           <p>Không tìm thấy sản phẩm phù hợp</p>
+          <button
+            class="retry-search-btn"
+            (click)="searchTerm = ''; filterProducts({ target: { value: '' } })"
+          >
+            Hiển thị tất cả
+          </button>
         </div>
 
         <app-card
-          *ngFor="let product of products"
+          *ngFor="let product of filteredProducts"
           [product]="product"
           (addToCart)="handleAddToCart($event)"
         >
@@ -48,24 +63,29 @@
 
       <ng-template #skeleton>
         <div class="skeleton-grid">
-          <p-skeleton *ngFor="let i of [1, 2, 3, 4, 5, 6]" class="skeleton-card" />
+          <p-skeleton *ngFor="let i of [1, 2, 3, 4, 5, 6]" class="skeleton-card"></p-skeleton>
         </div>
       </ng-template>
     </div>
 
+    <!-- Cart Section -->
     <div class="cart-section">
       <div class="cart-header">
         <h3 class="cart-title">
           <i class="pi pi-shopping-cart"></i>
           Giỏ hàng
+          <span class="cart-count">{{ cartItemsCount }}</span>
         </h3>
-        <span class="cart-count">{{ cartItemsCount }} sản phẩm</span>
+        <button class="clear-cart-btn" (click)="clearCart()" [disabled]="cartItems.length === 0">
+          <i class="pi pi-trash"></i>
+        </button>
       </div>
 
       <div class="cart-body">
         <div *ngIf="cartItems.length === 0" class="empty-cart">
           <i class="pi pi-shopping-cart"></i>
           <p>Giỏ hàng trống</p>
+          <small>Thêm sản phẩm để bắt đầu bán hàng</small>
         </div>
 
         <div *ngIf="cartItems.length > 0" class="cart-items">
@@ -73,6 +93,11 @@
             <div class="item-header">
               <h4 class="item-name">{{ item.name }}</h4>
               <span class="item-price">{{ formatCurrency(item.price) }}</span>
+            </div>
+
+            <div class="item-details">
+              <span class="item-sku">SKU: {{ item.sku }}</span>
+              <span class="item-barcode">Barcode: {{ item.bar_code }}</span>
             </div>
 
             <div class="item-actions">
@@ -90,6 +115,10 @@
                 </button>
               </div>
 
+              <div class="item-total">
+                {{ formatCurrency(item.price * item.quantity) }}
+              </div>
+
               <button class="delete-btn" (click)="removeItem(item)">
                 <i class="pi pi-trash"></i>
               </button>
@@ -100,24 +129,31 @@
 
       <div *ngIf="cartItems.length > 0" class="cart-footer">
         <div class="total-section">
-          <span class="total-label">Tổng cộng:</span>
-          <span class="total-amount">{{ formatCurrency(totalAmount) }}</span>
+          <div class="total-row">
+            <span class="total-label">Tổng tiền:</span>
+            <span class="total-amount">{{ formatCurrency(totalAmount) }}</span>
+          </div>
+          <div class="total-items">{{ totalItemsCount }} sản phẩm</div>
         </div>
 
         <div class="payment-actions">
-          <button class="payment-btn cash-btn" (click)="cashPayment()">
+          <button
+            class="payment-btn cash-btn"
+            (click)="cashPayment()"
+            [disabled]="isProcessingPayment"
+          >
             <i class="pi pi-money-bill"></i>
-            Thanh toán tiền mặt
+            {{ isProcessingPayment ? 'Đang xử lý...' : 'Tiền mặt' }}
           </button>
 
           <button class="payment-btn qr-btn" (click)="createPaymentQR()">
             <i class="pi pi-qrcode"></i>
-            Tạo QR thanh toán
+            QR Code
           </button>
 
-          <button class="payment-btn clear-btn" (click)="clearCart()">
-            <i class="pi pi-trash"></i>
-            Xóa giỏ hàng
+          <button class="payment-btn debit-btn" (click)="createDebit()">
+            <i class="pi pi-book"></i>
+            Ghi nợ
           </button>
         </div>
       </div>

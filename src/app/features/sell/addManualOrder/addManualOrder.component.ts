@@ -31,6 +31,11 @@ export class AddManualOrder implements OnInit {
       price: ['', [Validators.required, Validators.min(1)]],
       note: [''],
     });
+
+    // Auto-calculate total when quantity or price changes
+    this.manualOrderForm.valueChanges.subscribe(() => {
+      // Trigger change detection for total amount display
+    });
   }
 
   get totalAmount(): number {
@@ -41,7 +46,7 @@ export class AddManualOrder implements OnInit {
 
   isFieldInvalid(fieldName: string): boolean {
     const field = this.manualOrderForm.get(fieldName);
-    return !!(field && field.invalid && field.touched);
+    return !!(field && field.invalid && (field.touched || field.dirty));
   }
 
   formatCurrency(amount: number): string {
@@ -62,16 +67,20 @@ export class AddManualOrder implements OnInit {
       const manualProduct = {
         id: Date.now(),
         sku: `MANUAL-${Date.now()}`,
-        name: formValue.name,
-        price: formValue.price,
-        quantity: formValue.quantity,
+        bar_code: `MANUAL-${Date.now()}`,
+        name: formValue.name.trim(),
+        price: parseFloat(formValue.price),
+        quantity: parseFloat(formValue.quantity),
         unit: formValue.unit.name,
-        note: formValue.note,
+        note: formValue.note?.trim() || '',
         isManual: true,
+        stock_quantity: 999, // Infinite stock for manual products
+        cost_price: parseFloat(formValue.price) * 0.7, // Estimate cost price
       };
 
       this.dialogRef.close(manualProduct);
     } else {
+      // Mark all fields as touched to show validation errors
       Object.keys(this.manualOrderForm.controls).forEach((key) => {
         this.manualOrderForm.get(key)?.markAsTouched();
       });
@@ -80,26 +89,41 @@ export class AddManualOrder implements OnInit {
 
   private getOptsUnit() {
     this.lstUnit = [
-      { name: 'Lon', code: 0 },
-      { name: 'Chai', code: 1 },
-      { name: 'Hộp', code: 2 },
-      { name: 'Gói', code: 3 },
-      { name: 'Vỉ', code: 4 },
-      { name: 'Cây', code: 5 },
-      { name: 'Quả', code: 6 },
-      { name: 'Bịch', code: 7 },
-      { name: 'Gram', code: 8 },
-      { name: 'Kilogram', code: 9 },
-      { name: 'Lạng', code: 10 },
-      { name: 'Mililít', code: 11 },
-      { name: 'Lít', code: 12 },
-      { name: 'Thùng', code: 13 },
-      { name: 'Bao', code: 14 },
-      { name: 'Bó', code: 15 },
+      { name: 'Cái', code: 'piece' },
+      { name: 'Chiếc', code: 'item' },
+      { name: 'Lon', code: 'can' },
+      { name: 'Chai', code: 'bottle' },
+      { name: 'Hộp', code: 'box' },
+      { name: 'Gói', code: 'pack' },
+      { name: 'Vỉ', code: 'blister' },
+      { name: 'Cây', code: 'stick' },
+      { name: 'Quả', code: 'fruit' },
+      { name: 'Bịch', code: 'bag' },
+      { name: 'Gram', code: 'gram' },
+      { name: 'Kilogram', code: 'kg' },
+      { name: 'Lạng', code: 'tael' },
+      { name: 'Mililít', code: 'ml' },
+      { name: 'Lít', code: 'liter' },
+      { name: 'Thùng', code: 'case' },
+      { name: 'Bao', code: 'sack' },
+      { name: 'Bó', code: 'bunch' },
+      { name: 'Mét', code: 'meter' },
+      { name: 'Centimét', code: 'cm' },
     ];
 
+    // Set default unit to 'Cái'
     this.manualOrderForm.patchValue({
-      unit: this.lstUnit.find((unit) => unit.code === 9),
+      unit: this.lstUnit.find((unit) => unit.code === 'piece'),
     });
+  }
+
+  // Quick price buttons
+  setPrice(price: number): void {
+    this.manualOrderForm.patchValue({ price: price });
+  }
+
+  // Quick quantity buttons
+  setQuantity(quantity: number): void {
+    this.manualOrderForm.patchValue({ quantity: quantity });
   }
 }

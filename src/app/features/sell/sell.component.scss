@@ -2,7 +2,7 @@ $primary-color: #dc3545;
 $primary-hover: #c82333;
 $success-color: #28a745;
 $warning-color: #ffc107;
-$danger-color: #dc3545;
+$info-color: #17a2b8;
 $border-color: #dee2e6;
 $text-primary: #212529;
 $text-secondary: #6c757d;
@@ -14,6 +14,8 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   padding: 1rem;
   background: #f5f5f5;
   min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
 }
 
 .search-section {
@@ -80,9 +82,14 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   transition: all 0.2s;
   white-space: nowrap;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: darken($success-color, 10%);
     transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   i {
@@ -114,7 +121,8 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   display: grid;
   grid-template-columns: 1fr 400px;
   gap: 1.5rem;
-  height: calc(100vh - 200px);
+  flex: 1;
+  min-height: 600px;
 }
 
 .products-section {
@@ -154,6 +162,29 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   font-weight: 600;
 }
 
+.products-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.refresh-btn {
+  padding: 0.5rem;
+  border: 1px solid $border-color;
+  background: white;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: $bg-hover;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .products-grid {
   flex: 1;
   padding: 1rem;
@@ -169,8 +200,32 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   text-align: center;
   padding: 3rem 1rem;
   color: $text-secondary;
-  font-size: 1.1rem;
-  font-weight: 500;
+
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+}
+
+.retry-search-btn {
+  padding: 0.5rem 1rem;
+  background: $primary-color;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $primary-hover;
+  }
 }
 
 .cart-section {
@@ -184,7 +239,7 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .cart-header {
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
   background: $primary-color;
   color: white;
   display: flex;
@@ -208,6 +263,25 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   border-radius: 1rem;
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.clear-cart-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .cart-body {
@@ -234,8 +308,14 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   }
 
   p {
-    margin: 0;
+    margin: 0 0 0.5rem 0;
     font-size: 1rem;
+    font-weight: 500;
+  }
+
+  small {
+    font-size: 0.875rem;
+    opacity: 0.7;
   }
 }
 
@@ -262,7 +342,7 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .item-name {
@@ -281,10 +361,24 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   white-space: nowrap;
 }
 
+.item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.item-sku,
+.item-barcode {
+  font-size: 0.75rem;
+  color: $text-secondary;
+}
+
 .item-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .quantity-controls {
@@ -333,12 +427,19 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   text-align: center;
 }
 
+.item-total {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $text-primary;
+  margin-left: auto;
+}
+
 .delete-btn {
   width: 2rem;
   height: 2rem;
   border: none;
   background: #f8d7da;
-  color: $danger-color;
+  color: $primary-color;
   border-radius: 0.375rem;
   display: flex;
   align-items: center;
@@ -347,7 +448,7 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   transition: all 0.2s;
 
   &:hover {
-    background: $danger-color;
+    background: $primary-color;
     color: white;
     transform: scale(1.05);
   }
@@ -364,14 +465,18 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .total-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding: 1rem;
   background: white;
   border: 2px solid $primary-color;
   border-radius: 0.375rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
 .total-label {
@@ -384,6 +489,12 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   font-size: 1.5rem;
   font-weight: 700;
   color: $primary-color;
+}
+
+.total-items {
+  text-align: right;
+  font-size: 0.875rem;
+  color: $text-secondary;
 }
 
 .payment-actions {
@@ -406,11 +517,21 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   justify-content: center;
   gap: 0.5rem;
 
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  i {
+    font-size: 1.1rem;
+  }
+
   &.cash-btn {
     background: $success-color;
     color: white;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: darken($success-color, 10%);
       transform: translateY(-1px);
     }
@@ -420,30 +541,20 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     background: $primary-color;
     color: white;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $primary-hover;
       transform: translateY(-1px);
     }
   }
 
-  &.clear-btn {
-    background: #6c757d;
-    color: white;
+  &.debit-btn {
+    background: $warning-color;
+    color: $text-primary;
 
-    &:hover {
-      background: #5a6268;
+    &:hover:not(:disabled) {
+      background: darken($warning-color, 10%);
       transform: translateY(-1px);
     }
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none !important;
-  }
-
-  i {
-    font-size: 1.1rem;
   }
 }
 
@@ -522,5 +633,20 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
   .total-amount {
     font-size: 1.3rem;
+  }
+
+  .item-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .quantity-controls {
+    justify-content: center;
+  }
+
+  .item-total {
+    text-align: center;
+    margin-left: 0;
   }
 }

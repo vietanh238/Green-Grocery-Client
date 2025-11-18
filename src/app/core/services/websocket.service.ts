@@ -1,67 +1,112 @@
-import { Injectable, NgZone } from '@angular/core';
-import { Subject, BehaviorSubject } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
+import { Service } from './service';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root',
+})
 export class WebSocketService {
-  private ws?: WebSocket;
-  private reconnectDelay = 3000;
+  private socket: WebSocket | null = null;
+  private messageSubject = new Subject<any>();
+  public message$ = this.messageSubject.asObservable();
 
-  private paymentSuccessSource = new Subject<any>();
-  private messageSource = new Subject<any>();
-  private connectionStatus = new BehaviorSubject<boolean>(false);
+  private paymentSuccessSubject = new Subject<any>();
+  public paymentSuccess$ = this.paymentSuccessSubject.asObservable();
 
-  paymentSuccess$ = this.paymentSuccessSource.asObservable();
-  message$ = this.messageSource.asObservable();
-  connected$ = this.connectionStatus.asObservable();
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectInterval = 3000;
+  private isConnecting = false;
 
-  constructor(private ngZone: NgZone) {}
+  constructor(private service: Service) {}
 
   connect(): void {
-    const url = 'wss://api.green-grocery.io.vn/ws/message/';
-    this.ws = new WebSocket(url);
+    if (this.socket?.readyState === WebSocket.OPEN || this.isConnecting) {
+      return;
+    }
 
-    this.ws.onopen = () => {
-      this.connectionStatus.next(true);
-      this.send({ type: 'ping', at: Date.now() });
-    };
+    this.isConnecting = true;
+    const wsUrl = this.getWebSocketUrl();
 
-    this.ws.onmessage = (event) => {
-      this.ngZone.run(() => {
+    try {
+      this.socket = new WebSocket(wsUrl);
+
+      this.socket.onopen = () => {
+        console.log('WebSocket connected');
+        this.isConnecting = false;
+        this.reconnectAttempts = 0;
+      };
+
+      this.socket.onmessage = (event) => {
         try {
-          const msg = JSON.parse(event.data);
-          if (msg.type == 'echo') {
-            console.log(`${msg.data.type} connect websocket success`);
-          }
-          if (msg.type === 'payment_success') {
-            this.paymentSuccessSource.next(msg.data);
-          } else if (msg.type === 'message') {
-            this.messageSource.next(msg.data);
-          }
-        } catch (e) {
-          console.warn('WS message is not valid JSON:', event.data);
+          const data = JSON.parse(event.data);
+          this.handleMessage(data);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
         }
-      });
-    };
+      };
 
-    this.ws.onclose = () => {
-      this.connectionStatus.next(false);
-      setTimeout(() => this.connect(), this.reconnectDelay);
-    };
+      this.socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        this.isConnecting = false;
+      };
 
-    this.ws.onerror = (err) => {
-      console.error('[WS] Error:', err);
-    };
-  }
+      this.socket.onclose = (event) => {
+        console.log('WebSocket disconnected:', event.code, event.reason);
+        this.isConnecting = false;
+        this.socket = null;
 
-  send(data: any): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(data));
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
+          setTimeout(() => this.connect(), this.reconnectInterval);
+        }
+      };
+    } catch (error) {
+      console.error('Error creating WebSocket:', error);
+      this.isConnecting = false;
     }
   }
 
   disconnect(): void {
-    this.ws?.close();
-    this.ws = undefined;
-    this.connectionStatus.next(false);
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+    this.reconnectAttempts = this.maxReconnectAttempts;
+  }
+
+  private handleMessage(data: any): void {
+    console.log('WebSocket message received:', data);
+
+    this.messageSubject.next(data);
+
+    if (data.message_type === 'payment_success') {
+      this.paymentSuccessSubject.next({
+        success: true,
+        data: data.data,
+      });
+      this.service.notifyPaymentSuccess(data.data);
+    } else if (data.message_type === 'remind_reorder') {
+      console.log('Reorder reminder:', data.data);
+    }
+  }
+
+  private getWebSocketUrl(): string {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    return `${protocol}//${host}/ws/message/`;
+  }
+
+  sendMessage(message: any): void {
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(message));
+    } else {
+      console.warn('WebSocket is not connected');
+    }
+  }
+
+  isConnected(): boolean {
+    return this.socket?.readyState === WebSocket.OPEN;
   }
 }

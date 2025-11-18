@@ -169,7 +169,7 @@ export class DebtComponent implements OnInit {
   }
 
   getCustomer() {
-    this.service.getCustomer().subscribe(
+    this.service.getCustomers().subscribe(
       (rs: any) => {
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
           if (rs.response && rs.response.length > 0) {
@@ -230,7 +230,7 @@ export class DebtComponent implements OnInit {
   }
 
   getDebit() {
-    this.service.getDebit().subscribe(
+    this.service.getDebits().subscribe(
       (rs: any) => {
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
           this.totalDebt = rs.response?.total_debt || 0;

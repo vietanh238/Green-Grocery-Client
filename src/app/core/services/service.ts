@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environment/environment';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +13,9 @@ export class Service {
   private readonly API_PAYMENT = environment.apiPayment;
   private readonly API_DEBIT = environment.apiDebit;
   private readonly API_REPORT = environment.apiReport;
+
+  private paymentSuccessSubject = new Subject<any>();
+  public paymentSuccess$ = this.paymentSuccessSubject.asObservable();
 
   constructor(private _http: HttpClient) {}
 
@@ -77,22 +80,36 @@ export class Service {
   }
 
   createPayment(params: any): Observable<any> {
-    return this._http.post(`${this.API_PAYMENT}create/`, params);
+    return this._http.post(`${this.API_PAYMENT}create/`, {
+      orderCode: params.orderCode,
+      amount: params.amount,
+      description: params.description,
+      returnUrl: params.returnUrl,
+      cancelUrl: params.cancelUrl,
+      items: params.items,
+      buyerName: params.buyerName || '',
+      buyerPhone: params.buyerPhone || '',
+    });
   }
 
-  deletePayment(orderCode: any): Observable<any> {
+  deletePayment(orderCode: string): Observable<any> {
     return this._http.delete(`${this.API_PAYMENT}delete/${orderCode}/`);
   }
 
   cashPayment(params: any): Observable<any> {
-    return this._http.post(`${this.API_PAYMENT}cash/`, params);
+    return this._http.post(`${this.API_PAYMENT}cash/`, {
+      amount: params.amount,
+      items: params.items,
+      payment_method: params.payment_method || 'cash',
+      note: params.note || '',
+    });
   }
 
-  getCustomer(): Observable<any> {
+  getCustomers(): Observable<any> {
     return this._http.get(`${this.API_DEBIT}get/customer/`);
   }
 
-  getDebit(): Observable<any> {
+  getDebits(): Observable<any> {
     return this._http.get(`${this.API_DEBIT}get/debit/`);
   }
 
@@ -173,5 +190,9 @@ export class Service {
 
   getProductForecast(productId: number): Observable<any> {
     return this._http.get(`${this.API_HOME}ai/forecast/${productId}/`);
+  }
+
+  notifyPaymentSuccess(data: any): void {
+    this.paymentSuccessSubject.next(data);
   }
 }

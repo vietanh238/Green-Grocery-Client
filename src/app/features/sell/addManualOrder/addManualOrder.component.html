@@ -11,110 +11,150 @@
 
   <div class="dialog-body">
     <form [formGroup]="manualOrderForm">
-      <div class="form-group">
-        <label for="productName" class="form-label">
-          Tên sản phẩm <span class="required">*</span>
-        </label>
-        <input
-          id="productName"
-          type="text"
-          class="form-control"
-          formControlName="name"
-          placeholder="VD: Thịt lợn nạc"
-          [class.is-invalid]="isFieldInvalid('name')"
-        />
-        <div class="error-message" *ngIf="isFieldInvalid('name')">
-          Vui lòng nhập tên sản phẩm (tối thiểu 2 ký tự)
-        </div>
-      </div>
+      <!-- Product Information -->
+      <div class="form-section">
+        <h5 class="section-title">Thông tin sản phẩm</h5>
 
-      <div class="form-row">
         <div class="form-group">
-          <label for="quantity" class="form-label">
-            Số lượng <span class="required">*</span>
+          <label for="productName" class="form-label">
+            Tên sản phẩm <span class="required">*</span>
           </label>
-          <div class="input-with-unit">
-            <input
-              id="quantity"
-              type="number"
-              class="form-control"
-              formControlName="quantity"
-              placeholder="0"
-              min="0.01"
-              step="0.01"
-              [class.is-invalid]="isFieldInvalid('quantity')"
-            />
-            <p-select
-              [options]="lstUnit"
-              formControlName="unit"
-              optionLabel="name"
-              placeholder="Chọn đơn vị"
-              [class.is-invalid]="isFieldInvalid('unit')"
-              class="unit-select"
-            />
+          <input
+            id="productName"
+            type="text"
+            class="form-control"
+            formControlName="name"
+            placeholder="VD: Thịt lợn nạc, Rau muống, Nước ngọt..."
+            [class.is-invalid]="isFieldInvalid('name')"
+          />
+          <div class="error-message" *ngIf="isFieldInvalid('name')">
+            Vui lòng nhập tên sản phẩm (tối thiểu 2 ký tự)
           </div>
-          <div class="error-message" *ngIf="isFieldInvalid('quantity')">
-            Số lượng phải lớn hơn 0
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="quantity" class="form-label">
+              Số lượng <span class="required">*</span>
+            </label>
+            <div class="input-with-unit">
+              <input
+                id="quantity"
+                type="number"
+                class="form-control"
+                formControlName="quantity"
+                placeholder="0"
+                min="0.001"
+                step="0.001"
+                [class.is-invalid]="isFieldInvalid('quantity')"
+              />
+              <p-select
+                [options]="lstUnit"
+                formControlName="unit"
+                optionLabel="name"
+                placeholder="Chọn đơn vị"
+                [class.is-invalid]="isFieldInvalid('unit')"
+                class="unit-select"
+              />
+            </div>
+            <div class="quick-buttons">
+              <button type="button" class="quick-btn" (click)="setQuantity(0.1)">100g</button>
+              <button type="button" class="quick-btn" (click)="setQuantity(0.5)">500g</button>
+              <button type="button" class="quick-btn" (click)="setQuantity(1)">1kg</button>
+              <button type="button" class="quick-btn" (click)="setQuantity(1)">1</button>
+              <button type="button" class="quick-btn" (click)="setQuantity(2)">2</button>
+              <button type="button" class="quick-btn" (click)="setQuantity(5)">5</button>
+            </div>
+            <div class="error-message" *ngIf="isFieldInvalid('quantity')">
+              Số lượng phải lớn hơn 0
+            </div>
+            <div class="error-message" *ngIf="isFieldInvalid('unit')">Vui lòng chọn đơn vị</div>
           </div>
-          <div class="error-message" *ngIf="isFieldInvalid('unit')">Vui lòng chọn đơn vị</div>
+
+          <div class="form-group">
+            <label for="price" class="form-label"> Đơn giá <span class="required">*</span> </label>
+            <div class="price-input-wrapper">
+              <input
+                id="price"
+                type="number"
+                class="form-control"
+                formControlName="price"
+                placeholder="0"
+                min="0"
+                step="1000"
+                [class.is-invalid]="isFieldInvalid('price')"
+              />
+              <span class="currency">₫</span>
+            </div>
+            <div class="quick-buttons">
+              <button type="button" class="quick-btn" (click)="setPrice(5000)">5K</button>
+              <button type="button" class="quick-btn" (click)="setPrice(10000)">10K</button>
+              <button type="button" class="quick-btn" (click)="setPrice(20000)">20K</button>
+              <button type="button" class="quick-btn" (click)="setPrice(50000)">50K</button>
+              <button type="button" class="quick-btn" (click)="setPrice(100000)">100K</button>
+              <button type="button" class="quick-btn" (click)="setPrice(200000)">200K</button>
+            </div>
+            <div class="error-message" *ngIf="isFieldInvalid('price')">Giá phải lớn hơn 0</div>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="price" class="form-label"> Đơn giá <span class="required">*</span> </label>
-          <div class="price-input-wrapper">
-            <input
-              id="price"
-              type="number"
-              class="form-control"
-              formControlName="price"
-              placeholder="0"
-              min="0"
-              step="1000"
-              [class.is-invalid]="isFieldInvalid('price')"
-            />
-            <span class="currency">₫</span>
-          </div>
-          <div class="error-message" *ngIf="isFieldInvalid('price')">Giá phải lớn hơn 0</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="note" class="form-label">Ghi chú</label>
-        <textarea
-          id="note"
-          class="form-control"
-          formControlName="note"
-          placeholder="Thêm ghi chú về sản phẩm (tùy chọn)"
-          rows="3"
-        ></textarea>
-      </div>
-
-      <div class="total-preview" *ngIf="totalAmount > 0">
-        <div class="preview-row">
-          <span>Số lượng:</span>
-          <span class="preview-value">
-            {{ manualOrderForm.get('quantity')?.value || 0 }}
-            {{ manualOrderForm.get('unit')?.value?.name || '' }}
-          </span>
-        </div>
-        <div class="preview-row">
-          <span>Đơn giá:</span>
-          <span class="preview-value">
-            {{ formatCurrency(manualOrderForm.get('price')?.value || 0) }}
-          </span>
-        </div>
-        <div class="preview-row total">
-          <span>Thành tiền:</span>
-          <span class="preview-value">{{ formatCurrency(totalAmount) }}</span>
+          <label for="note" class="form-label">
+            Ghi chú
+            <span class="optional">(Tùy chọn)</span>
+          </label>
+          <textarea
+            id="note"
+            class="form-control"
+            formControlName="note"
+            placeholder="Thêm ghi chú về sản phẩm (xuất xứ, đặc điểm, ...)"
+            rows="2"
+          ></textarea>
         </div>
       </div>
     </form>
+
+    <!-- Order Summary -->
+    <div class="summary-section" *ngIf="totalAmount > 0">
+      <h5 class="section-title">Tổng kết đơn hàng</h5>
+
+      <div class="summary-details">
+        <div class="summary-row">
+          <span class="summary-label">Tên sản phẩm:</span>
+          <span class="summary-value">{{ manualOrderForm.get('name')?.value || 'Chưa có' }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span class="summary-label">Số lượng:</span>
+          <span class="summary-value">
+            {{ manualOrderForm.get('quantity')?.value || 0 | number : '1.0-3' }}
+            {{ manualOrderForm.get('unit')?.value?.name || '' }}
+          </span>
+        </div>
+
+        <div class="summary-row">
+          <span class="summary-label">Đơn giá:</span>
+          <span class="summary-value">
+            {{ formatCurrency(manualOrderForm.get('price')?.value || 0) }}
+          </span>
+        </div>
+
+        <div class="summary-row total">
+          <span class="summary-label">Thành tiền:</span>
+          <span class="summary-value total-amount">{{ formatCurrency(totalAmount) }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="dialog-footer">
-    <button class="btn btn-cancel" (click)="closeDialog()">Hủy</button>
+    <button class="btn btn-cancel" (click)="closeDialog()">
+      <i class="pi pi-times"></i>
+      Hủy
+    </button>
     <button class="btn btn-save" [disabled]="!manualOrderForm.valid" (click)="saveManualOrder()">
-      Lưu
+      <i class="pi pi-check"></i>
+      Thêm vào giỏ hàng
     </button>
   </div>
 </div>

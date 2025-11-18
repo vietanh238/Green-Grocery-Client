@@ -1,213 +1,195 @@
-<div class="product-management-container">
-  <div class="header-section">
-    <div class="header-left">
-      <h3 class="page-title">
-        <i class="pi pi-box"></i>
-        Quản lý sản phẩm
-      </h3>
-      <div class="stats-badges">
-        <span class="product-count total">
-          <i class="pi pi-database"></i>
-          Tổng: {{ products?.length || 0 }}
-        </span>
-        <span class="product-count warning" *ngIf="reorderCount > 0">
-          <i class="pi pi-exclamation-triangle"></i>
-          Sắp hết: {{ reorderCount }}
-        </span>
-        <span class="product-count danger" *ngIf="outOfStockCount > 0">
-          <i class="pi pi-times-circle"></i>
-          Hết hàng: {{ outOfStockCount }}
-        </span>
-        <span class="product-count info" *ngIf="overstockCount > 0">
-          <i class="pi pi-arrow-up"></i>
-          Vượt tồn: {{ overstockCount }}
-        </span>
+<div class="products-page">
+  <div class="page-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="page-title">Quản lý sản phẩm</h1>
+        <p class="page-subtitle">Theo dõi và quản lý tồn kho</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-action btn-secondary" (click)="exportExcel()">
+          <i class="pi pi-download"></i>
+          <span>Xuất Excel</span>
+        </button>
+        <button class="btn-action btn-secondary" (click)="openBulkImportDialog()">
+          <i class="pi pi-upload"></i>
+          <span>Nhập hàng</span>
+        </button>
+        <button class="btn-action btn-primary" (click)="openAddProductDialog()">
+          <i class="pi pi-plus"></i>
+          <span>Thêm sản phẩm</span>
+        </button>
       </div>
     </div>
-    <div class="header-actions">
-      <button
-        class="action-btn supplier-btn"
-        (click)="openAddSupplierDialog()"
-        title="Thêm nhà cung cấp"
-      >
-        <i class="pi pi-building"></i>
-        <span>Nhà cung cấp</span>
-      </button>
-      <button class="action-btn export-btn" (click)="exportExcel()" title="Xuất Excel">
-        <i class="pi pi-file-excel"></i>
-        <span>Xuất Excel</span>
-      </button>
-      <button class="action-btn import-btn" (click)="openBulkImportDialog()" title="Nhập hàng">
-        <i class="pi pi-upload"></i>
-        <span>Nhập hàng</span>
-      </button>
-      <button class="action-btn primary-btn" (click)="openAddProductDialog()" title="Thêm sản phẩm">
-        <i class="pi pi-plus"></i>
-        <span>Thêm sản phẩm</span>
-      </button>
+  </div>
+
+  <div class="stats-overview">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <i class="pi pi-box"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Tổng sản phẩm</span>
+        <span class="stat-value">{{ products?.length || 0 }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon yellow">
+        <i class="pi pi-exclamation-triangle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Sắp hết hàng</span>
+        <span class="stat-value">{{ reorderCount }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon red">
+        <i class="pi pi-times-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Hết hàng</span>
+        <span class="stat-value">{{ outOfStockCount }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <i class="pi pi-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Tồn kho tốt</span>
+        <span class="stat-value">{{ products.length - reorderCount - outOfStockCount || 0 }}</span>
+      </div>
     </div>
   </div>
 
-  <div class="search-filter-section">
-    <div class="search-box">
-      <i class="pi pi-search search-icon"></i>
-      <input
-        type="text"
-        class="search-input"
-        placeholder="Tìm kiếm theo tên, SKU, barcode, nhà cung cấp..."
-        [(ngModel)]="searchText"
-        (input)="onSearch()"
-      />
-      <i *ngIf="searchText" class="pi pi-times clear-icon" (click)="clearSearch()"></i>
-    </div>
-    <div class="filter-controls">
-      <p-select
-        [options]="filterCategories"
-        [(ngModel)]="selectedFilterCategory"
-        optionLabel="name"
-        placeholder="Tất cả phân loại"
-        class="filter-select"
-        (onChange)="onFilterChange()"
-        [showClear]="true"
-      >
-        <ng-template #selectedItem let-item>
-          <div class="select-item">
-            <i class="pi pi-tag"></i>
-            <span>{{ item.name }}</span>
-          </div>
-        </ng-template>
-      </p-select>
-      <p-select
-        [options]="stockFilters"
-        [(ngModel)]="selectedStockFilter"
-        optionLabel="name"
-        placeholder="Tình trạng kho"
-        class="filter-select"
-        (onChange)="onFilterChange()"
-        [showClear]="true"
-      >
-        <ng-template #selectedItem let-item>
-          <div class="select-item">
-            <i class="pi pi-filter"></i>
-            <span>{{ item.name }}</span>
-          </div>
-        </ng-template>
-      </p-select>
-    </div>
-  </div>
+  <div class="content-section">
+    <div class="filter-bar">
+      <div class="search-wrapper">
+        <i class="pi pi-search search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Tìm kiếm sản phẩm, SKU, barcode..."
+          [(ngModel)]="searchText"
+          (input)="onSearch()"
+        />
+        <button *ngIf="searchText" class="clear-btn" (click)="clearSearch()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
 
-  <div class="table-container">
-    <p-table
-      [value]="filteredProducts"
-      [rows]="10"
-      [paginator]="true"
-      [tableStyle]="{ 'min-width': '100%' }"
-      [rowsPerPageOptions]="[10, 25, 50, 100]"
-      currentPageReportTemplate="Hiển thị {first} - {last} trong tổng {totalRecords} sản phẩm"
-      [showCurrentPageReport]="true"
-      [loading]="loading"
-      responsiveLayout="scroll"
-    >
-      <ng-template #header>
-        <tr>
-          <th style="width: 50px">#</th>
-          <th>Tên sản phẩm</th>
-          <th style="width: 120px">SKU</th>
-          <th style="width: 150px">Phân loại</th>
-          <th style="width: 180px">Nhà cung cấp</th>
-          <th style="width: 130px" class="text-right">Giá nhập</th>
-          <th style="width: 130px" class="text-right">Giá bán</th>
-          <th style="width: 100px">Đơn vị</th>
-          <th style="width: 120px" class="text-center">Tồn kho</th>
-          <th style="width: 100px" class="text-center">Trạng thái</th>
-          <th style="width: 150px" class="text-center">Thao tác</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-product let-rowIndex="rowIndex">
-        <tr [ngClass]="getStockStatusClass(product)">
-          <td>{{ rowIndex + 1 }}</td>
-          <td>
-            <div class="product-name-cell">
-              <span class="product-name">{{ product.name }}</span>
-              <div class="product-meta">
-                <span *ngIf="product.has_expiry" class="meta-badge expiry">
-                  <i class="pi pi-clock"></i>
-                  HSD: {{ product.shelf_life_days }} ngày
-                </span>
+      <div class="filter-group">
+        <p-select
+          [options]="filterCategories"
+          [(ngModel)]="selectedFilterCategory"
+          optionLabel="name"
+          placeholder="Phân loại"
+          styleClass="filter-select"
+          (onChange)="onFilterChange()"
+          [showClear]="true"
+        />
+
+        <p-select
+          [options]="stockFilters"
+          [(ngModel)]="selectedStockFilter"
+          optionLabel="name"
+          placeholder="Tình trạng kho"
+          styleClass="filter-select"
+          (onChange)="onFilterChange()"
+          [showClear]="true"
+        />
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <p-table
+        [value]="filteredProducts"
+        [rows]="20"
+        [paginator]="true"
+        [loading]="loading"
+        [rowsPerPageOptions]="[20, 50, 100]"
+        responsiveLayout="scroll"
+        styleClass="custom-table"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 50px">#</th>
+            <th>Sản phẩm</th>
+            <th style="width: 120px">SKU</th>
+            <th style="width: 120px">Phân loại</th>
+            <th style="width: 140px" class="text-right">Giá nhập</th>
+            <th style="width: 140px" class="text-right">Giá bán</th>
+            <th style="width: 100px" class="text-center">Tồn kho</th>
+            <th style="width: 100px" class="text-center">Trạng thái</th>
+            <th style="width: 120px" class="text-center">Thao tác</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-product let-rowIndex="rowIndex">
+          <tr [class]="getRowClass(product)">
+            <td>{{ rowIndex + 1 }}</td>
+            <td>
+              <div class="product-info">
+                <span class="product-name">{{ product.name }}</span>
+                <span class="product-meta">{{ product.unit }}</span>
               </div>
-            </div>
-          </td>
-          <td>
-            <span class="sku-badge">{{ product.sku }}</span>
-          </td>
-          <td>
-            <span class="category-tag text-hidden">{{ product.name_category }}</span>
-          </td>
-          <td>
-            <span class="supplier-name text-hidden">{{
-              product.primary_supplier_name || 'Chưa có'
-            }}</span>
-          </td>
-          <td class="text-right">
-            <span class="price-text">{{ product.cost_price | number : '1.0-0' }}</span>
-          </td>
-          <td class="text-right">
-            <span class="price-text price-sell">{{ product.price | number : '1.0-0' }}</span>
-          </td>
-          <td>{{ product.unit }}</td>
-          <td class="text-center">
-            <div class="stock-info">
-              <span class="stock-badge" [ngClass]="getStockStatusClass(product)">
+            </td>
+            <td>
+              <span class="sku-badge">{{ product.sku }}</span>
+            </td>
+            <td>
+              <span class="category-badge">{{ product.name_category }}</span>
+            </td>
+            <td class="text-right">
+              <span class="price">{{ product.cost_price | number : '1.0-0' }} đ</span>
+            </td>
+            <td class="text-right">
+              <span class="price primary">{{ product.price | number : '1.0-0' }} đ</span>
+            </td>
+            <td class="text-center">
+              <span class="stock-badge" [class]="getStockClass(product)">
                 {{ product.stock_quantity }}
               </span>
-            </div>
-          </td>
-          <td class="text-center">
-            <span class="status-badge" [ngClass]="getStockStatusClass(product)">
-              <i
-                [class]="
-                  product.stock_quantity === 0
-                    ? 'pi pi-times-circle'
-                    : product.is_overstock
-                    ? 'pi pi-arrow-up'
-                    : product.is_reorder
-                    ? 'pi pi-exclamation-triangle'
-                    : 'pi pi-check-circle'
-                "
-              ></i>
-            </span>
-          </td>
-          <td class="text-center">
-            <div class="action-buttons">
-              <button class="btn-action btn-edit" (click)="editProduct(product)" title="Sửa">
-                <i class="pi pi-pencil"></i>
-              </button>
-              <button class="btn-action btn-delete" (click)="confirmDelete(product)" title="Xóa">
-                <i class="pi pi-trash"></i>
-              </button>
-              <button class="btn-action btn-info" (click)="viewDetail(product)" title="Chi tiết">
-                <i class="pi pi-info-circle"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template #emptymessage>
-        <tr>
-          <td colspan="11" class="empty-message">
-            <div class="empty-state">
-              <i class="pi pi-inbox empty-icon"></i>
-              <p>Không tìm thấy sản phẩm nào</p>
-              <button class="btn-primary" (click)="openAddProductDialog()">
-                <i class="pi pi-plus"></i>
-                Thêm sản phẩm đầu tiên
-              </button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+            </td>
+            <td class="text-center">
+              <span class="status-badge" [class]="getStockClass(product)">
+                <i [class]="getStockIcon(product)"></i>
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button class="btn-icon" (click)="viewDetail(product)" title="Chi tiết">
+                  <i class="pi pi-eye"></i>
+                </button>
+                <button class="btn-icon" (click)="editProduct(product)" title="Sửa">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button class="btn-icon danger" (click)="confirmDelete(product)" title="Xóa">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <i class="pi pi-inbox"></i>
+                <p>Chưa có sản phẩm nào</p>
+                <button class="btn-primary" (click)="openAddProductDialog()">
+                  Thêm sản phẩm đầu tiên
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
   </div>
 
-  <p-toast />
+  <p-toast position="top-right" />
 </div>
