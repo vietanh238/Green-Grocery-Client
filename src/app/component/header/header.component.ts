@@ -213,18 +213,33 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private handleWebSocketMessage(ms: any) {
+    console.log('📨 WebSocket message:', ms);
+
     if (ms?.message_type === 'remind_reorder') {
-      const countProductReorder = ms?.items?.length;
-      if (countProductReorder) {
+      // Data structure: ms.data.items (not ms.items)
+      const items = ms?.data?.items || [];
+      const count = ms?.data?.count || items.length;
+
+      if (count > 0) {
         const notification: Notification = {
           id: `reorder_${Date.now()}`,
-          title: 'Nhắc nhở nhập hàng',
-          message: `Có ${countProductReorder} sản phẩm cần nhập hàng`,
+          title: '⚠️ Cảnh báo tồn kho',
+          message: `Có ${count} sản phẩm sắp hết hàng, cần nhập ngay!`,
           time: new Date().toISOString(),
-          priority: '1',
+          priority: '1', // High priority
           isRead: false,
         };
         this.addNotification(notification);
+
+        // Log details for debugging
+        console.log('🔔 Low stock alert:', {
+          count,
+          items: items.map((item: any) => ({
+            name: item.name,
+            stock: item.stock_quantity,
+            reorder_point: item.reorder_point
+          }))
+        });
       }
     } else if (ms?.message_type === 'payment_success') {
       const notification: Notification = {

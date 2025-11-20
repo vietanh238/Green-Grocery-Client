@@ -118,15 +118,15 @@ export class HistoryComponent implements OnInit {
       params.date_to = this.formatDate(this.selectedDateRange[1]);
     }
 
-    if (this.selectedType) {
+    if (this.selectedType && this.selectedType.value) {
       params.type = this.selectedType.value;
     }
 
-    if (this.selectedStatus) {
+    if (this.selectedStatus && this.selectedStatus.value) {
       params.status = this.selectedStatus.value;
     }
 
-    if (this.selectedPaymentMethod) {
+    if (this.selectedPaymentMethod && this.selectedPaymentMethod.value) {
       params.payment_method = this.selectedPaymentMethod.value;
     }
 

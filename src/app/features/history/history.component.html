@@ -185,11 +185,11 @@
     <div class="table-container">
       <p-table
         [value]="filteredTransactions"
-        [rows]="20"
+        [rows]="15"
         [paginator]="true"
         [tableStyle]="{ 'min-width': '100%' }"
-        [rowsPerPageOptions]="[10, 20, 50, 100]"
-        currentPageReportTemplate="Hiển thị {first} - {last} trong tổng {totalRecords} giao dịch"
+        [rowsPerPageOptions]="[10, 15, 25, 50]"
+        currentPageReportTemplate="{first}-{last} / {totalRecords}"
         [showCurrentPageReport]="true"
         [loading]="loading"
         responsiveLayout="scroll"

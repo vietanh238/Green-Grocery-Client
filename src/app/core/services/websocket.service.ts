@@ -78,18 +78,25 @@ export class WebSocketService {
   }
 
   private handleMessage(data: any): void {
-    console.log('WebSocket message received:', data);
+    console.log('📩 WebSocket message received:', data);
 
+    // Emit to all subscribers
     this.messageSubject.next(data);
 
+    // Handle specific message types
     if (data.message_type === 'payment_success') {
+      console.log('💰 Payment success notification');
       this.paymentSuccessSubject.next({
         success: true,
         data: data.data,
       });
       this.service.notifyPaymentSuccess(data.data);
     } else if (data.message_type === 'remind_reorder') {
-      console.log('Reorder reminder:', data.data);
+      console.log('🔔 Reorder reminder notification:', {
+        count: data.data?.count,
+        items: data.data?.items?.length
+      });
+      // Message already sent via messageSubject, header will handle it
     }
   }
 

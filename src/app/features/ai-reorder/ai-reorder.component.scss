@@ -14,8 +14,19 @@ $text-secondary: #6b7280;
   flex-direction: column;
   overflow: hidden;
 
-  @media (max-width: 768px) {
+  @media (max-width: 968px) {
     padding: 10px;
+    height: calc(100vh - 70px);
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px;
+    height: calc(100vh - 65px);
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px;
+    height: calc(100vh - 60px);
   }
 }
 
@@ -65,6 +76,12 @@ $text-secondary: #6b7280;
   .header-actions {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
+
+    @media (max-width: 968px) {
+      width: 100%;
+      gap: 6px;
+    }
 
     @media (max-width: 768px) {
       width: 100%;
@@ -81,6 +98,24 @@ $text-secondary: #6b7280;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
+      white-space: nowrap;
+
+      @media (max-width: 968px) {
+        padding: 7px 12px;
+        font-size: 12px;
+        gap: 5px;
+      }
+
+      @media (max-width: 768px) {
+        flex: 1;
+        justify-content: center;
+        min-width: calc(50% - 3px);
+      }
+
+      @media (max-width: 480px) {
+        width: 100%;
+        padding: 8px 10px;
+      }
 
       &:disabled {
         opacity: 0.6;
@@ -89,6 +124,10 @@ $text-secondary: #6b7280;
 
       i {
         font-size: 14px;
+
+        @media (max-width: 968px) {
+          font-size: 13px;
+        }
       }
 
       &.train-btn {
@@ -153,11 +192,16 @@ $text-secondary: #6b7280;
   margin-bottom: 10px;
   flex-shrink: 0;
 
-  @media (max-width: 968px) {
+  @media (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 768px) {
+    gap: 6px;
+  }
+
+  @media (max-width: 576px) {
     grid-template-columns: 1fr;
   }
 
@@ -171,6 +215,15 @@ $text-secondary: #6b7280;
     border-left: 3px solid transparent;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     transition: all 0.3s;
+
+    @media (max-width: 768px) {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 10px 12px;
+    }
 
     &:hover {
       transform: translateY(-2px);
@@ -186,6 +239,18 @@ $text-secondary: #6b7280;
       justify-content: center;
       font-size: 18px;
       flex-shrink: 0;
+
+      @media (max-width: 768px) {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+      }
+
+      @media (max-width: 480px) {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
     }
 
     .card-content {
@@ -193,26 +258,63 @@ $text-secondary: #6b7280;
       display: flex;
       flex-direction: column;
       gap: 2px;
+      min-width: 0;
 
       .card-label {
         font-size: 12px;
         color: $text-secondary;
         font-weight: 500;
+        white-space: nowrap;
+
+        @media (max-width: 768px) {
+          font-size: 11px;
+        }
+
+        @media (max-width: 480px) {
+          font-size: 12px;
+        }
       }
 
       .card-value {
         font-size: 20px;
         font-weight: 700;
         color: $text-primary;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        @media (max-width: 768px) {
+          font-size: 18px;
+        }
+
+        @media (max-width: 480px) {
+          font-size: 20px;
+        }
 
         &.value-small {
           font-size: 15px;
+
+          @media (max-width: 768px) {
+            font-size: 13px;
+          }
+
+          @media (max-width: 480px) {
+            font-size: 14px;
+          }
         }
       }
 
       .card-subtitle {
         font-size: 11px;
         color: $text-secondary;
+
+        @media (max-width: 768px) {
+          font-size: 10px;
+        }
+
+        @media (max-width: 480px) {
+          font-size: 11px;
+        }
       }
     }
 
@@ -261,8 +363,13 @@ $text-secondary: #6b7280;
   margin-bottom: 10px;
   flex-shrink: 0;
 
-  @media (max-width: 968px) {
+  @media (max-width: 1024px) {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  @media (max-width: 768px) {
+    gap: 6px;
   }
 
   .chart-section,
@@ -273,12 +380,31 @@ $text-secondary: #6b7280;
       align-items: center;
       padding: 10px;
       height: 190px;
+
+      @media (max-width: 1024px) {
+        height: 220px;
+        padding: 15px;
+      }
+
+      @media (max-width: 768px) {
+        height: 200px;
+        padding: 10px;
+      }
+
+      @media (max-width: 480px) {
+        height: 180px;
+        padding: 8px;
+      }
     }
 
     .info-content {
       display: flex;
       flex-direction: column;
       gap: 8px;
+
+      @media (max-width: 1024px) {
+        gap: 6px;
+      }
 
       .info-item {
         display: flex;
@@ -287,25 +413,50 @@ $text-secondary: #6b7280;
         padding: 8px;
         background: #f9fafb;
         border-radius: 6px;
+        transition: background 0.2s;
+
+        @media (max-width: 768px) {
+          padding: 7px;
+          gap: 7px;
+        }
+
+        &:hover {
+          background: #f3f4f6;
+        }
 
         i {
           font-size: 16px;
           color: $primary-color;
+          flex-shrink: 0;
+
+          @media (max-width: 768px) {
+            font-size: 14px;
+          }
         }
 
         .info-text {
           display: flex;
           flex-direction: column;
           gap: 2px;
+          min-width: 0;
 
           strong {
             font-size: 12px;
             color: $text-primary;
+            font-weight: 600;
+
+            @media (max-width: 768px) {
+              font-size: 11px;
+            }
           }
 
           span {
             font-size: 11px;
             color: $text-secondary;
+
+            @media (max-width: 768px) {
+              font-size: 10px;
+            }
           }
         }
       }
@@ -351,11 +502,30 @@ $text-secondary: #6b7280;
     align-items: center;
     flex-shrink: 0;
     background: #f9fafb;
+    flex-wrap: wrap;
+
+    @media (max-width: 768px) {
+      padding: 8px 10px;
+      gap: 6px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 8px;
+    }
 
     .search-wrapper {
       position: relative;
       flex: 1;
       min-width: 200px;
+
+      @media (max-width: 768px) {
+        min-width: 150px;
+      }
+
+      @media (max-width: 480px) {
+        width: 100%;
+        min-width: 100%;
+      }
 
       .search-icon {
         position: absolute;
@@ -374,6 +544,11 @@ $text-secondary: #6b7280;
         font-size: 13px;
         transition: all 0.3s;
 
+        @media (max-width: 768px) {
+          padding: 7px 10px 7px 34px;
+          font-size: 12px;
+        }
+
         &:focus {
           outline: none;
           border-color: $primary-color;
@@ -389,6 +564,14 @@ $text-secondary: #6b7280;
     .filter-actions {
       display: flex;
       gap: 8px;
+
+      @media (max-width: 480px) {
+        width: 100%;
+
+        ::ng-deep .filter-select {
+          width: 100%;
+        }
+      }
     }
   }
 }
@@ -543,11 +726,47 @@ $text-secondary: #6b7280;
       max-height: calc(100vh - 480px);
       overflow-y: auto;
       overflow-x: auto;
+
+      @media (max-width: 1024px) {
+        max-height: calc(100vh - 520px);
+      }
+
+      @media (max-width: 768px) {
+        max-height: calc(100vh - 460px);
+      }
+
+      @media (max-width: 480px) {
+        max-height: calc(100vh - 420px);
+      }
+
+      &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f3f4f6;
+        border-radius: 10px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #22c55e;
+        border-radius: 10px;
+
+        &:hover {
+          background: #16a34a;
+        }
+      }
     }
 
     .p-datatable-table {
       table-layout: auto;
       width: 100%;
+      min-width: 1000px;
+
+      @media (max-width: 768px) {
+        min-width: 900px;
+      }
     }
 
     .p-datatable-thead > tr > th {
@@ -604,9 +823,21 @@ $text-secondary: #6b7280;
     display: flex;
     flex-direction: column;
 
+    @media (max-width: 768px) {
+      border-radius: 8px;
+    }
+
     .p-card-header {
       border-bottom: 1px solid $border-color;
       padding: 12px 14px;
+
+      @media (max-width: 768px) {
+        padding: 10px 12px;
+      }
+
+      @media (max-width: 480px) {
+        padding: 8px 10px;
+      }
     }
 
     .p-card-body {
@@ -622,6 +853,23 @@ $text-secondary: #6b7280;
       flex: 1;
       min-height: 0;
       overflow: auto;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f3f4f6;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #22c55e;
+        border-radius: 10px;
+
+        &:hover {
+          background: #16a34a;
+        }
+      }
     }
   }
 
@@ -631,9 +879,21 @@ $text-secondary: #6b7280;
     padding: 8px 10px;
     flex-shrink: 0;
 
+    @media (max-width: 768px) {
+      padding: 6px 8px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 5px 6px;
+    }
+
     .p-paginator-current {
       color: #6b7280;
       font-size: 11px;
+
+      @media (max-width: 768px) {
+        font-size: 10px;
+      }
     }
 
     .p-paginator-pages .p-paginator-page {
@@ -641,6 +901,18 @@ $text-secondary: #6b7280;
       min-width: 30px;
       height: 30px;
       font-size: 12px;
+
+      @media (max-width: 768px) {
+        min-width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+
+      @media (max-width: 480px) {
+        min-width: 26px;
+        height: 26px;
+        font-size: 10px;
+      }
 
       &.p-highlight {
         background: #22c55e;
@@ -653,6 +925,16 @@ $text-secondary: #6b7280;
         color: #22c55e;
       }
     }
+
+    .p-paginator-first,
+    .p-paginator-prev,
+    .p-paginator-next,
+    .p-paginator-last {
+      @media (max-width: 480px) {
+        min-width: 26px;
+        height: 26px;
+      }
+    }
   }
 
   .filter-select .p-select {
@@ -660,6 +942,17 @@ $text-secondary: #6b7280;
     border: 1.5px solid #e5e7eb;
     border-radius: 8px;
     height: 36px;
+
+    @media (max-width: 768px) {
+      min-width: 120px;
+      height: 34px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      min-width: 100%;
+      width: 100%;
+    }
 
     &:hover {
       border-color: $primary-color;
@@ -685,21 +978,59 @@ $text-secondary: #6b7280;
   }
 }
 
-@media (max-width: 968px) {
-  .content-grid {
-    .chart-section,
-    .info-section {
-      .chart-container {
-        height: 200px;
+// Additional responsive improvements
+@media (max-width: 480px) {
+  .page-header {
+    .header-left {
+      .page-title {
+        font-size: 18px;
+        gap: 8px;
+
+        i {
+          font-size: 20px;
+        }
       }
+
+      .page-subtitle {
+        font-size: 12px;
+      }
+    }
+  }
+
+  .table-section {
+    .card-header {
+      h3 {
+        font-size: 14px;
+      }
+
+      .product-count {
+        font-size: 11px;
+        padding: 2px 8px;
+      }
+    }
+  }
+
+  .btn-action.btn-view {
+    width: 28px;
+    height: 28px;
+
+    i {
+      font-size: 12px;
     }
   }
 }
 
-@media (max-width: 768px) {
-  :host ::ng-deep {
-    .reorder-table table {
-      min-width: 1000px;
-    }
+// Landscape mobile optimizations
+@media (max-width: 968px) and (orientation: landscape) {
+  .ai-reorder-container {
+    height: calc(100vh - 60px);
+  }
+
+  .summary-section {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
