@@ -197,10 +197,28 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   padding: 12px;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
   align-content: start;
   min-height: 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #22c55e;
+    border-radius: 3px;
+
+    &:hover {
+      background: #16a34a;
+    }
+  }
 }
 
 .product-not-found {

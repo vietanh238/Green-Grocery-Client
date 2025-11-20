@@ -165,6 +165,11 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   handleAddToCart(product: Product): void {
+    // Prevent double-click
+    if (this.isProcessingPayment) {
+      return;
+    }
+
     if (product.stock_quantity <= 0) {
       this.showError('Sản phẩm đã hết hàng');
       return;
@@ -173,8 +178,16 @@ export class SellComponent implements OnInit, OnDestroy {
     const existingItem = this.cartItems.find((item) => item.bar_code === product.bar_code);
 
     if (existingItem) {
-      existingItem.quantity++;
+      // Only increase if stock allows
+      if (product.stock_quantity > 0) {
+        existingItem.quantity++;
+        this.updateProductStock(product.bar_code, -1);
+        this.showSuccess(`Đã cập nhật số lượng ${product.name}`);
+      } else {
+        this.showError('Sản phẩm đã hết hàng trong kho');
+      }
     } else {
+      // Add new item to cart
       this.cartItems.push({
         id: product.id,
         name: product.name,
@@ -186,10 +199,9 @@ export class SellComponent implements OnInit, OnDestroy {
         unit: product.unit,
         cost_price: product.cost_price,
       });
+      this.updateProductStock(product.bar_code, -1);
+      this.showSuccess(`Đã thêm ${product.name} vào giỏ hàng`);
     }
-
-    this.updateProductStock(product.bar_code, -1);
-    this.showSuccess(`Đã thêm ${product.name} vào giỏ hàng`);
   }
 
   filterProducts(event: any): void {

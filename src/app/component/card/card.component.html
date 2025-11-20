@@ -1,45 +1,48 @@
-<div class="product-card">
-  <div class="product-card-content" [class.out-of-stock]="product.stock_quantity === 0">
-    <div class="product-info">
-      <div class="product-header">
-        <h4 class="product-name" [class.out-of-stock-text]="product.stock_quantity === 0">
-          {{ product.name }}
-        </h4>
-        <div class="d-flex justify-content-between">
-          <span class="product-sku" [class.out-of-stock-sku]="product.stock_quantity === 0">
-            SKU: {{ product.sku }}
-          </span>
-          <span class="product-sku" [class.out-of-stock-sku]="product.stock_quantity === 0">
-            Số lượng: {{ product.stock_quantity }}
-          </span>
-        </div>
-      </div>
+<div class="product-card" [class.out-of-stock]="product.stock_quantity === 0">
+  <!-- Stock Badge -->
+  <div class="stock-badge" *ngIf="product.stock_quantity <= 5 && product.stock_quantity > 0">
+    <i class="pi pi-exclamation-triangle"></i>
+    <span>Còn {{ product.stock_quantity }}</span>
+  </div>
+  <div class="stock-badge out" *ngIf="product.stock_quantity === 0">
+    <i class="pi pi-times-circle"></i>
+    <span>Hết hàng</span>
+  </div>
 
-      <div class="product-footer">
-        <div class="price-section">
-          @if (product.originalPrice && product.originalPrice > product.price) {
-          <span class="original-price">{{ formatPrice(product.originalPrice) }}</span>
-          }
-          <span class="current-price">{{ formatPrice(product.price) }}</span>
-        </div>
-
-        <button
-          pButton
-          type="button"
-          [disabled]="product.stock_quantity === 0"
-          (click)="onAddToCart()"
-          class="add-to-cart-btn"
-          [class.pulse]="product.stock_quantity > 0"
-        >
-          @if (product.stock_quantity === 0) {
-          <i class="pi pi-times"></i>
-          <span>Hết hàng</span>
-          } @else {
-          <i class="pi pi-plus"></i>
-          <span>Thêm</span>
-          }
-        </button>
-      </div>
+  <!-- Product Image/Icon -->
+  <div class="product-image">
+    <div class="image-placeholder">
+      <i class="pi pi-box"></i>
     </div>
   </div>
+
+  <!-- Product Info -->
+  <div class="product-info">
+    <h4 class="product-name">{{ product.name }}</h4>
+
+    <div class="product-meta">
+      <span class="meta-item">
+        <i class="pi pi-tag"></i>
+        {{ product.sku }}
+      </span>
+      <span class="meta-item stock">
+        <i class="pi pi-warehouse"></i>
+        {{ product.stock_quantity }} {{ product.unit || 'sp' }}
+      </span>
+    </div>
+
+    <div class="product-price">
+      <span class="current-price">{{ formatPrice(product.price) }}</span>
+      <span class="unit-label">/ {{ product.unit || 'sp' }}</span>
+    </div>
+  </div>
+
+  <!-- Add Button -->
+  <button
+    class="add-button"
+    [disabled]="product.stock_quantity === 0"
+    (click)="onAddToCart()"
+  >
+    <i class="pi" [class.pi-plus]="product.stock_quantity > 0" [class.pi-times]="product.stock_quantity === 0"></i>
+  </button>
 </div>

@@ -1,10 +1,11 @@
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CardModule } from 'primeng/card';
+import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-card',
   templateUrl: './card.component.html',
   styleUrl: './card.component.scss',
-  imports: [CardModule],
+  imports: [CardModule, CommonModule],
   standalone: true,
 })
 export class CardComponent implements OnInit {
