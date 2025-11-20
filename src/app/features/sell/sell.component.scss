@@ -11,24 +11,26 @@ $shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
 .sell-container {
-  padding: 1rem;
+  padding: 12px;
   background: #f5f5f5;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .search-section {
   background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
+  padding: 12px 14px;
+  border-radius: 8px;
   box-shadow: $shadow-sm;
-  margin-bottom: 1.5rem;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .search-row {
   display: flex;
-  gap: 1rem;
+  gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -50,10 +52,10 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 3rem;
+  padding: 10px 12px 10px 40px;
   border: 2px solid $border-color;
-  border-radius: 0.375rem;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 14px;
   transition: all 0.2s;
   background: white;
 
@@ -71,12 +73,13 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 .scan-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  gap: 6px;
+  padding: 10px 16px;
   background: $success-color;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 8px;
   color: white;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -100,12 +103,13 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 .manual-order-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  gap: 6px;
+  padding: 10px 16px;
   background: $primary-color;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 8px;
   color: white;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -119,46 +123,49 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 1.5rem;
+  grid-template-columns: 1fr 380px;
+  gap: 12px;
   flex: 1;
-  min-height: 600px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .products-section {
   background: white;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   box-shadow: $shadow-sm;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .products-header {
-  padding: 1rem 1.5rem;
+  padding: 12px 14px;
   background: #f8f9fa;
   border-bottom: 1px solid $border-color;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .products-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 16px;
   font-weight: 600;
   color: $text-primary;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .products-count {
   background: $primary-color;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -187,12 +194,13 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
 .products-grid {
   flex: 1;
-  padding: 1rem;
+  padding: 12px;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
   align-content: start;
+  min-height: 0;
 }
 
 .product-not-found {
@@ -230,38 +238,40 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
 .cart-section {
   background: white;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   box-shadow: $shadow-sm;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 0;
+  max-height: 100%;
 }
 
 .cart-header {
-  padding: 1rem 1.5rem;
+  padding: 12px 14px;
   background: $primary-color;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .cart-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 16px;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .cart-count {
   background: rgba(255, 255, 255, 0.2);
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -286,9 +296,10 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 
 .cart-body {
   flex: 1;
-  padding: 1rem;
+  padding: 12px;
   overflow-y: auto;
-  min-height: 200px;
+  min-height: 0;
+  max-height: calc(100vh - 400px);
 }
 
 .empty-cart {
@@ -322,14 +333,14 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 .cart-items {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
 .cart-item {
   background: #f8f9fa;
   border: 1px solid $border-color;
-  border-radius: 0.375rem;
-  padding: 1rem;
+  border-radius: 8px;
+  padding: 10px 12px;
   transition: all 0.2s;
 
   &:hover {
@@ -342,12 +353,12 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.5rem;
+  margin-bottom: 6px;
 }
 
 .item-name {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 13px;
   font-weight: 600;
   color: $text-primary;
   line-height: 1.4;
@@ -355,7 +366,7 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .item-price {
-  font-size: 1rem;
+  font-size: 14px;
   font-weight: 700;
   color: $primary-color;
   white-space: nowrap;
@@ -364,13 +375,13 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 .item-details {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
+  gap: 3px;
+  margin-bottom: 8px;
 }
 
 .item-sku,
 .item-barcode {
-  font-size: 0.75rem;
+  font-size: 11px;
   color: $text-secondary;
 }
 
@@ -378,25 +389,25 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 }
 
 .quantity-controls {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 8px;
   background: white;
   border: 1px solid $border-color;
-  border-radius: 0.375rem;
-  padding: 0.25rem;
+  border-radius: 6px;
+  padding: 3px;
 }
 
 .quantity-btn {
-  width: 2rem;
-  height: 2rem;
+  width: 26px;
+  height: 26px;
   border: none;
   background: transparent;
-  border-radius: 0.25rem;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -420,27 +431,27 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .quantity-value {
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 600;
   color: $text-primary;
-  min-width: 2rem;
+  min-width: 24px;
   text-align: center;
 }
 
 .item-total {
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 600;
   color: $text-primary;
   margin-left: auto;
 }
 
 .delete-btn {
-  width: 2rem;
-  height: 2rem;
+  width: 30px;
+  height: 30px;
   border: none;
   background: #f8d7da;
   color: $primary-color;
-  border-radius: 0.375rem;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -459,63 +470,64 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .cart-footer {
-  padding: 1.5rem;
+  padding: 12px 14px;
   background: #f8f9fa;
   border-top: 1px solid $border-color;
+  flex-shrink: 0;
 }
 
 .total-section {
   background: white;
   border: 2px solid $primary-color;
-  border-radius: 0.375rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
 }
 
 .total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 6px;
 }
 
 .total-label {
-  font-size: 1.1rem;
+  font-size: 15px;
   font-weight: 600;
   color: $text-primary;
 }
 
 .total-amount {
-  font-size: 1.5rem;
+  font-size: 20px;
   font-weight: 700;
   color: $primary-color;
 }
 
 .total-items {
   text-align: right;
-  font-size: 0.875rem;
+  font-size: 12px;
   color: $text-secondary;
 }
 
 .payment-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
 .payment-btn {
   width: 100%;
-  padding: 1rem;
+  padding: 12px;
   border: none;
-  border-radius: 0.375rem;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 8px;
 
   &:disabled {
     opacity: 0.6;

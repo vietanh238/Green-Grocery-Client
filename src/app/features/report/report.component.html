@@ -168,7 +168,7 @@
             type="line"
             [data]="revenueChartData"
             [options]="commonChartOptions"
-            [style]="{ position: 'relative', height: '350px' }"
+            [style]="{ position: 'relative', height: '240px' }"
           />
         </div>
       </div>
@@ -187,7 +187,7 @@
             type="bar"
             [data]="profitChartData"
             [options]="commonChartOptions"
-            [style]="{ position: 'relative', height: '300px' }"
+            [style]="{ position: 'relative', height: '220px' }"
           />
         </div>
       </div>
@@ -204,7 +204,7 @@
             type="doughnut"
             [data]="topProductsChartData"
             [options]="pieChartOptions"
-            [style]="{ position: 'relative', height: '300px' }"
+            [style]="{ position: 'relative', height: '220px' }"
           />
         </div>
       </div>
@@ -223,11 +223,11 @@
       <div class="table-container">
         <p-table
           [value]="topProducts"
-          [rows]="10"
+          [rows]="8"
           [paginator]="true"
           [showCurrentPageReport]="true"
           currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} sản phẩm"
-          [rowsPerPageOptions]="[10, 25, 50]"
+          [rowsPerPageOptions]="[8, 15, 25]"
           styleClass="products-table"
         >
           <ng-template #header>
@@ -281,10 +281,11 @@
       <div class="table-container">
         <p-table
           [value]="monthlyRevenueData"
-          [rows]="10"
+          [rows]="8"
           [paginator]="true"
           [showCurrentPageReport]="true"
           currentPageReportTemplate="Hiển thị {first} đến {last} trong tổng số {totalRecords} tháng"
+          [rowsPerPageOptions]="[8, 15, 25]"
           styleClass="report-table"
         >
           <ng-template #header>
