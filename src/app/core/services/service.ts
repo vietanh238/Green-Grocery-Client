@@ -14,6 +14,7 @@ export class Service {
   private readonly API_DEBIT = environment.apiDebit;
   private readonly API_REPORT = environment.apiReport;
   private readonly API_PURCHASE_ORDER = environment.apiPurchaseOrder;
+  private readonly API_INVENTORY = environment.apiInventory;
 
   private paymentSuccessSubject = new Subject<any>();
   public paymentSuccess$ = this.paymentSuccessSubject.asObservable();
@@ -240,5 +241,83 @@ export class Service {
 
   sendPurchaseOrderEmail(poId: number): Observable<any> {
     return this._http.post(`${this.API_PURCHASE_ORDER}send-email/${poId}/`, {});
+  }
+
+  // ============ INVENTORY APIs ============
+
+  getInventoryHistory(productId: number, params?: any): Observable<any> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key]) {
+          httpParams = httpParams.set(key, params[key]);
+        }
+      });
+    }
+    return this._http.get(`${this.API_INVENTORY}history/${productId}/`, { params: httpParams });
+  }
+
+  adjustInventory(payload: any): Observable<any> {
+    return this._http.post(`${this.API_INVENTORY}adjust/`, payload);
+  }
+
+  recordDamage(payload: any): Observable<any> {
+    return this._http.post(`${this.API_INVENTORY}damage/`, payload);
+  }
+
+  recordLost(payload: any): Observable<any> {
+    return this._http.post(`${this.API_INVENTORY}lost/`, payload);
+  }
+
+  returnStock(payload: any): Observable<any> {
+    return this._http.post(`${this.API_INVENTORY}return/`, payload);
+  }
+
+  getInventorySummary(params?: any): Observable<any> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key]) {
+          httpParams = httpParams.set(key, params[key]);
+        }
+      });
+    }
+    return this._http.get(`${this.API_INVENTORY}summary/`, { params: httpParams });
+  }
+
+  // ============ ADVANCED REPORTS APIs ============
+
+  getInventoryMovementReport(startDate?: string, endDate?: string): Observable<any> {
+    let httpParams = new HttpParams();
+    if (startDate) httpParams = httpParams.set('start_date', startDate);
+    if (endDate) httpParams = httpParams.set('end_date', endDate);
+    return this._http.get(`${this.API_REPORT}inventory-movement/`, { params: httpParams });
+  }
+
+  getSupplierPerformanceReport(startDate?: string, endDate?: string): Observable<any> {
+    let httpParams = new HttpParams();
+    if (startDate) httpParams = httpParams.set('start_date', startDate);
+    if (endDate) httpParams = httpParams.set('end_date', endDate);
+    return this._http.get(`${this.API_REPORT}supplier-performance/`, { params: httpParams });
+  }
+
+  getCustomerBehaviorReport(startDate?: string, endDate?: string): Observable<any> {
+    let httpParams = new HttpParams();
+    if (startDate) httpParams = httpParams.set('start_date', startDate);
+    if (endDate) httpParams = httpParams.set('end_date', endDate);
+    return this._http.get(`${this.API_REPORT}customer-behavior/`, { params: httpParams });
+  }
+
+  // ============ ORDER MANAGEMENT APIs ============
+
+  cancelOrder(orderCode: string, reason: string): Observable<any> {
+    return this._http.post(`${this.API_PAYMENT}cancel/${orderCode}/`, { reason });
+  }
+
+  refundOrder(orderCode: string, refundAmount?: number, reason?: string, items?: any[]): Observable<any> {
+    const payload: any = { reason: reason || 'Hoàn tiền' };
+    if (refundAmount) payload.refund_amount = refundAmount;
+    if (items) payload.items = items;
+    return this._http.post(`${this.API_PAYMENT}refund/${orderCode}/`, payload);
   }
 }

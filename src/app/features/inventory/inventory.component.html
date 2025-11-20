@@ -1,0 +1,234 @@
+<div class="inventory-container">
+  <!-- Header & Statistics -->
+  <div class="inventory-header">
+    <h1><i class="pi pi-box"></i> Quản lý Tồn kho</h1>
+
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <i class="pi pi-shopping-cart"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Tổng sản phẩm</span>
+          <span class="stat-value">{{ statistics.total_products }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Sắp hết hàng</span>
+          <span class="stat-value warning">{{ statistics.low_stock_count }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+          <i class="pi pi-times-circle"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Hết hàng</span>
+          <span class="stat-value danger">{{ statistics.out_of_stock_count }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <i class="pi pi-dollar"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Giá trị tồn kho</span>
+          <span class="stat-value">{{ statistics.total_stock_value | number:'1.0-0' }}đ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products Table -->
+  <div class="inventory-table">
+    <p-table
+      [value]="products"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="20"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Hiển thị {first} - {last} / {totalRecords} sản phẩm"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      styleClass="p-datatable-sm"
+      responsiveLayout="scroll">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 60px">#</th>
+          <th>Sản phẩm</th>
+          <th>SKU</th>
+          <th style="width: 120px; text-align: center;">Tồn kho</th>
+          <th style="width: 120px; text-align: center;">Điểm đặt lại</th>
+          <th style="width: 120px; text-align: center;">Mức tối đa</th>
+          <th style="width: 120px; text-align: center;">Trạng thái</th>
+          <th style="width: 280px; text-align: center;">Thao tác</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-product let-rowIndex="rowIndex">
+        <tr>
+          <td>{{ rowIndex + 1 }}</td>
+          <td>
+            <div class="product-info">
+              <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="product-img" />
+              <div>
+                <div class="product-name">{{ product.name }}</div>
+                <div class="product-category">{{ product.category }}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="sku-badge">{{ product.sku }}</span></td>
+          <td style="text-align: center;">
+            <strong style="font-size: 1.1em;">{{ product.stock_quantity }}</strong> {{ product.unit }}
+          </td>
+          <td style="text-align: center;">{{ product.reorder_point }} {{ product.unit }}</td>
+          <td style="text-align: center;">{{ product.max_stock_level }} {{ product.unit }}</td>
+          <td style="text-align: center;">
+            <span class="status-badge" [ngClass]="getStockStatus(product)">
+              {{ getStockStatusLabel(getStockStatus(product)) }}
+            </span>
+          </td>
+          <td style="text-align: center;">
+            <button pButton type="button" icon="pi pi-history"
+                    class="p-button-sm p-button-text p-button-info"
+                    label="Lịch sử" (click)="viewHistory(product)"
+                    pTooltip="Xem lịch sử biến động"></button>
+            <button pButton type="button" icon="pi pi-pencil"
+                    class="p-button-sm p-button-text p-button-warning"
+                    label="Điều chỉnh" (click)="openAdjustmentDialog(product)"
+                    pTooltip="Điều chỉnh tồn kho"></button>
+            <button pButton type="button" icon="pi pi-exclamation-circle"
+                    class="p-button-sm p-button-text p-button-danger"
+                    (click)="openDamageLostDialog(product, 'damage')"
+                    pTooltip="Ghi nhận hư hỏng"></button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 2rem;">
+            <i class="pi pi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+            <p style="margin-top: 1rem; color: #999;">Không có sản phẩm nào</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- History Dialog -->
+<p-dialog [(visible)]="showHistoryDialog" [modal]="true" [style]="{width: '800px'}"
+          [header]="'Lịch sử biến động - ' + selectedProduct?.name">
+  <div class="history-dialog">
+    <p-table [value]="inventoryHistory" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Mã GD</th>
+          <th>Loại</th>
+          <th style="text-align: right;">Số lượng</th>
+          <th style="text-align: right;">Tồn sau</th>
+          <th>Ghi chú</th>
+          <th>Thời gian</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-txn>
+        <tr>
+          <td><small>{{ txn.transaction_code }}</small></td>
+          <td><span class="type-badge" [ngClass]="txn.transaction_type">
+            {{ getTransactionTypeLabel(txn.transaction_type) }}
+          </span></td>
+          <td style="text-align: right;">
+            <span [style.color]="txn.quantity > 0 ? 'green' : 'red'" style="font-weight: 600;">
+              {{ txn.quantity > 0 ? '+' : '' }}{{ txn.quantity }}
+            </span>
+          </td>
+          <td style="text-align: right;"><strong>{{ txn.quantity_after }}</strong></td>
+          <td><small>{{ txn.note }}</small></td>
+          <td><small>{{ txn.created_at | date:'dd/MM/yyyy HH:mm' }}</small></td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</p-dialog>
+
+<!-- Adjustment Dialog -->
+<p-dialog [(visible)]="showAdjustmentDialog" [modal]="true" [style]="{width: '500px'}"
+          header="Điều chỉnh tồn kho">
+  <div class="adjustment-dialog">
+    <div class="form-field">
+      <label>Sản phẩm</label>
+      <p><strong>{{ selectedProduct?.name }}</strong> ({{ selectedProduct?.sku }})</p>
+    </div>
+
+    <div class="form-field">
+      <label>Tồn kho hiện tại</label>
+      <p><strong>{{ selectedProduct?.stock_quantity }}</strong> {{ selectedProduct?.unit }}</p>
+    </div>
+
+    <div class="form-field">
+      <label>Tồn kho mới <span style="color: red;">*</span></label>
+      <input pInputText type="number" [(ngModel)]="adjustmentForm.new_quantity"
+             style="width: 100%;" min="0" />
+    </div>
+
+    <div class="form-field">
+      <label>Lý do điều chỉnh</label>
+      <textarea pInputTextarea [(ngModel)]="adjustmentForm.reason"
+                rows="3" style="width: 100%;" placeholder="Nhập lý do..."></textarea>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button pButton label="Hủy" (click)="showAdjustmentDialog = false"
+            class="p-button-text"></button>
+    <button pButton label="Xác nhận" (click)="submitAdjustment()"
+            icon="pi pi-check"></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Damage/Lost Dialog -->
+<p-dialog [(visible)]="showDamageLostDialog" [modal]="true" [style]="{width: '500px'}"
+          [header]="damageLostForm.type === 'damage' ? 'Ghi nhận hư hỏng' : 'Ghi nhận mất hàng'">
+  <div class="damage-lost-dialog">
+    <div class="form-field">
+      <label>Sản phẩm</label>
+      <p><strong>{{ selectedProduct?.name }}</strong> ({{ selectedProduct?.sku }})</p>
+    </div>
+
+    <div class="form-field">
+      <label>Tồn kho hiện tại</label>
+      <p><strong>{{ selectedProduct?.stock_quantity }}</strong> {{ selectedProduct?.unit }}</p>
+    </div>
+
+    <div class="form-field">
+      <label>Số lượng {{ damageLostForm.type === 'damage' ? 'hư hỏng' : 'mất' }} <span style="color: red;">*</span></label>
+      <input pInputText type="number" [(ngModel)]="damageLostForm.quantity"
+             style="width: 100%;" min="1" [max]="selectedProduct?.stock_quantity" />
+    </div>
+
+    <div class="form-field">
+      <label>Lý do</label>
+      <textarea pInputTextarea [(ngModel)]="damageLostForm.reason"
+                rows="3" style="width: 100%;"
+                [placeholder]="damageLostForm.type === 'damage' ? 'Mô tả tình trạng hư hỏng...' : 'Mô tả nguyên nhân mất hàng...'"></textarea>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button pButton label="Hủy" (click)="showDamageLostDialog = false"
+            class="p-button-text"></button>
+    <button pButton label="Xác nhận" (click)="submitDamageLost()"
+            icon="pi pi-check" class="p-button-danger"></button>
+  </ng-template>
+</p-dialog>
+
+<p-toast></p-toast>
+

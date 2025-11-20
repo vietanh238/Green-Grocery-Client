@@ -11,4 +11,5 @@ export const environment = {
   apiDebit: apiConnectServer + 'debit/',
   apiReport: apiConnectServer + 'report/',
   apiPurchaseOrder: apiConnectServer + 'purchase-order/',
+  apiInventory: apiConnectServer + 'inventory/',
 };
