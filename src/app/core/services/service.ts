@@ -13,6 +13,7 @@ export class Service {
   private readonly API_PAYMENT = environment.apiPayment;
   private readonly API_DEBIT = environment.apiDebit;
   private readonly API_REPORT = environment.apiReport;
+  private readonly API_PURCHASE_ORDER = environment.apiPurchaseOrder;
 
   private paymentSuccessSubject = new Subject<any>();
   public paymentSuccess$ = this.paymentSuccessSubject.asObservable();
@@ -43,8 +44,16 @@ export class Service {
     return this._http.get(`${this.API_PRODUCT}categories/`);
   }
 
-  getProducts(): Observable<any> {
-    return this._http.get(`${this.API_PRODUCT}products/`);
+  getProducts(params?: any): Observable<any> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key]) {
+          httpParams = httpParams.set(key, params[key]);
+        }
+      });
+    }
+    return this._http.get(`${this.API_PRODUCT}products/`, { params: httpParams });
   }
 
   createProduct(params: any): Observable<any> {
@@ -194,5 +203,42 @@ export class Service {
 
   notifyPaymentSuccess(data: any): void {
     this.paymentSuccessSubject.next(data);
+  }
+
+  // Purchase Order APIs
+  createPurchaseOrder(params: any): Observable<any> {
+    return this._http.post(`${this.API_PURCHASE_ORDER}create/`, params);
+  }
+
+  getPurchaseOrders(params?: any): Observable<any> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key]) {
+          httpParams = httpParams.set(key, params[key]);
+        }
+      });
+    }
+    return this._http.get(`${this.API_PURCHASE_ORDER}list/`, { params: httpParams });
+  }
+
+  getPurchaseOrderDetail(poId: number): Observable<any> {
+    return this._http.get(`${this.API_PURCHASE_ORDER}detail/${poId}/`);
+  }
+
+  updatePurchaseOrderStatus(poId: number, status: string): Observable<any> {
+    return this._http.put(`${this.API_PURCHASE_ORDER}update-status/${poId}/`, { status });
+  }
+
+  receivePurchaseOrder(poId: number, receivedItems: any[]): Observable<any> {
+    return this._http.post(`${this.API_PURCHASE_ORDER}receive/${poId}/`, { received_items: receivedItems });
+  }
+
+  deletePurchaseOrder(poId: number): Observable<any> {
+    return this._http.delete(`${this.API_PURCHASE_ORDER}delete/${poId}/`);
+  }
+
+  sendPurchaseOrderEmail(poId: number): Observable<any> {
+    return this._http.post(`${this.API_PURCHASE_ORDER}send-email/${poId}/`, {});
   }
 }

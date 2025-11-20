@@ -12,6 +12,8 @@ import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDia
 import { ProductDetailDialogComponent } from './productDetailDialog/producDetailDialog.component';
 import { AddEditProductDialogComponent } from './addProductDialog/addProductDialog.component';
 import { BulkImportDialogComponent } from '../../component/bulkImportDialog/bulkImportDialog.component';
+import { SupplierDialogComponent } from './supplier-dialog/supplier-dialog.component';
+import { PurchaseOrderDialogComponent } from './purchase-order-dialog/purchase-order-dialog.component';
 import * as XLSX from 'xlsx';
 
 interface Product {
@@ -86,9 +88,9 @@ export class ProductsComponent implements OnInit {
     this.getProducts();
   }
 
-  getProducts(): void {
+  getProducts(params?: any): void {
     this.loading = true;
-    this.service.getProducts().subscribe({
+    this.service.getProducts(params).subscribe({
       next: (rs: any) => {
         this.loading = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
@@ -159,6 +161,29 @@ export class ProductsComponent implements OnInit {
           if (result) this.getProducts();
         });
       });
+    });
+  }
+
+  openSupplierDialog(): void {
+    this.dialog.open(SupplierDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      disableClose: false
+    });
+  }
+
+  openPurchaseOrderDialog(): void {
+    const dialogRef = this.dialog.open(PurchaseOrderDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.showSuccess('Đơn đặt hàng đã được tạo thành công');
+        this.getProducts(); // Refresh products list
+      }
     });
   }
 

@@ -22,10 +22,40 @@ interface RecentSale {
   status: string;
 }
 
+interface Activity {
+  type: 'sale' | 'low_stock' | 'new_customer' | 'milestone';
+  title: string;
+  description: string;
+  time: string;
+  icon: string;
+  color: string;
+}
+
 interface TopProduct {
   name: string;
   quantity: number;
   revenue: number;
+}
+
+interface InventoryStats {
+  total_products: number;
+  low_stock_count: number;
+  out_of_stock_count: number;
+  overstock_count: number;
+  total_stock_value: number;
+  alert_level: 'normal' | 'warning' | 'critical';
+}
+
+interface LowStockProduct {
+  id: number;
+  name: string;
+  sku: string;
+  stock_quantity: number;
+  reorder_point: number;
+  unit: string;
+  category: string;
+  status: 'out_of_stock' | 'low_stock';
+  urgency: 'critical' | 'high' | 'medium';
 }
 
 interface DashboardData {
@@ -45,6 +75,8 @@ interface DashboardData {
   top_products: TopProduct[];
   hourly_revenue: any[];
   category_revenue: any[];
+  inventory_stats?: InventoryStats;
+  low_stock_products?: LowStockProduct[];
 }
 
 @Component({
@@ -95,6 +127,13 @@ export class HomeComponent implements OnInit {
 
   recentSales: RecentSale[] = [];
   topProducts: TopProduct[] = [];
+
+  // Inventory data
+  inventoryStats: InventoryStats | null = null;
+  lowStockProducts: LowStockProduct[] = [];
+
+  // Activities
+  recentActivities: Activity[] = [];
 
   revenueChartData: any;
   revenueChartOptions: any;
@@ -222,6 +261,13 @@ export class HomeComponent implements OnInit {
 
     this.recentSales = data.recent_sales || [];
     this.topProducts = data.top_products || [];
+
+    // Inventory data
+    this.inventoryStats = data.inventory_stats || null;
+    this.lowStockProducts = data.low_stock_products || [];
+
+    // Generate activities from data
+    this.generateActivities(data);
 
     this.updateComparisonPeriod();
   }
@@ -511,5 +557,111 @@ export class HomeComponent implements OnInit {
       detail: message,
       life: 3000,
     });
+  }
+
+  getUrgencySeverity(urgency: string): 'success' | 'warn' | 'danger' | 'info' {
+    switch (urgency) {
+      case 'critical':
+        return 'danger';
+      case 'high':
+        return 'warn';
+      case 'medium':
+        return 'info';
+      default:
+        return 'success';
+    }
+  }
+
+  getUrgencyLabel(urgency: string): string {
+    switch (urgency) {
+      case 'critical':
+        return 'Khẩn cấp';
+      case 'high':
+        return 'Cao';
+      case 'medium':
+        return 'Trung bình';
+      default:
+        return 'Thấp';
+    }
+  }
+
+  getAlertIcon(alertLevel: string): string {
+    switch (alertLevel) {
+      case 'critical':
+        return 'pi-exclamation-triangle';
+      case 'warning':
+        return 'pi-exclamation-circle';
+      default:
+        return 'pi-check-circle';
+    }
+  }
+
+  viewProduct(productId: number): void {
+    this.router.navigate(['/page/products'], { queryParams: { id: productId } });
+  }
+
+  viewAllInventory(): void {
+    this.router.navigate(['/page/products'], { queryParams: { filter: 'low_stock' } });
+  }
+
+  private generateActivities(data: DashboardData): void {
+    this.recentActivities = [];
+
+    // Add recent sales as activities
+    if (data.recent_sales && data.recent_sales.length > 0) {
+      data.recent_sales.slice(0, 3).forEach((sale) => {
+        this.recentActivities.push({
+          type: 'sale',
+          title: 'Đơn hàng mới',
+          description: `${sale.buyer_name || 'Khách lẻ'} - ${this.formatCurrency(sale.amount)}`,
+          time: this.getTimeAgo(sale.created_at),
+          icon: 'pi-shopping-cart',
+          color: '#22c55e',
+        });
+      });
+    }
+
+    // Add low stock alerts
+    if (data.low_stock_products && data.low_stock_products.length > 0) {
+      const criticalProducts = data.low_stock_products.filter((p) => p.urgency === 'critical');
+      if (criticalProducts.length > 0) {
+        this.recentActivities.push({
+          type: 'low_stock',
+          title: 'Cảnh báo tồn kho',
+          description: `${criticalProducts.length} sản phẩm hết hàng`,
+          time: 'Vừa xong',
+          icon: 'pi-exclamation-triangle',
+          color: '#ef4444',
+        });
+      }
+    }
+
+    // Add milestone activities
+    if (data.today_orders > 0 && data.today_orders % 10 === 0) {
+      this.recentActivities.push({
+        type: 'milestone',
+        title: 'Cột mốc',
+        description: `Đạt ${data.today_orders} đơn hàng hôm nay!`,
+        time: 'Hôm nay',
+        icon: 'pi-star-fill',
+        color: '#f59e0b',
+      });
+    }
+
+    // Sort by recency (sales first, then others)
+    this.recentActivities = this.recentActivities.slice(0, 5);
+  }
+
+  private getTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return date.toLocaleDateString('vi-VN');
   }
 }

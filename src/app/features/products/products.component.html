@@ -6,6 +6,14 @@
         <p class="page-subtitle">Theo dõi và quản lý tồn kho</p>
       </div>
       <div class="header-actions">
+        <button class="btn-action btn-secondary" (click)="openSupplierDialog()">
+          <i class="pi pi-building"></i>
+          <span>Nhà cung cấp</span>
+        </button>
+        <button class="btn-action btn-secondary" (click)="openPurchaseOrderDialog()">
+          <i class="pi pi-shopping-cart"></i>
+          <span>Đặt hàng NCC</span>
+        </button>
         <button class="btn-action btn-secondary" (click)="exportExcel()">
           <i class="pi pi-download"></i>
           <span>Xuất Excel</span>

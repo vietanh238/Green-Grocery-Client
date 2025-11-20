@@ -228,13 +228,27 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
     this.qrLoaded = false;
 
     const orderCode = Date.now();
+
+    // Get full URL for returnUrl and cancelUrl
+    const currentUrl = window.location.origin + this.router.url;
+
+    // Map cart items to correct format for API
+    const mappedItems = this.cartItems.map((item: any) => ({
+      bar_code: item.bar_code,
+      sku: item.sku,
+      name: item.name,
+      quantity: item.quantity,
+      unit_price: item.price || item.unit_price,
+      total_price: (item.price || item.unit_price) * item.quantity
+    }));
+
     const params = {
       orderCode: orderCode,
       amount: this.amount,
       description: this.transactionCode,
-      cancelUrl: this.router.url,
-      returnUrl: this.router.url,
-      items: this.cartItems,
+      cancelUrl: currentUrl,
+      returnUrl: currentUrl,
+      items: mappedItems,
     };
 
     this.service.createPayment(params).subscribe(
@@ -246,11 +260,15 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
           sessionStorage.setItem('qrCodeUrl', this.qrCodeUrl);
           sessionStorage.setItem('orderCode', this.orderCode);
         } else {
-          this.showError('Không thể tạo mã');
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tạo mã';
+          this.showError(errorMsg);
         }
       },
-      (_error: any) => {
-        this.showError('Lỗi hệ thống');
+      (error: any) => {
+        const errorMsg = error?.error?.response?.error_message_vn ||
+                        error?.error?.response?.error_message_us ||
+                        'Lỗi hệ thống';
+        this.showError(errorMsg);
       }
     );
   }

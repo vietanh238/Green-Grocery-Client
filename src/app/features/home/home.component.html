@@ -34,6 +34,14 @@
     </div>
   </div>
 
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner-container">
+      <i class="pi pi-spin pi-spinner"></i>
+      <p>Đang tải dữ liệu...</p>
+    </div>
+  </div>
+
   <div class="stats-grid" *ngIf="!loading">
     <div class="stat-card revenue">
       <div class="stat-header">
@@ -150,8 +158,69 @@
     </div>
   </div>
 
+  <!-- Inventory Overview Stats (Optional - can add to stats-grid if needed) -->
+  <div class="inventory-overview" *ngIf="!loading && inventoryStats">
+    <div class="inventory-card">
+      <div class="inventory-header">
+        <div class="header-left">
+          <h3 class="inventory-title">
+            <i class="pi pi-box"></i>
+            Tổng quan kho hàng
+          </h3>
+          <p class="inventory-subtitle">Theo dõi tình trạng tồn kho</p>
+        </div>
+        <div class="header-right">
+          <button class="view-inventory-btn" (click)="viewAllInventory()">
+            Xem tất cả
+            <i class="pi pi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+      <div class="inventory-stats-grid">
+        <div class="inv-stat-item">
+          <div class="inv-stat-icon total">
+            <i class="pi pi-database"></i>
+          </div>
+          <div class="inv-stat-content">
+            <p class="inv-stat-label">Tổng sản phẩm</p>
+            <h4 class="inv-stat-value">{{ inventoryStats.total_products }}</h4>
+          </div>
+        </div>
+        <div class="inv-stat-item">
+          <div class="inv-stat-icon warning">
+            <i class="pi pi-exclamation-circle"></i>
+          </div>
+          <div class="inv-stat-content">
+            <p class="inv-stat-label">Sắp hết hàng</p>
+            <h4 class="inv-stat-value">{{ inventoryStats.low_stock_count }}</h4>
+          </div>
+        </div>
+        <div class="inv-stat-item">
+          <div class="inv-stat-icon danger">
+            <i class="pi pi-times-circle"></i>
+          </div>
+          <div class="inv-stat-content">
+            <p class="inv-stat-label">Hết hàng</p>
+            <h4 class="inv-stat-value">{{ inventoryStats.out_of_stock_count }}</h4>
+          </div>
+        </div>
+        <div class="inv-stat-item">
+          <div class="inv-stat-icon success">
+            <i class="pi pi-dollar"></i>
+          </div>
+          <div class="inv-stat-content">
+            <p class="inv-stat-label">Giá trị tồn kho</p>
+            <h4 class="inv-stat-value">
+              {{ inventoryStats.total_stock_value | number : '1.0-0' }} đ
+            </h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="data-grid" *ngIf="!loading">
-    <div class="data-section recent-sales">
+    <div class="data-section recent-sales-section">
       <div class="section-header">
         <h3 class="section-title">
           <i class="pi pi-clock"></i>
@@ -201,40 +270,133 @@
           </ng-template>
           <ng-template #emptymessage>
             <tr>
-              <td colspan="6" class="text-center">Không có đơn hàng</td>
+              <td colspan="6" class="empty-message-cell">
+                <div class="empty-state-inline">
+                  <i class="pi pi-inbox"></i>
+                  <p>Chưa có đơn hàng nào</p>
+                </div>
+              </td>
             </tr>
           </ng-template>
         </p-table>
       </div>
     </div>
 
-    <div class="data-section top-products">
-      <div class="section-header">
-        <h3 class="section-title">
-          <i class="pi pi-star-fill"></i>
-          Sản phẩm bán chạy
-        </h3>
-        <button class="view-all-btn" (click)="viewAllProducts()">
-          Xem tất cả
-          <i class="pi pi-arrow-right"></i>
-        </button>
+    <div class="data-section-container">
+      <div class="data-section top-products">
+        <div class="section-header">
+          <h3 class="section-title">
+            <i class="pi pi-star-fill"></i>
+            Sản phẩm bán chạy
+          </h3>
+          <button class="view-all-btn" (click)="viewAllProducts()">
+            Xem tất cả
+            <i class="pi pi-arrow-right"></i>
+          </button>
+        </div>
+        <div class="products-list">
+          <div class="product-item" *ngFor="let product of topProducts; let i = index">
+            <div class="product-rank" [class.top3]="i < 3">{{ i + 1 }}</div>
+            <div class="product-info">
+              <h4 class="product-name">{{ product.name }}</h4>
+              <div class="product-stats">
+                <span class="quantity">
+                  <i class="pi pi-box"></i>
+                  {{ product.quantity }} đã bán
+                </span>
+                <span class="revenue">{{ product.revenue | number : '1.0-0' }} đ</span>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!topProducts || topProducts.length === 0">
+            <i class="pi pi-star"></i>
+            <p>Chưa có dữ liệu</p>
+          </div>
+        </div>
       </div>
-      <div class="products-list">
-        <div class="product-item" *ngFor="let product of topProducts; let i = index">
-          <div class="product-rank" [class.top3]="i < 3">{{ i + 1 }}</div>
-          <div class="product-info">
-            <h4 class="product-name">{{ product.name }}</h4>
-            <div class="product-stats">
-              <span class="quantity">
-                <i class="pi pi-box"></i>
-                {{ product.quantity }} đã bán
-              </span>
-              <span class="revenue">{{ product.revenue | number : '1.0-0' }} đ</span>
+
+      <!-- Activity Timeline -->
+      <div class="data-section activity-timeline" *ngIf="recentActivities.length > 0">
+        <div class="section-header">
+          <h3 class="section-title">
+            <i class="pi pi-bell"></i>
+            Hoạt động gần đây
+          </h3>
+        </div>
+        <div class="timeline-list">
+          <div class="timeline-item" *ngFor="let activity of recentActivities">
+            <div class="timeline-marker" [style.background]="activity.color">
+              <i class="pi" [ngClass]="activity.icon"></i>
+            </div>
+            <div class="timeline-content">
+              <h4 class="activity-title">{{ activity.title }}</h4>
+              <p class="activity-description">{{ activity.description }}</p>
+              <span class="activity-time">{{ activity.time }}</span>
             </div>
           </div>
         </div>
-        <div class="empty-state" *ngIf="!topProducts || topProducts.length === 0">
-          <p>Không có dữ liệu sản phẩm</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock Alerts -->
+  <div class="alerts-section" *ngIf="!loading && lowStockProducts && lowStockProducts.length > 0">
+    <div class="alerts-header">
+      <h3 class="section-title">
+        <i class="pi pi-exclamation-triangle"></i>
+        Cảnh báo tồn kho
+      </h3>
+      <p class="alerts-subtitle">Sản phẩm cần nhập thêm</p>
+    </div>
+    <div class="alerts-grid">
+      <div
+        class="alert-card"
+        *ngFor="let product of lowStockProducts"
+        [class.critical]="product.urgency === 'critical'"
+        [class.high]="product.urgency === 'high'"
+        [class.medium]="product.urgency === 'medium'"
+        (click)="viewProduct(product.id)"
+      >
+        <div class="alert-indicator" [class]="product.urgency"></div>
+        <div class="alert-content">
+          <div class="alert-header">
+            <div class="alert-title-group">
+              <h4 class="alert-product-name">{{ product.name }}</h4>
+              <p class="alert-sku">SKU: {{ product.sku }}</p>
+            </div>
+            <p-tag
+              [value]="getUrgencyLabel(product.urgency)"
+              [severity]="getUrgencySeverity(product.urgency)"
+            />
+          </div>
+          <div class="alert-details">
+            <div class="detail-item">
+              <i class="pi pi-box"></i>
+              <span
+                >Tồn kho: <strong>{{ product.stock_quantity }} {{ product.unit }}</strong></span
+              >
+            </div>
+            <div class="detail-item">
+              <i class="pi pi-flag"></i>
+              <span
+                >Điểm đặt lại: <strong>{{ product.reorder_point }} {{ product.unit }}</strong></span
+              >
+            </div>
+            <div class="detail-item">
+              <i class="pi pi-tag"></i>
+              <span><strong>{{ product.category }}</strong></span>
+            </div>
+          </div>
+          <div class="alert-status">
+            <i
+              class="pi"
+              [class.pi-times-circle]="product.status === 'out_of_stock'"
+              [class.pi-exclamation-triangle]="product.status === 'low_stock'"
+            ></i>
+            <span>{{
+              product.status === 'out_of_stock' ? 'Hết hàng' : 'Sắp hết hàng'
+            }}</span>
+          </div>
         </div>
       </div>
     </div>

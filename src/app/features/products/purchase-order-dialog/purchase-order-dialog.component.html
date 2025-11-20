@@ -1,0 +1,188 @@
+<div class="po-dialog">
+  <div class="dialog-header">
+    <h2 class="dialog-title">
+      <i class="pi pi-shopping-cart"></i>
+      Tạo đơn đặt hàng
+    </h2>
+    <button class="close-btn" (click)="close()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <!-- Supplier Selection -->
+    <div class="section">
+      <h3 class="section-title">Thông tin nhà cung cấp</h3>
+      <div class="supplier-select-wrapper">
+        <button class="btn-select-supplier" (click)="openSupplierDialog()">
+          <i class="pi pi-building"></i>
+          {{ selectedSupplier ? 'Thay đổi nhà cung cấp' : 'Chọn nhà cung cấp' }}
+        </button>
+
+        <div class="supplier-info-card" *ngIf="selectedSupplier">
+          <div class="supplier-icon">
+            <i class="pi pi-building"></i>
+          </div>
+          <div class="supplier-details">
+            <h4 class="supplier-name">{{ selectedSupplier.name }}</h4>
+            <p class="supplier-meta">
+              <span><i class="pi pi-id-card"></i> {{ selectedSupplier.supplier_code }}</span>
+              <span><i class="pi pi-phone"></i> {{ selectedSupplier.phone }}</span>
+            </p>
+            <p class="supplier-address" *ngIf="selectedSupplier.address">
+              <i class="pi pi-map-marker"></i>
+              {{ selectedSupplier.address }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expected Date -->
+    <div class="section">
+      <h3 class="section-title">Ngày dự kiến nhận hàng</h3>
+      <input
+        type="date"
+        [(ngModel)]="expectedDate"
+        class="date-input"
+        [min]="getTodayDate()"
+      />
+    </div>
+
+    <!-- Products List -->
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title">Danh sách sản phẩm cần đặt</h3>
+        <div class="summary-badges">
+          <span class="badge blue">
+            <i class="pi pi-shopping-bag"></i>
+            {{ poItems.length }} sản phẩm
+          </span>
+          <span class="badge orange">
+            <i class="pi pi-box"></i>
+            {{ getTotalItems() }} đơn vị
+          </span>
+          <span class="badge green">
+            <i class="pi pi-dollar"></i>
+            {{ getTotalAmount() | number: '1.0-0' }} đ
+          </span>
+        </div>
+      </div>
+
+      <div class="po-items-table">
+        <p-table [value]="poItems" [loading]="loading" styleClass="items-table">
+          <ng-template #header>
+            <tr>
+              <th style="width: 40px">#</th>
+              <th>Sản phẩm</th>
+              <th style="width: 100px">SKU</th>
+              <th style="width: 80px">ĐVT</th>
+              <th style="width: 120px">Số lượng</th>
+              <th style="width: 140px">Đơn giá</th>
+              <th style="width: 140px">Thành tiền</th>
+              <th style="width: 60px"></th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-item let-rowIndex="rowIndex">
+            <tr>
+              <td>{{ rowIndex + 1 }}</td>
+              <td>
+                <div class="product-info">
+                  <span class="product-name">{{ item.product_name }}</span>
+                  <span class="product-note" *ngIf="item.note">{{ item.note }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="sku-badge">{{ item.product_sku }}</span>
+              </td>
+              <td>{{ item.product_unit }}</td>
+              <td>
+                <p-inputNumber
+                  [(ngModel)]="item.quantity"
+                  [min]="1"
+                  [showButtons]="true"
+                  buttonLayout="horizontal"
+                  incrementButtonIcon="pi pi-plus"
+                  decrementButtonIcon="pi pi-minus"
+                  (ngModelChange)="updateItemTotal(item)"
+                  styleClass="quantity-input"
+                />
+              </td>
+              <td>
+                <p-inputNumber
+                  [(ngModel)]="item.unit_price"
+                  [min]="0"
+                  mode="decimal"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="0"
+                  suffix=" đ"
+                  (ngModelChange)="updateItemTotal(item)"
+                  styleClass="price-input"
+                />
+              </td>
+              <td>
+                <span class="total-price">{{ item.total_price | number: '1.0-0' }} đ</span>
+              </td>
+              <td>
+                <button class="btn-remove" (click)="removeItem(rowIndex)" title="Xóa">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <i class="pi pi-inbox"></i>
+                  <p>Không có sản phẩm nào cần đặt hàng</p>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div class="section">
+      <h3 class="section-title">Ghi chú</h3>
+      <textarea
+        [(ngModel)]="note"
+        placeholder="Ghi chú thêm cho đơn đặt hàng..."
+        rows="3"
+        class="note-textarea"
+      ></textarea>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-section">
+      <div class="summary-item">
+        <span class="label">Tổng số lượng:</span>
+        <span class="value">{{ getTotalItems() }} đơn vị</span>
+      </div>
+      <div class="summary-item total">
+        <span class="label">Tổng giá trị:</span>
+        <span class="value">{{ getTotalAmount() | number: '1.0-0' }} đ</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn-cancel" (click)="close()">
+      <i class="pi pi-times"></i>
+      Hủy
+    </button>
+    <button
+      class="btn-submit"
+      [disabled]="!canSubmit() || loading"
+      (click)="submitPO()"
+    >
+      <i class="pi pi-check"></i>
+      {{ loading ? 'Đang xử lý...' : 'Tạo đơn đặt hàng' }}
+    </button>
+  </div>
+
+  <p-toast position="top-right" />
+</div>
+
