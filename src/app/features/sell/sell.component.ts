@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { PanelModule } from 'primeng/panel';
-import { InputGroup } from 'primeng/inputgroup';
 import { ButtonModule } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
@@ -53,7 +52,6 @@ interface Product {
   standalone: true,
   imports: [
     PanelModule,
-    InputGroup,
     ButtonModule,
     FormsModule,
     InputGroupAddonModule,
@@ -92,7 +90,7 @@ export class SellComponent implements OnInit, OnDestroy {
     // Websocket subscription for real-time payment updates
     this.paymentSuccessSubscription = this.service.paymentSuccess$.subscribe((data: any) => {
       if (data && data.success) {
-        this.handlePaymentSuccess(data);
+        this.handlePaymentSuccess(data.data);
       }
     });
   }
@@ -314,12 +312,17 @@ export class SellComponent implements OnInit, OnDestroy {
           this.handlePaymentSuccess(rs.response);
           this.showSuccess('Thanh toán tiền mặt thành công');
         } else {
-          this.showError(rs.error_message || 'Thanh toán thất bại');
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || rs.error_message || 'Thanh toán thất bại';
+          this.showError(errorMsg);
         }
       },
       (error: any) => {
         this.isProcessingPayment = false;
-        this.showError('Lỗi kết nối khi thanh toán');
+        const errorMsg = error?.error?.response?.error_message_vn ||
+                        error?.error?.response?.error_message_us ||
+                        error?.error?.message ||
+                        'Lỗi kết nối khi thanh toán';
+        this.showError(errorMsg);
       }
     );
   }

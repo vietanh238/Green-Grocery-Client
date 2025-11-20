@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { Service } from './service';
+import { URL_SERVER } from '../../../environment/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -93,9 +94,10 @@ export class WebSocketService {
   }
 
   private getWebSocketUrl(): string {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    return `${protocol}//${host}/ws/message/`;
+    // Use server URL from environment
+    const serverUrl = URL_SERVER.replace('https://', '').replace('http://', '');
+    const protocol = URL_SERVER.startsWith('https') ? 'wss:' : 'ws:';
+    return `${protocol}//${serverUrl}/ws/message/`;
   }
 
   sendMessage(message: any): void {
