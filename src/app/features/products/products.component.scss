@@ -1,7 +1,10 @@
 .products-page {
-  padding: 24px;
+  padding: 16px;
   background: #f8f9fa;
-  min-height: calc(100vh - 80px);
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   animation: fadeIn 0.4s ease;
 }
 
@@ -18,51 +21,51 @@
 
 // Page Header
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 
   .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
   }
 
   .title-section {
     .page-title {
-      margin: 0 0 4px 0;
-      font-size: 28px;
+      margin: 0 0 2px 0;
+      font-size: 22px;
       font-weight: 700;
       color: #1a1a1a;
     }
 
     .page-subtitle {
       margin: 0;
-      font-size: 14px;
+      font-size: 13px;
       color: #6b7280;
     }
   }
 
   .header-actions {
     display: flex;
-    gap: 12px;
+    gap: 8px;
   }
 
   .btn-action {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
+    gap: 6px;
+    padding: 8px 16px;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
     white-space: nowrap;
 
     i {
-      font-size: 16px;
+      font-size: 14px;
     }
 
     &.btn-primary {
@@ -98,17 +101,18 @@
 // Stats Overview
 .stats-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 
   .stat-card {
     background: white;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 10px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     transition: all 0.3s;
 
@@ -118,13 +122,13 @@
     }
 
     .stat-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 20px;
       flex-shrink: 0;
 
       &.blue {
@@ -151,16 +155,16 @@
     .stat-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
 
       .stat-label {
-        font-size: 13px;
+        font-size: 12px;
         color: #6b7280;
         font-weight: 500;
       }
 
       .stat-value {
-        font-size: 28px;
+        font-size: 22px;
         font-weight: 700;
         color: #1a1a1a;
       }
@@ -173,35 +177,39 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
 
   .filter-bar {
-    padding: 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid #e5e7eb;
     display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 12px;
+    flex-shrink: 0;
 
     .search-wrapper {
       position: relative;
       flex: 1;
-      min-width: 300px;
+      min-width: 250px;
 
       .search-icon {
         position: absolute;
-        left: 16px;
+        left: 12px;
         top: 50%;
         transform: translateY(-50%);
         color: #9ca3af;
-        font-size: 18px;
+        font-size: 16px;
       }
 
       .search-input {
         width: 100%;
-        padding: 12px 48px 12px 48px;
+        padding: 10px 40px 10px 40px;
         border: 1.5px solid #e5e7eb;
-        border-radius: 10px;
-        font-size: 14px;
+        border-radius: 8px;
+        font-size: 13px;
         transition: all 0.3s;
 
         &:focus {
@@ -217,13 +225,13 @@
 
       .clear-btn {
         position: absolute;
-        right: 12px;
+        right: 10px;
         top: 50%;
         transform: translateY(-50%);
         background: #f3f4f6;
         border: none;
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -232,7 +240,7 @@
         transition: all 0.2s;
 
         i {
-          font-size: 12px;
+          font-size: 11px;
           color: #6b7280;
         }
 
@@ -244,28 +252,40 @@
 
     .filter-group {
       display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
+      gap: 10px;
     }
   }
 
   .table-wrapper {
-    overflow-x: auto;
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
   }
 }
 
 // Table Styles
 :host ::ng-deep {
   .custom-table {
+    height: 100%;
+
+    .p-datatable-wrapper {
+      max-height: calc(100vh - 400px);
+      overflow-y: auto;
+    }
+
     .p-datatable-thead > tr > th {
       background: #f9fafb;
       color: #374151;
       font-weight: 600;
-      font-size: 13px;
-      padding: 14px 16px;
+      font-size: 12px;
+      padding: 10px 12px;
       border: none;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
 
     .p-datatable-tbody > tr {
@@ -284,18 +304,20 @@
       }
 
       > td {
-        padding: 14px 16px;
+        padding: 10px 12px;
         border-bottom: 1px solid #f3f4f6;
-        font-size: 14px;
+        font-size: 13px;
         color: #1a1a1a;
+        white-space: nowrap;
       }
     }
   }
 
   .filter-select .p-select {
-    min-width: 180px;
+    min-width: 160px;
     border: 1.5px solid #e5e7eb;
-    border-radius: 10px;
+    border-radius: 8px;
+    height: 38px;
 
     &:hover {
       border-color: #22c55e;
@@ -310,16 +332,18 @@
   .p-paginator {
     background: white;
     border-top: 1px solid #e5e7eb;
-    padding: 16px;
+    padding: 10px 12px;
 
     .p-paginator-current {
       color: #6b7280;
+      font-size: 12px;
     }
 
     .p-paginator-pages .p-paginator-page {
       color: #6b7280;
-      min-width: 36px;
-      height: 36px;
+      min-width: 32px;
+      height: 32px;
+      font-size: 13px;
 
       &.p-highlight {
         background: #22c55e;
@@ -378,10 +402,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
 
   &.in-stock {
     background: #dcfce7;
@@ -403,12 +427,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
 
   i {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   &.in-stock {
@@ -441,13 +465,13 @@
 // Action Buttons
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
 
   .btn-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
     border: 1.5px solid #e5e7eb;
     background: white;
     display: flex;
@@ -457,7 +481,7 @@
     transition: all 0.2s;
 
     i {
-      font-size: 14px;
+      font-size: 13px;
       color: #6b7280;
     }
 

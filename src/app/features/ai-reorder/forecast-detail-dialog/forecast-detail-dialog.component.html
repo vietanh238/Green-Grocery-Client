@@ -1,0 +1,131 @@
+<div class="forecast-dialog">
+  <div class="dialog-header">
+    <div class="header-content">
+      <h2 class="dialog-title">
+        <i class="pi pi-chart-line"></i>
+        Chi tiết dự đoán AI
+      </h2>
+      <button class="close-btn" (click)="close()">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="dialog-body">
+    <!-- Product Info Card -->
+    <div class="product-card">
+      <div class="product-header">
+        <div class="product-info">
+          <h3 class="product-name">{{ recommendation.product_name }}</h3>
+          <span class="product-sku">SKU: {{ recommendation.product_sku }}</span>
+        </div>
+        <div class="urgency-badge" [class]="getUrgencyClass()">
+          <i
+            class="pi"
+            [class.pi-exclamation-triangle]="recommendation.urgency === 'high'"
+            [class.pi-clock]="recommendation.urgency === 'medium'"
+            [class.pi-check]="recommendation.urgency === 'low'"
+          ></i>
+          <span>{{ getUrgencyLabel() }}</span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-label">Tồn kho hiện tại</span>
+          <span class="stat-value">{{ recommendation.current_stock }} {{ recommendation.unit }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Hết hàng sau</span>
+          <span class="stat-value danger" *ngIf="recommendation.days_until_stockout <= 3">
+            {{ recommendation.days_until_stockout }} ngày
+          </span>
+          <span class="stat-value warning" *ngIf="recommendation.days_until_stockout > 3 && recommendation.days_until_stockout <= 7">
+            {{ recommendation.days_until_stockout }} ngày
+          </span>
+          <span class="stat-value" *ngIf="recommendation.days_until_stockout > 7">
+            {{ recommendation.days_until_stockout }} ngày
+          </span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Điểm đặt lại</span>
+          <span class="stat-value">{{ recommendation.reorder_point | number: '1.0-1' }} {{ recommendation.unit }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Đề xuất nhập</span>
+          <span class="stat-value highlight">
+            {{ recommendation.optimal_order_quantity | number: '1.0-0' }} {{ recommendation.unit }}
+          </span>
+        </div>
+      </div>
+
+      <div class="recommendation-box">
+        <div class="recommendation-header">
+          <i class="pi pi-lightbulb"></i>
+          <strong>Khuyến nghị của AI:</strong>
+        </div>
+        <p class="recommendation-text">{{ recommendation.recommendation }}</p>
+      </div>
+    </div>
+
+    <!-- Forecast Chart -->
+    <div class="chart-card">
+      <h4 class="chart-title">Dự đoán nhu cầu 30 ngày tới</h4>
+      <div class="chart-container" *ngIf="!loading">
+        <p-chart type="line" [data]="chartData" [options]="chartOptions" [style]="{ height: '350px' }" />
+      </div>
+      <div class="loading-state" *ngIf="loading">
+        <i class="pi pi-spin pi-spinner"></i>
+        <p>Đang tải dữ liệu dự đoán...</p>
+      </div>
+    </div>
+
+    <!-- Demand Summary -->
+    <div class="demand-summary">
+      <div class="summary-item">
+        <div class="summary-icon blue">
+          <i class="pi pi-calendar"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">Nhu cầu 7 ngày</span>
+          <span class="summary-value">
+            {{ recommendation.predicted_demand_7_days | number: '1.0-1' }} {{ recommendation.unit }}
+          </span>
+          <span class="summary-note">Trung bình: {{ (recommendation.predicted_demand_7_days / 7) | number: '1.0-1' }}/ngày</span>
+        </div>
+      </div>
+
+      <div class="summary-item">
+        <div class="summary-icon green">
+          <i class="pi pi-calendar-plus"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">Nhu cầu 30 ngày</span>
+          <span class="summary-value">
+            {{ recommendation.predicted_demand_30_days | number: '1.0-1' }} {{ recommendation.unit }}
+          </span>
+          <span class="summary-note">Trung bình: {{ (recommendation.predicted_demand_30_days / 30) | number: '1.0-1' }}/ngày</span>
+        </div>
+      </div>
+
+      <div class="summary-item">
+        <div class="summary-icon orange">
+          <i class="pi pi-wallet"></i>
+        </div>
+        <div class="summary-content">
+          <span class="summary-label">Chi phí dự kiến</span>
+          <span class="summary-value">{{ recommendation.estimated_cost | number: '1.0-0' }} đ</span>
+          <span class="summary-note">Cho {{ recommendation.optimal_order_quantity | number: '1.0-0' }} {{ recommendation.unit }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn-secondary" (click)="close()">
+      <i class="pi pi-times"></i>
+      Đóng
+    </button>
+  </div>
+</div>
+

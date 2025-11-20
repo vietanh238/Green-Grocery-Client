@@ -9,6 +9,19 @@
         <p class="page-subtitle">Hệ thống AI phân tích và đề xuất nhập hàng tự động</p>
       </div>
       <div class="header-actions">
+        <button
+          class="action-btn create-order-btn"
+          (click)="createBulkOrder()"
+          [disabled]="selectedProducts.length === 0"
+          *ngIf="selectedProducts.length > 0"
+        >
+          <i class="pi pi-shopping-cart"></i>
+          <span>Đặt hàng ({{ selectedProducts.length }})</span>
+        </button>
+        <button class="action-btn export-btn" (click)="exportExcel()" [disabled]="loading">
+          <i class="pi pi-download"></i>
+          <span>Xuất Excel</span>
+        </button>
         <button class="action-btn train-btn" (click)="trainAI()" [disabled]="trainingAI || loading">
           <i
             class="pi"
@@ -78,12 +91,7 @@
     <div class="chart-section">
       <p-card header="Phân loại độ ưu tiên">
         <div class="chart-container">
-          <p-chart
-            type="doughnut"
-            [data]="chartData"
-            [options]="chartOptions"
-            [style]="{ height: '300px' }"
-          />
+          <p-chart type="doughnut" [data]="chartData" [options]="chartOptions" />
         </div>
       </p-card>
     </div>
@@ -129,37 +137,78 @@
       <ng-template pTemplate="header">
         <div class="card-header">
           <h3>Danh sách đề xuất nhập hàng</h3>
-          <span class="product-count">{{ recommendations.length }} sản phẩm</span>
+          <span class="product-count">{{ filteredRecommendations.length }} sản phẩm</span>
         </div>
       </ng-template>
 
+      <div class="filter-bar">
+        <div class="search-wrapper">
+          <i class="pi pi-search search-icon"></i>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Tìm kiếm sản phẩm, SKU..."
+            [(ngModel)]="searchText"
+            (input)="onSearch()"
+          />
+        </div>
+        <div class="filter-actions">
+          <p-select
+            [options]="urgencyFilters"
+            [(ngModel)]="selectedUrgency"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Độ ưu tiên"
+            styleClass="filter-select"
+            (onChange)="onFilterChange()"
+            [showClear]="true"
+          />
+        </div>
+      </div>
+
       <p-table
-        [value]="recommendations"
+        [value]="filteredRecommendations"
         [rows]="10"
         [paginator]="true"
-        [tableStyle]="{ 'min-width': '100%' }"
-        [rowsPerPageOptions]="[10, 20, 50]"
+        [rowsPerPageOptions]="[10, 20, 30]"
         [loading]="loading"
+        [scrollable]="true"
+        scrollHeight="flex"
         responsiveLayout="scroll"
         styleClass="reorder-table"
+        [(selection)]="selectedProducts"
       >
         <ng-template #header>
           <tr>
-            <th style="width: 50px">#</th>
-            <th style="width: 120px">Độ ưu tiên</th>
-            <th>Sản phẩm</th>
-            <th style="width: 100px" class="text-center">Tồn kho</th>
-            <th style="width: 100px" class="text-center">Hết hàng sau</th>
-            <th style="width: 120px" class="text-right">Nhu cầu 7 ngày</th>
-            <th style="width: 120px" class="text-right">Nhu cầu 30 ngày</th>
-            <th style="width: 130px" class="text-right">Đề xuất nhập</th>
-            <th style="width: 130px" class="text-right">Chi phí dự kiến</th>
-            <th style="width: 100px" class="text-center">Thao tác</th>
+            <th style="width: 40px">
+              <p-checkbox
+                [(ngModel)]="selectAll"
+                (onChange)="onSelectAllChange()"
+                [binary]="true"
+              />
+            </th>
+            <th style="width: 35px">#</th>
+            <th style="width: 105px">Ưu tiên</th>
+            <th style="min-width: 200px">Sản phẩm</th>
+            <th style="width: 85px" class="text-center">Tồn</th>
+            <th style="width: 75px" class="text-center">Hết</th>
+            <th style="width: 85px" class="text-right">NCC 7d</th>
+            <th style="width: 95px" class="text-right">NCC 30d</th>
+            <th style="width: 100px" class="text-right">Đề xuất</th>
+            <th style="width: 105px" class="text-right">Chi phí</th>
+            <th style="width: 70px" class="text-center">Xem</th>
           </tr>
         </ng-template>
 
         <ng-template #body let-item let-rowIndex="rowIndex">
-          <tr>
+          <tr [class.selected-row]="isSelected(item)">
+            <td>
+              <p-checkbox
+                [(ngModel)]="item.selected"
+                (onChange)="onRowSelect(item)"
+                [binary]="true"
+              />
+            </td>
             <td>{{ rowIndex + 1 }}</td>
             <td>
               <p-tag
@@ -191,18 +240,14 @@
                 [class.danger]="item.days_until_stockout <= 3"
                 [class.warning]="item.days_until_stockout > 3 && item.days_until_stockout <= 7"
               >
-                {{ item.days_until_stockout }} ngày
+                {{ item.days_until_stockout }}d
               </span>
             </td>
             <td class="text-right">
-              <span class="demand-value">{{
-                item.predicted_demand_7_days | number : '1.0-2'
-              }}</span>
+              <span class="demand-value">{{ item.predicted_demand_7_days | number : '1.0-1' }}</span>
             </td>
             <td class="text-right">
-              <span class="demand-value">{{
-                item.predicted_demand_30_days | number : '1.0-2'
-              }}</span>
+              <span class="demand-value">{{ item.predicted_demand_30_days | number : '1.0-1' }}</span>
             </td>
             <td class="text-right">
               <span class="order-quantity">
@@ -215,7 +260,7 @@
             <td class="text-center">
               <button
                 class="btn-action btn-view"
-                (click)="viewForecast(item.product_id)"
+                (click)="viewForecast(item)"
                 title="Xem chi tiết dự đoán"
               >
                 <i class="pi pi-chart-line"></i>
@@ -226,7 +271,7 @@
 
         <ng-template #emptymessage>
           <tr>
-            <td colspan="10" class="empty-message">
+            <td colspan="11" class="empty-message">
               <div class="empty-state">
                 <i class="pi pi-check-circle empty-icon"></i>
                 <p class="empty-title">Tuyệt vời! Không có sản phẩm nào cần nhập hàng</p>

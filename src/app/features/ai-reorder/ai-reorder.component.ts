@@ -9,8 +9,13 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { ChartModule } from 'primeng/chart';
 import { CardModule } from 'primeng/card';
+import { CheckboxModule } from 'primeng/checkbox';
+import { SelectModule } from 'primeng/select';
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
+import { ForecastDetailDialogComponent } from './forecast-detail-dialog/forecast-detail-dialog.component';
+import { PurchaseOrderDialogComponent } from '../products/purchase-order-dialog/purchase-order-dialog.component';
+import * as XLSX from 'xlsx';
 
 interface ReorderRecommendation {
   product_id: number;
@@ -26,6 +31,8 @@ interface ReorderRecommendation {
   estimated_cost: number;
   recommendation: string;
   unit: string;
+  cost_price?: number;
+  selected?: boolean;
 }
 
 @Component({
@@ -42,13 +49,27 @@ interface ReorderRecommendation {
     ToastModule,
     ChartModule,
     CardModule,
+    CheckboxModule,
+    SelectModule,
   ],
   providers: [MessageService],
 })
 export class AiReorderComponent implements OnInit {
   recommendations: ReorderRecommendation[] = [];
+  filteredRecommendations: ReorderRecommendation[] = [];
+  selectedProducts: ReorderRecommendation[] = [];
+  selectAll: boolean = false;
   loading: boolean = false;
   trainingAI: boolean = false;
+  searchText: string = '';
+  selectedUrgency: string | null = null;
+
+  urgencyFilters = [
+    { label: 'Tất cả', value: null },
+    { label: 'Khẩn cấp', value: 'high' },
+    { label: 'Trung bình', value: 'medium' },
+    { label: 'Thấp', value: 'low' },
+  ];
 
   summary = {
     total_products_need_reorder: 0,
@@ -81,8 +102,20 @@ export class AiReorderComponent implements OnInit {
           position: 'bottom',
           labels: {
             color: '#1f2937',
-            font: { size: 12 },
+            font: { size: 11 },
             usePointStyle: true,
+            padding: 10,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context: any) => {
+              const label = context.label || '';
+              const value = context.parsed || 0;
+              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: ${value} SP (${percentage}%)`;
+            },
           },
         },
       },
@@ -119,8 +152,10 @@ export class AiReorderComponent implements OnInit {
         this.loading = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
           this.recommendations = rs.response.recommendations || [];
+          this.recommendations.forEach((r) => (r.selected = false));
           this.summary = rs.response.summary || this.summary;
           this.updateChart();
+          this.applyFilters();
         } else {
           this.showError('Không thể tải dữ liệu');
         }
@@ -146,9 +181,168 @@ export class AiReorderComponent implements OnInit {
           data: urgencyData,
           backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
           hoverBackgroundColor: ['#dc2626', '#d97706', '#16a34a'],
+          borderWidth: 0,
         },
       ],
     };
+  }
+
+  onSearch(): void {
+    this.applyFilters();
+  }
+
+  onFilterChange(): void {
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.recommendations];
+
+    // Search filter
+    if (this.searchText) {
+      const searchLower = this.searchText.toLowerCase();
+      filtered = filtered.filter(
+        (r) =>
+          r.product_name.toLowerCase().includes(searchLower) ||
+          r.product_sku.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Urgency filter
+    if (this.selectedUrgency) {
+      filtered = filtered.filter((r) => r.urgency === this.selectedUrgency);
+    }
+
+    this.filteredRecommendations = filtered;
+  }
+
+  onSelectAllChange(): void {
+    if (this.selectAll) {
+      this.filteredRecommendations.forEach((r) => (r.selected = true));
+      this.selectedProducts = [...this.filteredRecommendations];
+    } else {
+      this.filteredRecommendations.forEach((r) => (r.selected = false));
+      this.selectedProducts = [];
+    }
+  }
+
+  onRowSelect(item: ReorderRecommendation): void {
+    if (item.selected) {
+      if (!this.selectedProducts.find((p) => p.product_id === item.product_id)) {
+        this.selectedProducts.push(item);
+      }
+    } else {
+      this.selectedProducts = this.selectedProducts.filter(
+        (p) => p.product_id !== item.product_id
+      );
+    }
+    this.updateSelectAll();
+  }
+
+  updateSelectAll(): void {
+    this.selectAll =
+      this.filteredRecommendations.length > 0 &&
+      this.filteredRecommendations.every((r) => r.selected);
+  }
+
+  isSelected(item: ReorderRecommendation): boolean {
+    return !!item.selected;
+  }
+
+  viewForecast(item: ReorderRecommendation): void {
+    const dialogRef = this.dialog.open(ForecastDetailDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      data: { recommendation: item },
+    });
+
+    dialogRef.afterClosed().subscribe();
+  }
+
+  createBulkOrder(): void {
+    if (this.selectedProducts.length === 0) {
+      this.showWarning('Vui lòng chọn ít nhất một sản phẩm');
+      return;
+    }
+
+    // Transform AI recommendations to purchase order items
+    const items = this.selectedProducts.map((r) => ({
+      product_id: r.product_id,
+      product_name: r.product_name,
+      product_sku: r.product_sku,
+      quantity: Math.ceil(r.optimal_order_quantity),
+      unit_price: r.cost_price || r.estimated_cost / r.optimal_order_quantity,
+      unit: r.unit,
+      note: r.recommendation,
+    }));
+
+    const dialogRef = this.dialog.open(PurchaseOrderDialogComponent, {
+      width: '1200px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      data: { items, fromAI: true },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.showSuccess('Đã tạo đơn đặt hàng thành công!');
+        // Clear selection
+        this.selectedProducts = [];
+        this.selectAll = false;
+        this.recommendations.forEach((r) => (r.selected = false));
+        this.loadRecommendations();
+      }
+    });
+  }
+
+  exportExcel(): void {
+    if (this.filteredRecommendations.length === 0) {
+      this.showWarning('Không có dữ liệu để xuất');
+      return;
+    }
+
+    const exportData = this.filteredRecommendations.map((r, index) => ({
+      'STT': index + 1,
+      'Sản phẩm': r.product_name,
+      'SKU': r.product_sku,
+      'Độ ưu tiên': this.getUrgencyLabel(r.urgency),
+      'Tồn kho hiện tại': `${r.current_stock} ${r.unit}`,
+      'Hết hàng sau (ngày)': r.days_until_stockout,
+      'Nhu cầu 7 ngày': r.predicted_demand_7_days.toFixed(1),
+      'Nhu cầu 30 ngày': r.predicted_demand_30_days.toFixed(1),
+      'Đề xuất nhập': `${Math.ceil(r.optimal_order_quantity)} ${r.unit}`,
+      'Chi phí dự kiến (đ)': r.estimated_cost,
+      'Điểm đặt lại': r.reorder_point.toFixed(1),
+      'Khuyến nghị': r.recommendation,
+    }));
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 5 },  // STT
+      { wch: 30 }, // Sản phẩm
+      { wch: 15 }, // SKU
+      { wch: 12 }, // Độ ưu tiên
+      { wch: 15 }, // Tồn kho
+      { wch: 15 }, // Hết hàng sau
+      { wch: 15 }, // Nhu cầu 7 ngày
+      { wch: 15 }, // Nhu cầu 30 ngày
+      { wch: 15 }, // Đề xuất nhập
+      { wch: 18 }, // Chi phí
+      { wch: 12 }, // Điểm đặt lại
+      { wch: 50 }, // Khuyến nghị
+    ];
+    ws['!cols'] = colWidths;
+
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'AI Recommendations');
+
+    const fileName = `AI_Reorder_Recommendations_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    this.showSuccess(`Đã xuất file ${fileName}`);
   }
 
   getUrgencyLabel(urgency: string): string {
@@ -176,10 +370,6 @@ export class AiReorderComponent implements OnInit {
     }).format(value);
   }
 
-  viewForecast(productId: number): void {
-    console.log('View forecast for product:', productId);
-  }
-
   private showSuccess(detail: string): void {
     this.message.add({
       severity: 'success',
@@ -192,7 +382,16 @@ export class AiReorderComponent implements OnInit {
   private showError(detail: string): void {
     this.message.add({
       severity: 'error',
-      summary: 'Thông báo',
+      summary: 'Lỗi',
+      detail,
+      life: 3000,
+    });
+  }
+
+  private showWarning(detail: string): void {
+    this.message.add({
+      severity: 'warn',
+      summary: 'Cảnh báo',
       detail,
       life: 3000,
     });
