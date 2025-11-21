@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary-color: #dc3545;
 $primary-hover: #c82333;
 $success-color: #28a745;
@@ -86,7 +88,7 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   white-space: nowrap;
 
   &:hover:not(:disabled) {
-    background: darken($success-color, 10%);
+    background: color.adjust($success-color, $lightness: -10%);
     transform: translateY(-1px);
   }
 
@@ -562,7 +564,7 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     color: white;
 
     &:hover:not(:disabled) {
-      background: darken($success-color, 10%);
+      background: color.adjust($success-color, $lightness: -10%);
       transform: translateY(-1px);
     }
   }
@@ -582,7 +584,7 @@ $shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     color: $text-primary;
 
     &:hover:not(:disabled) {
-      background: darken($warning-color, 10%);
+      background: color.adjust($warning-color, $lightness: -10%);
       transform: translateY(-1px);
     }
   }

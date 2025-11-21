@@ -1,4 +1,6 @@
-@import 'styles/_variables';
+@use 'styles/_variables';
+
+// CSS imports must stay as @import
 @import 'primeicons/primeicons.css';
 
 .label {
