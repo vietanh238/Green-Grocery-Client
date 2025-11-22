@@ -26,9 +26,9 @@
             [class.loading]="loading"
           ></i>
         </button>
-        <button class="action-btn export-btn" (click)="exportReport()">
-          <i class="pi pi-file-excel"></i>
-          <span>Xuất Excel</span>
+        <button class="action-btn export-btn" (click)="exportReport()" [disabled]="exporting">
+          <i class="pi" [class.pi-file-excel]="!exporting" [class.pi-spin]="exporting" [class.pi-spinner]="exporting"></i>
+          <span>{{ exporting ? 'Đang xuất...' : 'Xuất Excel' }}</span>
         </button>
       </div>
     </div>

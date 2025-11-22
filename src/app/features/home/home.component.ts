@@ -1,6 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, finalize } from 'rxjs/operators';
+
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
 import { CardModule } from 'primeng/card';
@@ -9,7 +13,7 @@ import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { Router } from '@angular/router';
+
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
 import * as XLSX from 'xlsx';
@@ -85,67 +89,84 @@ interface DashboardData {
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
   imports: [
-    ButtonModule,
     CommonModule,
+    FormsModule,
+    ButtonModule,
     ChartModule,
     CardModule,
     TableModule,
     TagModule,
     SelectModule,
-    FormsModule,
     ToastModule,
   ],
   providers: [MessageService],
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   readonly Math = Math;
 
-  selectedPeriod: string = 'today';
-  periodOptions = [
+  private subscriptions = new Subscription();
+  private periodChange$ = new Subject<string>();
+
+  selectedPeriod = 'today';
+  readonly periodOptions = [
     { label: 'Hôm nay', value: 'today' },
     { label: 'Tuần này', value: 'week' },
     { label: 'Tháng này', value: 'month' },
   ];
 
-  comparisonPeriod: string = 'hôm qua';
-  loading: boolean = false;
+  comparisonPeriod = 'hôm qua';
+  loading = false;
+  exporting = false;
 
-  todayRevenue: number = 0;
-  todayOrders: number = 0;
-  todayProfit: number = 0;
-  todayCustomers: number = 0;
-  newCustomers: number = 0;
-  profitMargin: number = 0;
+  todayRevenue = 0;
+  todayOrders = 0;
+  todayProfit = 0;
+  todayCustomers = 0;
+  newCustomers = 0;
+  profitMargin = 0;
 
-  revenueGrowth: number = 0;
-  orderGrowth: number = 0;
-  profitGrowth: number = 0;
-  customerGrowth: number = 0;
+  revenueGrowth = 0;
+  orderGrowth = 0;
+  profitGrowth = 0;
+  customerGrowth = 0;
 
-  revenueComparison: number = 0;
-  orderComparison: number = 0;
+  revenueComparison = 0;
+  orderComparison = 0;
 
   recentSales: RecentSale[] = [];
   topProducts: TopProduct[] = [];
-
-  // Inventory data
   inventoryStats: InventoryStats | null = null;
   lowStockProducts: LowStockProduct[] = [];
-
-  // Activities
   recentActivities: Activity[] = [];
 
   revenueChartData: any;
   revenueChartOptions: any;
-
   categoryChartData: any;
   pieChartOptions: any;
 
-  constructor(private service: Service, private message: MessageService, private router: Router) {}
+  constructor(
+    private service: Service,
+    private message: MessageService,
+    private router: Router
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.initializeChartOptions();
     this.loadDashboardData();
+    this.setupPeriodChangeListener();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    this.periodChange$.complete();
+  }
+
+  private setupPeriodChangeListener(): void {
+    const subscription = this.periodChange$
+      .pipe(debounceTime(300))
+      .subscribe(() => this.loadDashboardData());
+
+    this.subscriptions.add(subscription);
   }
 
   private initializeChartOptions(): void {
@@ -226,66 +247,77 @@ export class HomeComponent implements OnInit {
   private loadDashboardData(): void {
     this.loading = true;
 
-    this.service.getDashboardData(this.selectedPeriod).subscribe(
-      (rs: any) => {
-        this.loading = false;
-        if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.processDashboardData(rs.response);
-          this.initializeCharts(rs.response);
-        } else {
-          this.showError('Không thể tải dữ liệu dashboard');
-        }
-      },
-      (error: any) => {
-        this.loading = false;
-        this.showError('Lỗi hệ thống');
-      }
-    );
+    const subscription = this.service
+      .getDashboardData(this.selectedPeriod)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.status === ConstantDef.STATUS_SUCCESS) {
+            this.processDashboardData(response.response);
+            this.initializeCharts(response.response);
+          } else {
+            this.showError('Không thể tải dữ liệu dashboard');
+          }
+        },
+        error: (error: any) => {
+          console.error('Dashboard data error:', error);
+          this.showError('Lỗi kết nối khi tải dữ liệu');
+        },
+      });
+
+    this.subscriptions.add(subscription);
   }
 
   private processDashboardData(data: DashboardData): void {
-    this.todayRevenue = data.today_revenue || 0;
-    this.todayOrders = data.today_orders || 0;
-    this.todayProfit = data.today_profit || 0;
-    this.todayCustomers = data.today_customers || 0;
-    this.newCustomers = data.new_customers || 0;
-    this.profitMargin = data.profit_margin || 0;
+    const {
+      today_revenue = 0,
+      today_orders = 0,
+      today_profit = 0,
+      today_customers = 0,
+      new_customers = 0,
+      profit_margin = 0,
+      revenue_growth = 0,
+      order_growth = 0,
+      profit_growth = 0,
+      customer_growth = 0,
+      revenue_comparison = 0,
+      order_comparison = 0,
+      recent_sales = [],
+      top_products = [],
+      inventory_stats = null,
+      low_stock_products = [],
+    } = data;
 
-    this.revenueGrowth = data.revenue_growth || 0;
-    this.orderGrowth = data.order_growth || 0;
-    this.profitGrowth = data.profit_growth || 0;
-    this.customerGrowth = data.customer_growth || 0;
+    Object.assign(this, {
+      todayRevenue: today_revenue,
+      todayOrders: today_orders,
+      todayProfit: today_profit,
+      todayCustomers: today_customers,
+      newCustomers: new_customers,
+      profitMargin: profit_margin,
+      revenueGrowth: revenue_growth,
+      orderGrowth: order_growth,
+      profitGrowth: profit_growth,
+      customerGrowth: customer_growth,
+      revenueComparison: revenue_comparison,
+      orderComparison: order_comparison,
+      recentSales: recent_sales,
+      topProducts: top_products,
+      inventoryStats: inventory_stats,
+      lowStockProducts: low_stock_products,
+    });
 
-    this.revenueComparison = data.revenue_comparison || 0;
-    this.orderComparison = data.order_comparison || 0;
-
-    this.recentSales = data.recent_sales || [];
-    this.topProducts = data.top_products || [];
-
-    // Inventory data
-    this.inventoryStats = data.inventory_stats || null;
-    this.lowStockProducts = data.low_stock_products || [];
-
-    // Generate activities from data
     this.generateActivities(data);
-
     this.updateComparisonPeriod();
   }
 
   private updateComparisonPeriod(): void {
-    switch (this.selectedPeriod) {
-      case 'today':
-        this.comparisonPeriod = 'hôm qua';
-        break;
-      case 'week':
-        this.comparisonPeriod = 'tuần trước';
-        break;
-      case 'month':
-        this.comparisonPeriod = 'tháng trước';
-        break;
-      default:
-        this.comparisonPeriod = 'trước đó';
-    }
+    const periodMap: Record<string, string> = {
+      today: 'hôm qua',
+      week: 'tuần trước',
+      month: 'tháng trước',
+    };
+    this.comparisonPeriod = periodMap[this.selectedPeriod] || 'trước đó';
   }
 
   private initializeCharts(data: DashboardData): void {
@@ -293,58 +325,28 @@ export class HomeComponent implements OnInit {
     this.initCategoryChart();
   }
 
+  private updateChartData(data: DashboardData): void {
+    if (this.revenueChartData) {
+      const { labels, chartData } = this.prepareRevenueChartData(data);
+      this.revenueChartData.labels = labels;
+      this.revenueChartData.datasets[0].data = chartData;
+      this.revenueChartData = { ...this.revenueChartData };
+    } else {
+      this.initRevenueChart(data);
+    }
+
+    if (this.categoryChartData && this.topProducts?.length) {
+      const topFive = this.topProducts.slice(0, 5);
+      this.categoryChartData.labels = topFive.map((p) => p.name);
+      this.categoryChartData.datasets[0].data = topFive.map((p) => p.revenue);
+      this.categoryChartData = { ...this.categoryChartData };
+    } else {
+      this.initCategoryChart();
+    }
+  }
+
   private initRevenueChart(data: DashboardData): void {
-    let labels: string[] = [];
-    let chartData: number[] = [];
-
-    if (data.hourly_revenue && data.hourly_revenue.length > 0) {
-      const revenueData = data.hourly_revenue;
-
-      labels = revenueData.map((item: any) => {
-        if (this.selectedPeriod === 'today') {
-          return `${item.hour}:00`;
-        } else if (this.selectedPeriod === 'week') {
-          const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-          return days[new Date(item.date).getDay()];
-        } else {
-          return new Date(item.date).getDate().toString();
-        }
-      });
-
-      chartData = revenueData.map((item: any) => item.revenue || 0);
-    } else if (this.recentSales && this.recentSales.length > 0) {
-      const salesByTime: { [key: string]: number } = {};
-
-      this.recentSales.forEach((sale) => {
-        const date = new Date(sale.created_at);
-        let timeKey: string;
-
-        if (this.selectedPeriod === 'today') {
-          timeKey = `${date.getHours()}:00`;
-        } else if (this.selectedPeriod === 'week') {
-          const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-          timeKey = days[date.getDay()];
-        } else {
-          timeKey = date.getDate().toString();
-        }
-
-        salesByTime[timeKey] = (salesByTime[timeKey] || 0) + sale.amount;
-      });
-
-      labels = Object.keys(salesByTime);
-      chartData = Object.values(salesByTime);
-    }
-
-    if (labels.length === 0) {
-      if (this.selectedPeriod === 'today') {
-        labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
-      } else if (this.selectedPeriod === 'week') {
-        labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-      } else {
-        labels = Array.from({ length: 30 }, (_, i) => (i + 1).toString());
-      }
-      chartData = new Array(labels.length).fill(0);
-    }
+    const { labels, chartData } = this.prepareRevenueChartData(data);
 
     this.revenueChartData = {
       labels,
@@ -353,11 +355,11 @@ export class HomeComponent implements OnInit {
           label: 'Doanh thu',
           data: chartData,
           fill: true,
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          borderColor: '#22c55e',
+          backgroundColor: 'rgba(22, 163, 74, 0.1)',
+          borderColor: '#16a34a',
           borderWidth: 2,
           tension: 0.4,
-          pointBackgroundColor: '#22c55e',
+          pointBackgroundColor: '#16a34a',
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           pointRadius: 4,
@@ -367,16 +369,96 @@ export class HomeComponent implements OnInit {
     };
   }
 
+  private prepareRevenueChartData(data: DashboardData): { labels: string[]; chartData: number[] } {
+    if (data.hourly_revenue?.length) {
+      return this.mapHourlyRevenueData(data.hourly_revenue);
+    }
+
+    if (this.recentSales?.length) {
+      return this.aggregateSalesData(this.recentSales);
+    }
+
+    return this.getDefaultChartData();
+  }
+
+  private mapHourlyRevenueData(hourlyRevenue: any[]): { labels: string[]; chartData: number[] } {
+    const labels = hourlyRevenue.map((item) => this.formatTimeLabel(item));
+    const chartData = hourlyRevenue.map((item) => item.revenue || 0);
+    return { labels, chartData };
+  }
+
+  private aggregateSalesData(sales: RecentSale[]): { labels: string[]; chartData: number[] } {
+    const salesByTime = sales.reduce((acc, sale) => {
+      const date = new Date(sale.created_at);
+      const timeKey = this.getTimeKey(date);
+
+      if (!acc[timeKey]) {
+        acc[timeKey] = { amount: 0, sortOrder: this.getTimeSortOrder(date) };
+      }
+      acc[timeKey].amount += sale.amount;
+
+      return acc;
+    }, {} as Record<string, { amount: number; sortOrder: number }>);
+
+    const sortedEntries = Object.entries(salesByTime).sort((a, b) => a[1].sortOrder - b[1].sortOrder);
+
+    return {
+      labels: sortedEntries.map(([key]) => key),
+      chartData: sortedEntries.map(([, value]) => value.amount),
+    };
+  }
+
+  private getTimeSortOrder(date: Date): number {
+    if (this.selectedPeriod === 'today') {
+      return date.getHours();
+    }
+    if (this.selectedPeriod === 'week') {
+      return date.getDay();
+    }
+    return date.getDate();
+  }
+
+  private formatTimeLabel(item: any): string {
+    if (this.selectedPeriod === 'today') {
+      return `${item.hour}:00`;
+    }
+    if (this.selectedPeriod === 'week') {
+      const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      return days[new Date(item.date).getDay()];
+    }
+    return new Date(item.date).getDate().toString();
+  }
+
+  private getTimeKey(date: Date): string {
+    if (this.selectedPeriod === 'today') {
+      return `${date.getHours()}:00`;
+    }
+    if (this.selectedPeriod === 'week') {
+      const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      return days[date.getDay()];
+    }
+    return date.getDate().toString();
+  }
+
+  private getDefaultChartData(): { labels: string[]; chartData: number[] } {
+    let labels: string[];
+
+    if (this.selectedPeriod === 'today') {
+      labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+    } else if (this.selectedPeriod === 'week') {
+      labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    } else {
+      labels = Array.from({ length: 30 }, (_, i) => (i + 1).toString());
+    }
+
+    return { labels, chartData: new Array(labels.length).fill(0) };
+  }
+
   private initCategoryChart(): void {
-    if (!this.topProducts || this.topProducts.length === 0) {
+    if (!this.topProducts?.length) {
       this.categoryChartData = {
         labels: ['Chưa có dữ liệu'],
-        datasets: [
-          {
-            data: [1],
-            backgroundColor: ['#e5e7eb'],
-          },
-        ],
+        datasets: [{ data: [1], backgroundColor: ['#e5e7eb'] }],
       };
       return;
     }
@@ -384,7 +466,7 @@ export class HomeComponent implements OnInit {
     const topFive = this.topProducts.slice(0, 5);
     const labels = topFive.map((p) => p.name);
     const data = topFive.map((p) => p.revenue);
-    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+    const colors = ['#16a34a', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
 
     this.categoryChartData = {
       labels,
@@ -415,81 +497,108 @@ export class HomeComponent implements OnInit {
   }
 
   onPeriodChange(): void {
-    this.loadDashboardData();
+    this.periodChange$.next(this.selectedPeriod);
   }
 
   refreshData(): void {
-    this.loadDashboardData();
-    this.showSuccess('Đã cập nhật dữ liệu');
+    if (this.loading) return;
+
+    this.loading = true;
+    const subscription = this.service
+      .getDashboardData(this.selectedPeriod)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.status === ConstantDef.STATUS_SUCCESS) {
+            this.processDashboardData(response.response);
+            this.updateChartData(response.response);
+            this.showSuccess('Đã cập nhật dữ liệu');
+          } else {
+            this.showError('Không thể tải dữ liệu dashboard');
+          }
+        },
+        error: (error: any) => {
+          console.error('Dashboard refresh error:', error);
+          this.showError('Lỗi kết nối khi làm mới dữ liệu');
+        },
+      });
+
+    this.subscriptions.add(subscription);
   }
 
   exportReport(): void {
-    try {
-      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const periodLabel =
-        this.periodOptions.find((p) => p.value === this.selectedPeriod)?.label ||
-        this.selectedPeriod;
+    if (this.exporting) return;
 
-      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    this.exporting = true;
 
-      const overviewData = [
-        { 'Chỉ số': 'Doanh thu', 'Giá trị': this.todayRevenue },
-        { 'Chỉ số': 'Đơn hàng', 'Giá trị': this.todayOrders },
-        { 'Chỉ số': 'Lợi nhuận', 'Giá trị': this.todayProfit },
-        { 'Chỉ số': 'Khách hàng', 'Giá trị': this.todayCustomers },
-        { 'Chỉ số': 'Khách hàng mới', 'Giá trị': this.newCustomers },
-        {
-          'Chỉ số': 'Tỷ suất lợi nhuận (%)',
-          'Giá trị': this.profitMargin.toFixed(1),
-        },
-      ];
-      const ws_overview: XLSX.WorkSheet = XLSX.utils.json_to_sheet(overviewData);
-      ws_overview['!cols'] = [{ wch: 20 }, { wch: 18 }];
-      XLSX.utils.book_append_sheet(wb, ws_overview, 'Tổng quan');
+    setTimeout(() => {
+      try {
+        const workbook = XLSX.utils.book_new();
+        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const periodLabel = this.periodOptions.find((p) => p.value === this.selectedPeriod)?.label || this.selectedPeriod;
 
-      if (this.recentSales && this.recentSales.length > 0) {
-        const salesData = this.recentSales.map((sale, index) => ({
-          STT: index + 1,
-          'Mã đơn': sale.order_code,
-          'Thời gian': new Date(sale.created_at).toLocaleString('vi-VN'),
-          'Khách hàng': sale.buyer_name || 'Khách lẻ',
-          'Số tiền (VNĐ)': sale.amount,
-          'Thanh toán': this.getPaymentMethod(sale.status),
-          'Trạng thái': this.getStatusLabel(sale.status),
-        }));
-        const ws_sales: XLSX.WorkSheet = XLSX.utils.json_to_sheet(salesData);
-        ws_sales['!cols'] = [
-          { wch: 5 },
-          { wch: 20 },
-          { wch: 20 },
-          { wch: 25 },
-          { wch: 18 },
-          { wch: 15 },
-          { wch: 15 },
-        ];
-        XLSX.utils.book_append_sheet(wb, ws_sales, 'Đơn hàng gần đây');
+        this.addOverviewSheet(workbook);
+        this.addSalesSheet(workbook);
+        this.addProductsSheet(workbook);
+
+        const fileName = `Bao_cao_Dashboard_${periodLabel}_${timestamp}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+
+        this.showSuccess('Xuất báo cáo Excel thành công');
+      } catch (error) {
+        console.error('Export report error:', error);
+        this.showError('Không thể xuất báo cáo');
+      } finally {
+        this.exporting = false;
       }
+    }, 100);
+  }
 
-      if (this.topProducts && this.topProducts.length > 0) {
-        const productsData = this.topProducts.map((product, index) => ({
-          STT: index + 1,
-          'Tên sản phẩm': product.name,
-          'Số lượng đã bán': product.quantity,
-          'Doanh thu (VNĐ)': product.revenue,
-        }));
-        const ws_products: XLSX.WorkSheet = XLSX.utils.json_to_sheet(productsData);
-        ws_products['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
-        XLSX.utils.book_append_sheet(wb, ws_products, 'Sản phẩm bán chạy');
-      }
+  private addOverviewSheet(workbook: XLSX.WorkBook): void {
+    const overviewData = [
+      { 'Chỉ số': 'Doanh thu', 'Giá trị': this.todayRevenue },
+      { 'Chỉ số': 'Đơn hàng', 'Giá trị': this.todayOrders },
+      { 'Chỉ số': 'Lợi nhuận', 'Giá trị': this.todayProfit },
+      { 'Chỉ số': 'Khách hàng', 'Giá trị': this.todayCustomers },
+      { 'Chỉ số': 'Khách hàng mới', 'Giá trị': this.newCustomers },
+      { 'Chỉ số': 'Tỷ suất lợi nhuận (%)', 'Giá trị': this.profitMargin.toFixed(1) },
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(overviewData);
+    worksheet['!cols'] = [{ wch: 20 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tổng quan');
+  }
 
-      const fileName = `Bao_cao_Dashboard_${periodLabel}_${timestamp}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+  private addSalesSheet(workbook: XLSX.WorkBook): void {
+    if (!this.recentSales?.length) return;
 
-      this.showSuccess('Xuất báo cáo Excel thành công');
-    } catch (error) {
-      console.error('Lỗi khi xuất báo cáo Excel:', error);
-      this.showError('Xuất báo cáo thất bại');
-    }
+    const salesData = this.recentSales.map((sale, index) => ({
+      STT: index + 1,
+      'Mã đơn': sale.order_code,
+      'Thời gian': new Date(sale.created_at).toLocaleString('vi-VN'),
+      'Khách hàng': sale.buyer_name || 'Khách lẻ',
+      'Số tiền (VNĐ)': sale.amount,
+      'Thanh toán': this.getPaymentMethod(sale.status),
+      'Trạng thái': this.getStatusLabel(sale.status),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(salesData);
+    worksheet['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 18 }, { wch: 15 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Đơn hàng gần đây');
+  }
+
+  private addProductsSheet(workbook: XLSX.WorkBook): void {
+    if (!this.topProducts?.length) return;
+
+    const productsData = this.topProducts.map((product, index) => ({
+      STT: index + 1,
+      'Tên sản phẩm': product.name,
+      'Số lượng đã bán': product.quantity,
+      'Doanh thu (VNĐ)': product.revenue,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(productsData);
+    worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sản phẩm bán chạy');
   }
 
   viewAllSales(): void {
@@ -505,95 +614,72 @@ export class HomeComponent implements OnInit {
   }
 
   getStatusLabel(status: string): string {
-    switch (status) {
-      case 'paid':
-        return 'Đã thanh toán';
-      case 'pending':
-        return 'Chờ thanh toán';
-      case 'cancelled':
-        return 'Đã hủy';
-      default:
-        return 'Khác';
-    }
+    const statusMap: Record<string, string> = {
+      paid: 'Đã thanh toán',
+      pending: 'Chờ thanh toán',
+      cancelled: 'Đã hủy',
+    };
+    return statusMap[status] || 'Khác';
   }
 
   getStatusSeverity(status: string): 'success' | 'warn' | 'danger' | 'info' {
-    switch (status) {
-      case 'paid':
-        return 'success';
-      case 'pending':
-        return 'warn';
-      case 'cancelled':
-        return 'danger';
-      default:
-        return 'info';
-    }
+    const severityMap: Record<string, 'success' | 'warn' | 'danger' | 'info'> = {
+      paid: 'success',
+      pending: 'warn',
+      cancelled: 'danger',
+    };
+    return severityMap[status] || 'info';
   }
 
   getPaymentMethod(status: string): string {
-    switch (status) {
-      case 'paid':
-        return 'Đã thanh toán';
-      case 'pending':
-        return 'Chờ xác nhận';
-      default:
-        return 'Khác';
-    }
+    const methodMap: Record<string, string> = {
+      paid: 'Đã thanh toán',
+      pending: 'Chờ xác nhận',
+    };
+    return methodMap[status] || 'Khác';
   }
 
   private showSuccess(message: string): void {
-    this.message.add({
-      severity: 'success',
-      summary: 'Thành công',
-      detail: message,
-      life: 3000,
-    });
+    this.showNotification('success', 'Thành công', message);
   }
 
   private showError(message: string): void {
+    this.showNotification('error', 'Lỗi', message);
+  }
+
+  private showNotification(severity: 'success' | 'error' | 'info', summary: string, detail: string): void {
     this.message.add({
-      severity: 'error',
-      summary: 'Lỗi',
-      detail: message,
-      life: 3000,
+      severity,
+      summary,
+      detail,
+      life: severity === 'error' ? 5000 : 3000,
     });
   }
 
   getUrgencySeverity(urgency: string): 'success' | 'warn' | 'danger' | 'info' {
-    switch (urgency) {
-      case 'critical':
-        return 'danger';
-      case 'high':
-        return 'warn';
-      case 'medium':
-        return 'info';
-      default:
-        return 'success';
-    }
+    const severityMap: Record<string, 'success' | 'warn' | 'danger' | 'info'> = {
+      critical: 'danger',
+      high: 'warn',
+      medium: 'info',
+    };
+    return severityMap[urgency] || 'success';
   }
 
   getUrgencyLabel(urgency: string): string {
-    switch (urgency) {
-      case 'critical':
-        return 'Khẩn cấp';
-      case 'high':
-        return 'Cao';
-      case 'medium':
-        return 'Trung bình';
-      default:
-        return 'Thấp';
-    }
+    const labelMap: Record<string, string> = {
+      critical: 'Khẩn cấp',
+      high: 'Cao',
+      medium: 'Trung bình',
+    };
+    return labelMap[urgency] || 'Thấp';
   }
 
   getAlertIcon(alertLevel: string): string {
-    switch (alertLevel) {
-      case 'critical':
-        return 'pi-exclamation-triangle';
-      case 'warning':
-        return 'pi-exclamation-circle';
-      default:
-        return 'pi-check-circle';
-    }
+    const iconMap: Record<string, string> = {
+      critical: 'pi-exclamation-triangle',
+      warning: 'pi-exclamation-circle',
+    };
+    return iconMap[alertLevel] || 'pi-check-circle';
   }
 
   viewProduct(productId: number): void {
@@ -605,63 +691,105 @@ export class HomeComponent implements OnInit {
   }
 
   private generateActivities(data: DashboardData): void {
-    this.recentActivities = [];
+    const activities: Activity[] = [];
 
-    // Add recent sales as activities
-    if (data.recent_sales && data.recent_sales.length > 0) {
-      data.recent_sales.slice(0, 3).forEach((sale) => {
-        this.recentActivities.push({
-          type: 'sale',
-          title: 'Đơn hàng mới',
-          description: `${sale.buyer_name || 'Khách lẻ'} - ${this.formatCurrency(sale.amount)}`,
-          time: this.getTimeAgo(sale.created_at),
-          icon: 'pi-shopping-cart',
-          color: '#22c55e',
-        });
-      });
-    }
+    activities.push(...this.generateSaleActivities(data.recent_sales));
+    activities.push(...this.generateLowStockActivities(data.low_stock_products));
+    activities.push(...this.generateMilestoneActivities(data.today_orders));
 
-    // Add low stock alerts
-    if (data.low_stock_products && data.low_stock_products.length > 0) {
-      const criticalProducts = data.low_stock_products.filter((p) => p.urgency === 'critical');
-      if (criticalProducts.length > 0) {
-        this.recentActivities.push({
-          type: 'low_stock',
-          title: 'Cảnh báo tồn kho',
-          description: `${criticalProducts.length} sản phẩm hết hàng`,
-          time: 'Vừa xong',
-          icon: 'pi-exclamation-triangle',
-          color: '#ef4444',
-        });
-      }
-    }
+    this.recentActivities = activities.slice(0, 5);
+  }
 
-    // Add milestone activities
-    if (data.today_orders > 0 && data.today_orders % 10 === 0) {
-      this.recentActivities.push({
-        type: 'milestone',
-        title: 'Cột mốc',
-        description: `Đạt ${data.today_orders} đơn hàng hôm nay!`,
-        time: 'Hôm nay',
-        icon: 'pi-star-fill',
-        color: '#f59e0b',
-      });
-    }
+  private generateSaleActivities(sales: RecentSale[] = []): Activity[] {
+    return sales.slice(0, 3).map((sale) => ({
+      type: 'sale' as const,
+      title: 'Đơn hàng mới',
+      description: `${sale.buyer_name || 'Khách lẻ'} - ${this.formatCurrency(sale.amount)}`,
+      time: this.getTimeAgo(sale.created_at),
+      icon: 'pi-shopping-cart',
+      color: '#16a34a',
+    }));
+  }
 
-    // Sort by recency (sales first, then others)
-    this.recentActivities = this.recentActivities.slice(0, 5);
+  private generateLowStockActivities(lowStockProducts: LowStockProduct[] = []): Activity[] {
+    const criticalProducts = lowStockProducts.filter((p) => p.urgency === 'critical');
+
+    if (!criticalProducts.length) return [];
+
+    return [
+      {
+        type: 'low_stock' as const,
+        title: 'Cảnh báo tồn kho',
+        description: `${criticalProducts.length} sản phẩm hết hàng`,
+        time: 'Vừa xong',
+        icon: 'pi-exclamation-triangle',
+        color: '#ef4444',
+      },
+    ];
+  }
+
+  private generateMilestoneActivities(todayOrders: number): Activity[] {
+    if (todayOrders <= 0) return [];
+
+    const milestones = [10, 20, 50, 100, 200, 250, 500, 750, 1000, 2000, 5000];
+    const achievedMilestone = milestones
+      .reverse()
+      .find((milestone) => todayOrders >= milestone && todayOrders <= milestone + 5);
+
+    if (!achievedMilestone) return [];
+
+    const getMilestoneIcon = (orders: number): string => {
+      if (orders >= 1000) return 'pi-trophy';
+      if (orders >= 500) return 'pi-star-fill';
+      if (orders >= 100) return 'pi-bolt';
+      return 'pi-check-circle';
+    };
+
+    const getMilestoneColor = (orders: number): string => {
+      if (orders >= 1000) return '#eab308';
+      if (orders >= 500) return '#f59e0b';
+      if (orders >= 100) return '#3b82f6';
+      return '#16a34a';
+    };
+
+    return [
+      {
+        type: 'milestone' as const,
+        title: 'Cột mốc đạt được',
+        description: `Chúc mừng! Đã hoàn thành ${achievedMilestone} đơn hàng`,
+        time: 'Vừa xong',
+        icon: getMilestoneIcon(achievedMilestone),
+        color: getMilestoneColor(achievedMilestone),
+      },
+    ];
   }
 
   private getTimeAgo(dateString: string): string {
     const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+      return 'Không xác định';
+    }
+
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
+    const utcDate = new Date(date.toISOString());
+    const utcNow = new Date(now.toISOString());
+
+    const diffMs = utcNow.getTime() - utcDate.getTime();
+    const diffMins = Math.floor(Math.abs(diffMs) / 60000);
+    const diffHours = Math.floor(Math.abs(diffMs) / 3600000);
+    const diffDays = Math.floor(Math.abs(diffMs) / 86400000);
 
     if (diffMins < 1) return 'Vừa xong';
     if (diffMins < 60) return `${diffMins} phút trước`;
     if (diffHours < 24) return `${diffHours} giờ trước`;
-    return date.toLocaleDateString('vi-VN');
+    if (diffDays === 1) return 'Hôm qua';
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   }
 }
