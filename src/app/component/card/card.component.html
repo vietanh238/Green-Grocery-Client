@@ -41,7 +41,7 @@
   <button
     class="add-button"
     [disabled]="product.stock_quantity === 0"
-    (click)="onAddToCart()"
+    (click)="onAddToCart($event)"
   >
     <i class="pi" [class.pi-plus]="product.stock_quantity > 0" [class.pi-times]="product.stock_quantity === 0"></i>
   </button>

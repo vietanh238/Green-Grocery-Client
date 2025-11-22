@@ -13,7 +13,13 @@ export class CardComponent implements OnInit {
   @Output() addToCart = new EventEmitter<any>();
   ngOnInit(): void {}
 
-  onAddToCart() {
+  onAddToCart(event?: Event) {
+    // Stop event propagation to prevent duplicate triggers
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    console.log('🛒 Card: onAddToCart called for', this.product.name);
     this.addToCart.emit(this.product);
   }
 

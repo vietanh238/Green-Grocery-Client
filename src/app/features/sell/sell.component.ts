@@ -70,6 +70,7 @@ export class SellComponent implements OnInit, OnDestroy {
   loading: boolean = true;
   isProcessingPayment: boolean = false;
   private paymentSuccessSubscription?: Subscription;
+  private processingProducts = new Set<string>();
 
   constructor(
     private service: Service,
@@ -165,7 +166,12 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   handleAddToCart(product: Product): void {
-    // Prevent double-click
+    // Prevent double-click/rapid clicks on same product
+    if (this.processingProducts.has(product.bar_code)) {
+      console.log('⚠️ Preventing duplicate add for:', product.name);
+      return;
+    }
+
     if (this.isProcessingPayment) {
       return;
     }
@@ -175,32 +181,46 @@ export class SellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const existingItem = this.cartItems.find((item) => item.bar_code === product.bar_code);
+    // Mark as processing
+    this.processingProducts.add(product.bar_code);
 
-    if (existingItem) {
-      // Only increase if stock allows
-      if (product.stock_quantity > 0) {
-        existingItem.quantity++;
-        this.updateProductStock(product.bar_code, -1);
-        this.showSuccess(`Đã cập nhật số lượng ${product.name}`);
+    try {
+      const existingItem = this.cartItems.find((item) => item.bar_code === product.bar_code);
+
+      if (existingItem) {
+        // Only increase if stock allows
+        if (product.stock_quantity > 0) {
+          console.log('📦 Updating existing item:', product.name, 'Stock before:', product.stock_quantity);
+          existingItem.quantity++;
+          this.updateProductStock(product.bar_code, -1);
+          console.log('📦 Stock after:', product.stock_quantity);
+          this.showSuccess(`Đã cập nhật số lượng ${product.name}`);
+        } else {
+          this.showError('Sản phẩm đã hết hàng trong kho');
+        }
       } else {
-        this.showError('Sản phẩm đã hết hàng trong kho');
+        // Add new item to cart
+        console.log('➕ Adding new item:', product.name, 'Stock before:', product.stock_quantity);
+        this.cartItems.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          sku: product.sku,
+          bar_code: product.bar_code,
+          stock_quantity: product.stock_quantity,
+          unit: product.unit,
+          cost_price: product.cost_price,
+        });
+        this.updateProductStock(product.bar_code, -1);
+        console.log('➕ Stock after:', product.stock_quantity);
+        this.showSuccess(`Đã thêm ${product.name} vào giỏ hàng`);
       }
-    } else {
-      // Add new item to cart
-      this.cartItems.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        sku: product.sku,
-        bar_code: product.bar_code,
-        stock_quantity: product.stock_quantity,
-        unit: product.unit,
-        cost_price: product.cost_price,
-      });
-      this.updateProductStock(product.bar_code, -1);
-      this.showSuccess(`Đã thêm ${product.name} vào giỏ hàng`);
+    } finally {
+      // Release lock after a short delay to prevent rapid clicks
+      setTimeout(() => {
+        this.processingProducts.delete(product.bar_code);
+      }, 300);
     }
   }
 
@@ -406,14 +426,15 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   private updateProductStock(barCode: string, delta: number): void {
+    // All arrays (products, allProducts, filteredProducts) share the same object references
+    // So we only need to update once in any of them
     const product = this.allProducts.find((p) => p.bar_code === barCode);
     if (product) {
+      const oldStock = product.stock_quantity;
       product.stock_quantity = Math.max(0, product.stock_quantity + delta);
-    }
-
-    const filteredProduct = this.filteredProducts.find((p) => p.bar_code === barCode);
-    if (filteredProduct) {
-      filteredProduct.stock_quantity = Math.max(0, filteredProduct.stock_quantity + delta);
+      console.log(`🔄 updateProductStock: ${barCode}, delta: ${delta}, old: ${oldStock}, new: ${product.stock_quantity}`);
+    } else {
+      console.error(`❌ Product not found in updateProductStock: ${barCode}`);
     }
   }
 
