@@ -65,15 +65,23 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.transactionCode = this.generateTransactionCode();
-    if (sessionStorage.getItem('qrCodeUrl')) {
-      this.onImageLoad();
-      this.qrCodeUrl = sessionStorage.getItem('qrCodeUrl') || '';
-      this.orderCode = sessionStorage.getItem('orderCode') || '';
-    } else {
-      this.generateVietQRUrl();
-    }
+    this.loadQRFromStorage();
     this.startTimer();
     this.subscribeToPaymentSuccess();
+  }
+
+  private loadQRFromStorage(): void {
+    const existingOrderCode = sessionStorage.getItem('orderCode');
+    if (existingOrderCode) {
+      const qrUrl = sessionStorage.getItem(`qrCodeUrl_${existingOrderCode}`);
+      if (qrUrl) {
+        this.onImageLoad();
+        this.qrCodeUrl = qrUrl;
+        this.orderCode = existingOrderCode;
+        return;
+      }
+    }
+    this.generateVietQRUrl();
   }
 
   ngOnDestroy() {
@@ -86,11 +94,20 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
 
   private subscribeToPaymentSuccess(): void {
     this.sub = this.wsService.paymentSuccess$.subscribe((data) => {
+      this.clearTimer();
       this.handlePaymentWithSpeech(data);
 
-      sessionStorage.removeItem('qrCodeUrl');
-      sessionStorage.removeItem('orderCode');
+      this.clearSessionStorage();
     });
+  }
+
+  private clearSessionStorage(): void {
+    if (this.orderCode) {
+      sessionStorage.removeItem(`qrCodeUrl_${this.orderCode}`);
+      sessionStorage.removeItem(`orderCode_${this.orderCode}`);
+    }
+    sessionStorage.removeItem('qrCodeUrl');
+    sessionStorage.removeItem('orderCode');
   }
 
   private handlePaymentWithSpeech(data: any): void {
@@ -259,7 +276,7 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
           this.onImageLoad();
           this.qrCodeUrl = rs.response.qrCode;
           this.orderCode = rs.response.orderCode;
-          sessionStorage.setItem('qrCodeUrl', this.qrCodeUrl);
+          sessionStorage.setItem(`qrCodeUrl_${this.orderCode}`, this.qrCodeUrl);
           sessionStorage.setItem('orderCode', this.orderCode);
         } else {
           const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tạo mã';
@@ -381,15 +398,15 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
       },
     });
     dialog.afterClosed().subscribe((result: any) => {
-      this.clearTimer();
       if (result) {
         this.service.deletePayment(this.orderCode).subscribe((rs: any) => {
           if (rs.status === ConstantDef.STATUS_SUCCESS) {
-            sessionStorage.removeItem('qrCodeUrl');
-            sessionStorage.removeItem('orderCode');
+            this.clearSessionStorage();
             this.dialogRef.close({ cancel: true, data: '' });
           }
         });
+      } else {
+        this.startTimer();
       }
     });
   }
@@ -425,8 +442,7 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
         if (this.orderCode) {
           this.service.deletePayment(this.orderCode).subscribe((rs: any) => {
             if (rs.status === ConstantDef.STATUS_SUCCESS) {
-              sessionStorage.removeItem('qrCodeUrl');
-              sessionStorage.removeItem('orderCode');
+              this.clearSessionStorage();
             }
           });
         }

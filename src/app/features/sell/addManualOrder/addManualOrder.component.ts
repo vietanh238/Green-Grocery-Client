@@ -69,19 +69,20 @@ export class AddManualOrder implements OnInit {
 
     const formValue = this.manualOrderForm.value;
     const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     const manualProduct = {
-      id: timestamp,
-      sku: `MANUAL-${timestamp}`,
-      bar_code: `MANUAL-${timestamp}`,
+      id: `${timestamp}-${random}`,
+      sku: `MAN-${timestamp}`,
+      bar_code: `MANUAL-${timestamp}-${random}`,
       name: formValue.name.trim(),
       price: parseFloat(formValue.price),
       quantity: parseFloat(formValue.quantity),
       unit: formValue.unit.name,
       note: formValue.note?.trim() || '',
       isManual: true,
-      stock_quantity: 999,
-      cost_price: parseFloat(formValue.price) * 0.7,
+      stock_quantity: -1,
+      cost_price: 0,
     };
 
     this.dialogRef.close(manualProduct);

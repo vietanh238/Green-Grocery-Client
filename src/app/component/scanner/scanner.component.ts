@@ -460,7 +460,7 @@ export class ScannerComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   closeScanner(code?: string): void {
     this.cleanup();
-    this.dialogRef.close(code ? [code] : null);
+    this.dialogRef.close(code || null);
   }
 
   /**

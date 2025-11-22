@@ -96,6 +96,38 @@ export class DebitComponent implements OnInit {
       })),
     };
 
+    if (this.customerExists) {
+      this.getExistingCustomerAndCreateDebit(debitData);
+    } else {
+      this.createNewCustomerAndDebit(debitData);
+    }
+  }
+
+  private getExistingCustomerAndCreateDebit(debitData: any): void {
+    this.service.getCustomers().subscribe({
+      next: (response: any) => {
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          const customer = response.response.find(
+            (c: any) => c.phone === debitData.customer_phone
+          );
+          if (customer) {
+            this.createDebitRecord(debitData, customer.customer_code);
+          } else {
+            this.createNewCustomerAndDebit(debitData);
+          }
+        } else {
+          this.isLoading = false;
+          this.showNotification('error', 'Không thể tìm thông tin khách hàng');
+        }
+      },
+      error: () => {
+        this.isLoading = false;
+        this.showNotification('error', 'Lỗi khi tìm khách hàng');
+      },
+    });
+  }
+
+  private createNewCustomerAndDebit(debitData: any): void {
     const customerData = {
       name: debitData.customer_name,
       phone: debitData.customer_phone,

@@ -85,12 +85,14 @@ export class SellComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.restoreCart();
     this.loadProducts();
     this.subscribeToPaymentSuccess();
   }
 
   ngOnDestroy(): void {
     this.paymentSuccessSubscription?.unsubscribe();
+    this.saveCartToStorage();
   }
 
   get totalAmount(): number {
@@ -190,6 +192,8 @@ export class SellComponent implements OnInit, OnDestroy {
         this.updateProductStock(product.bar_code, -1);
         this.showNotification('success', `Đã thêm ${product.name} vào giỏ hàng`);
       }
+
+      this.saveCartToStorage();
     } finally {
       setTimeout(() => {
         this.processingProducts.delete(product.bar_code);
@@ -207,6 +211,7 @@ export class SellComponent implements OnInit, OnDestroy {
     if (product.stock_quantity > 0) {
       item.quantity++;
       this.updateProductStock(product.bar_code, -1);
+      this.saveCartToStorage();
     } else {
       this.showNotification('error', 'Sản phẩm đã hết hàng trong kho');
     }
@@ -216,6 +221,7 @@ export class SellComponent implements OnInit, OnDestroy {
     if (item.quantity > 1) {
       item.quantity--;
       this.updateProductStock(item.bar_code, 1);
+      this.saveCartToStorage();
     } else {
       this.removeItem(item);
     }
@@ -224,6 +230,7 @@ export class SellComponent implements OnInit, OnDestroy {
   removeItem(item: CartItem): void {
     this.updateProductStock(item.bar_code, item.quantity);
     this.cartItems = this.cartItems.filter((i) => i.bar_code !== item.bar_code);
+    this.saveCartToStorage();
     this.showNotification('success', 'Đã xóa sản phẩm khỏi giỏ hàng');
   }
 
@@ -292,6 +299,7 @@ export class SellComponent implements OnInit, OnDestroy {
           });
           this.showNotification('success', `Đã thêm ${result.name} vào giỏ hàng`);
         }
+        this.saveCartToStorage();
       }
     });
   }
@@ -413,13 +421,21 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   private handlePaymentSuccess(paymentData: any): void {
-    this.cartItems = [];
-    this.loadProducts();
+    if (paymentData && (paymentData.order_code || paymentData.status === 'completed')) {
+      this.saveCartBackup();
+      this.cartItems = [];
+      this.clearCartFromStorage();
+      this.loadProducts();
 
-    if (paymentData.order_code) {
-      this.showNotification('success', `Thanh toán thành công - Mã đơn: ${paymentData.order_code}`);
+      if (paymentData.order_code) {
+        this.showNotification('success', `Thanh toán thành công - Mã đơn: ${paymentData.order_code}`);
+      } else {
+        this.showNotification('success', 'Thanh toán thành công');
+      }
+
+      this.clearCartBackupAfterDelay();
     } else {
-      this.showNotification('success', 'Thanh toán thành công');
+      this.showNotification('error', 'Thanh toán không thành công, vui lòng thử lại');
     }
   }
 
@@ -441,6 +457,69 @@ export class SellComponent implements OnInit, OnDestroy {
       }
     });
     this.cartItems = [];
+    this.clearCartFromStorage();
+  }
+
+  private saveCartToStorage(): void {
+    try {
+      const cartData = {
+        items: this.cartItems,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('pos_cart_backup', JSON.stringify(cartData));
+    } catch (error) {
+      console.error('Error saving cart to storage:', error);
+    }
+  }
+
+  private restoreCart(): void {
+    try {
+      const cartBackup = localStorage.getItem('pos_cart_backup');
+      if (cartBackup) {
+        const data = JSON.parse(cartBackup);
+        const hourInMs = 3600000;
+
+        if (data.timestamp && Date.now() - data.timestamp < hourInMs) {
+          this.cartItems = data.items || [];
+          this.showNotification('info', 'Đã khôi phục giỏ hàng trước đó');
+        } else {
+          localStorage.removeItem('pos_cart_backup');
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring cart:', error);
+      localStorage.removeItem('pos_cart_backup');
+    }
+  }
+
+  private clearCartFromStorage(): void {
+    try {
+      localStorage.removeItem('pos_cart_backup');
+    } catch (error) {
+      console.error('Error clearing cart from storage:', error);
+    }
+  }
+
+  private saveCartBackup(): void {
+    try {
+      const backup = {
+        items: [...this.cartItems],
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('pos_last_order_backup', JSON.stringify(backup));
+    } catch (error) {
+      console.error('Error saving cart backup:', error);
+    }
+  }
+
+  private clearCartBackupAfterDelay(): void {
+    setTimeout(() => {
+      try {
+        localStorage.removeItem('pos_last_order_backup');
+      } catch (error) {
+        console.error('Error clearing cart backup:', error);
+      }
+    }, 300000);
   }
 
   private showNotification(severity: 'success' | 'error' | 'info', detail: string): void {
