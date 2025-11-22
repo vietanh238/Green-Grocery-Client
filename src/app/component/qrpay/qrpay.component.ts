@@ -37,9 +37,6 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
     bankId: '970436',
   };
 
-  private readonly VIETQR_BASE_URL = 'https://img.vietqr.io/image';
-  private readonly QR_TEMPLATE = 'compact2';
-
   qrCodeUrl: string = '';
   transactionCode: string = '';
   remainingTime: number = 300;
@@ -227,7 +224,12 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
     this.isLoadingQR = true;
     this.qrLoaded = false;
 
-    const orderCode = Date.now();
+    // ✅ Generate PayOS-compatible orderCode (max 9 digits)
+    // Use modulo to keep it within 100000000-999999999 range
+    const timestamp = Date.now();
+    const orderCode = (timestamp % 900000000) + 100000000; // Ensures 9 digits: 100000000-999999999
+
+    console.log('🔢 Generated orderCode:', orderCode, 'Length:', orderCode.toString().length);
 
     // Get full URL for returnUrl and cancelUrl
     const currentUrl = window.location.origin + this.router.url;
