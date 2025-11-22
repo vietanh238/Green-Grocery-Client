@@ -51,6 +51,17 @@
       </div>
     </div>
 
+    <div class="summary-card critical" *ngIf="summary.critical_urgency > 0">
+      <div class="card-icon">
+        <i class="pi pi-times-circle"></i>
+      </div>
+      <div class="card-content">
+        <span class="card-label">Cực kỳ khẩn cấp</span>
+        <span class="card-value">{{ summary.critical_urgency }}</span>
+        <span class="card-subtitle">sản phẩm</span>
+      </div>
+    </div>
+
     <div class="summary-card urgent">
       <div class="card-icon">
         <i class="pi pi-exclamation-triangle"></i>
@@ -215,7 +226,9 @@
                 [value]="getUrgencyLabel(item.urgency)"
                 [severity]="getUrgencySeverity(item.urgency)"
                 [icon]="
-                  item.urgency === 'high'
+                  item.urgency === 'critical'
+                    ? 'pi pi-times-circle'
+                    : item.urgency === 'high'
                     ? 'pi pi-exclamation-triangle'
                     : item.urgency === 'medium'
                     ? 'pi pi-clock'

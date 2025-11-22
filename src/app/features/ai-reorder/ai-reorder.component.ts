@@ -22,7 +22,7 @@ interface ReorderRecommendation {
   product_name: string;
   product_sku: string;
   current_stock: number;
-  urgency: 'high' | 'medium' | 'low';
+  urgency: 'critical' | 'high' | 'medium' | 'low';
   reorder_point: number;
   optimal_order_quantity: number;
   predicted_demand_7_days: number;
@@ -66,6 +66,7 @@ export class AiReorderComponent implements OnInit {
 
   urgencyFilters = [
     { label: 'Tất cả', value: null },
+    { label: 'Cực kỳ khẩn cấp', value: 'critical' },
     { label: 'Khẩn cấp', value: 'high' },
     { label: 'Trung bình', value: 'medium' },
     { label: 'Thấp', value: 'low' },
@@ -76,6 +77,7 @@ export class AiReorderComponent implements OnInit {
     high_urgency: 0,
     medium_urgency: 0,
     low_urgency: 0,
+    critical_urgency: 0,
     total_estimated_cost: 0,
   };
 
@@ -169,22 +171,36 @@ export class AiReorderComponent implements OnInit {
 
   updateChart(): void {
     const urgencyData = [
-      this.summary.high_urgency,
-      this.summary.medium_urgency,
-      this.summary.low_urgency,
+      this.summary.critical_urgency || 0,
+      this.summary.high_urgency || 0,
+      this.summary.medium_urgency || 0,
+      this.summary.low_urgency || 0,
     ];
 
+    // Only show chart if there's data
+    const hasData = urgencyData.some(val => val > 0);
+
     this.chartData = {
-      labels: ['Khẩn cấp', 'Trung bình', 'Thấp'],
+      labels: ['Cực kỳ khẩn cấp', 'Khẩn cấp', 'Trung bình', 'Thấp'],
       datasets: [
         {
-          data: urgencyData,
-          backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
-          hoverBackgroundColor: ['#dc2626', '#d97706', '#16a34a'],
+          data: hasData ? urgencyData : [1, 1, 1, 1], // Show dummy data if empty
+          backgroundColor: hasData
+            ? ['#dc2626', '#ef4444', '#f59e0b', '#16a34a']
+            : ['#e5e7eb', '#e5e7eb', '#e5e7eb', '#e5e7eb'],
+          hoverBackgroundColor: hasData
+            ? ['#b91c1c', '#dc2626', '#d97706', '#15803d']
+            : ['#d1d5db', '#d1d5db', '#d1d5db', '#d1d5db'],
           borderWidth: 0,
         },
       ],
     };
+
+    console.log('Chart updated:', {
+      hasData,
+      urgencyData,
+      summary: this.summary
+    });
   }
 
   onSearch(): void {
@@ -347,6 +363,7 @@ export class AiReorderComponent implements OnInit {
 
   getUrgencyLabel(urgency: string): string {
     const labels: { [key: string]: string } = {
+      critical: 'Cực kỳ khẩn cấp',
       high: 'Khẩn cấp',
       medium: 'Trung bình',
       low: 'Thấp',
@@ -354,8 +371,9 @@ export class AiReorderComponent implements OnInit {
     return labels[urgency] || urgency;
   }
 
-  getUrgencySeverity(urgency: string): 'danger' | 'warn' | 'success' {
-    const severities: { [key: string]: 'danger' | 'warn' | 'success' } = {
+  getUrgencySeverity(urgency: string): 'danger' | 'warn' | 'success' | 'contrast' {
+    const severities: { [key: string]: 'danger' | 'warn' | 'success' | 'contrast' } = {
+      critical: 'contrast',
       high: 'danger',
       medium: 'warn',
       low: 'success',

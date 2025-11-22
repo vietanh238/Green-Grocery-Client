@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -12,9 +12,9 @@ import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, finalize } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface TopProduct {
   name: string;
@@ -27,6 +27,26 @@ interface MonthlyRevenue {
   month: string;
   revenue: number;
   orders?: number;
+}
+
+interface ReportSummary {
+  totalRevenue: number;
+  totalProfit: number;
+  totalOrders: number;
+  profitMargin: number;
+}
+
+interface ReportGrowth {
+  revenue: number;
+  profit: number;
+  order: number;
+  margin: number;
+}
+
+interface ReportComparison {
+  revenue: number;
+  profit: number;
+  order: number;
 }
 
 @Component({
@@ -48,11 +68,14 @@ interface MonthlyRevenue {
   ],
   providers: [MessageService],
 })
-export class ReportComponent implements OnInit {
+export class ReportComponent implements OnInit, OnDestroy {
   readonly Math = Math;
 
+  private subscriptions = new Subscription();
+  private periodChange$ = new Subject<void>();
+
   selectedPeriod: string = 'month';
-  periodOptions = [
+  readonly periodOptions = [
     { label: 'Tuần này', value: 'week' },
     { label: 'Tháng này', value: 'month' },
     { label: 'Năm nay', value: 'year' },
@@ -63,20 +86,27 @@ export class ReportComponent implements OnInit {
   customDateTo: string = '';
   showCustomDate: boolean = false;
   loading: boolean = false;
+  exporting: boolean = false;
 
-  totalRevenue: number = 0;
-  totalProfit: number = 0;
-  totalOrders: number = 0;
-  profitMargin: number = 0;
+  summary: ReportSummary = {
+    totalRevenue: 0,
+    totalProfit: 0,
+    totalOrders: 0,
+    profitMargin: 0,
+  };
 
-  revenueGrowth: number = 0;
-  profitGrowth: number = 0;
-  orderGrowth: number = 0;
-  marginGrowth: number = 0;
+  growth: ReportGrowth = {
+    revenue: 0,
+    profit: 0,
+    order: 0,
+    margin: 0,
+  };
 
-  revenueComparison: number = 0;
-  profitComparison: number = 0;
-  orderComparison: number = 0;
+  comparison: ReportComparison = {
+    revenue: 0,
+    profit: 0,
+    order: 0,
+  };
 
   topProducts: TopProduct[] = [];
   monthlyRevenueData: MonthlyRevenue[] = [];
@@ -88,18 +118,33 @@ export class ReportComponent implements OnInit {
   commonChartOptions: any;
   pieChartOptions: any;
 
-  constructor(private service: Service, private message: MessageService) {}
+  constructor(
+    private service: Service,
+    private message: MessageService
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.initializeChartOptions();
+    this.initializePeriodDebounce();
     this.loadReportData();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
+  private initializePeriodDebounce(): void {
+    const sub = this.periodChange$
+      .pipe(debounceTime(300))
+      .subscribe(() => this.loadReportData());
+
+    this.subscriptions.add(sub);
+  }
+
   private initializeChartOptions(): void {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color');
-    const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
-    const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
+    const textColor = '#1f2937';
+    const textColorSecondary = '#6b7280';
+    const surfaceBorder = '#e5e7eb';
 
     this.commonChartOptions = {
       maintainAspectRatio: false,
@@ -132,7 +177,7 @@ export class ReportComponent implements OnInit {
           ticks: {
             color: textColorSecondary,
             font: { size: 11 },
-            callback: (value: any) => `${value}M`,
+            callback: (value: any) => this.formatChartValue(value),
           },
           grid: {
             color: surfaceBorder,
@@ -155,8 +200,24 @@ export class ReportComponent implements OnInit {
             padding: 15,
           },
         },
+        tooltip: {
+          callbacks: {
+            label: (context: any) => {
+              const label = context.label || '';
+              const value = context.parsed || 0;
+              return `${label}: ${value.toFixed(2)}M đ`;
+            },
+          },
+        },
       },
     };
+  }
+
+  private formatChartValue(value: number): string {
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}B`;
+    }
+    return `${value}M`;
   }
 
   onPeriodChange(): void {
@@ -164,12 +225,18 @@ export class ReportComponent implements OnInit {
       this.showCustomDate = true;
     } else {
       this.showCustomDate = false;
-      this.loadReportData();
+      this.customDateFrom = '';
+      this.customDateTo = '';
+      this.periodChange$.next();
     }
   }
 
   onDateRangeSelect(): void {
     if (this.customDateFrom && this.customDateTo) {
+      if (this.customDateFrom > this.customDateTo) {
+        this.showNotification('error', 'Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+        return;
+      }
       this.loadReportData();
     }
   }
@@ -177,58 +244,77 @@ export class ReportComponent implements OnInit {
   private loadReportData(): void {
     this.loading = true;
 
-    const params =
-      this.selectedPeriod === 'custom'
-        ? {
-            period: 'custom',
-            date_from: this.customDateFrom,
-            date_to: this.customDateTo,
-          }
-        : { period: this.selectedPeriod };
+    const params = this.buildRequestParams();
 
-    this.service.getBusinessReport(params).subscribe(
-      (rs: any) => {
-        this.loading = false;
-        if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.processReportData(rs.response);
-          this.initializeCharts();
-        } else {
-          this.showError('Không thể tải báo cáo');
-        }
-      },
-      (error: any) => {
-        this.loading = false;
-        this.showError('Lỗi hệ thống');
-      }
-    );
+    const sub = this.service
+      .getBusinessReport(params)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (rs: any) => {
+          if (rs.status === ConstantDef.STATUS_SUCCESS) {
+            this.processReportData(rs.response);
+            this.updateCharts();
+          } else {
+            this.showNotification('error', rs.response?.error_message_vn || 'Không thể tải báo cáo');
+          }
+        },
+        error: (error: any) => {
+          console.error('Report loading error:', error);
+          this.showNotification('error', 'Lỗi hệ thống khi tải báo cáo');
+        },
+      });
+
+    this.subscriptions.add(sub);
+  }
+
+  private buildRequestParams(): any {
+    if (this.selectedPeriod === 'custom') {
+      return {
+        period: 'custom',
+        date_from: this.customDateFrom,
+        date_to: this.customDateTo,
+      };
+    }
+    return { period: this.selectedPeriod };
   }
 
   private processReportData(data: any): void {
-    this.totalRevenue = data.total_revenue || 0;
-    this.totalProfit = data.total_profit || 0;
-    this.totalOrders = data.orders_count || 0;
-    this.profitMargin = data.profit_margin || 0;
+    this.summary = {
+      totalRevenue: data.total_revenue || 0,
+      totalProfit: data.total_profit || 0,
+      totalOrders: data.orders_count || 0,
+      profitMargin: data.profit_margin || 0,
+    };
 
-    this.revenueGrowth = data.revenue_growth || 0;
-    this.profitGrowth = data.profit_growth || 0;
-    this.orderGrowth = data.order_growth || 0;
-    this.marginGrowth = data.margin_growth || 0;
+    this.growth = {
+      revenue: data.revenue_growth || 0,
+      profit: data.profit_growth || 0,
+      order: data.order_growth || 0,
+      margin: data.margin_growth || 0,
+    };
 
-    this.revenueComparison = data.revenue_comparison || 0;
-    this.profitComparison = data.profit_comparison || 0;
-    this.orderComparison = data.order_comparison || 0;
+    this.comparison = {
+      revenue: data.revenue_comparison || 0,
+      profit: data.profit_comparison || 0,
+      order: data.order_comparison || 0,
+    };
 
     this.topProducts = data.top_products || [];
     this.monthlyRevenueData = data.monthly_revenue || [];
   }
 
-  private initializeCharts(): void {
-    this.initRevenueChart();
-    this.initProfitChart();
-    this.initTopProductsChart();
+  private updateCharts(): void {
+    this.updateRevenueChart();
+    this.updateProfitChart();
+    this.updateTopProductsChart();
   }
 
-  private initRevenueChart(): void {
+  private updateRevenueChart(): void {
+    if (this.monthlyRevenueData.length === 0) {
+      this.revenueChartData = this.getEmptyChartData('Doanh thu (M đ)');
+      return;
+    }
+
     const labels = this.monthlyRevenueData.map((item) => item.month);
     const data = this.monthlyRevenueData.map((item) => item.revenue / 1000000);
 
@@ -236,45 +322,63 @@ export class ReportComponent implements OnInit {
       labels,
       datasets: [
         {
-          label: 'Doanh thu',
+          label: 'Doanh thu (M đ)',
           data,
           fill: true,
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          borderColor: '#22c55e',
+          backgroundColor: 'rgba(22, 163, 74, 0.1)',
+          borderColor: '#16a34a',
           borderWidth: 2,
           tension: 0.4,
-          pointBackgroundColor: '#22c55e',
+          pointBackgroundColor: '#16a34a',
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           pointRadius: 4,
+          pointHoverRadius: 6,
         },
       ],
     };
   }
 
-  private initProfitChart(): void {
+  private updateProfitChart(): void {
+    if (this.monthlyRevenueData.length === 0) {
+      this.profitChartData = this.getEmptyChartData('Lợi nhuận (M đ)');
+      return;
+    }
+
     const labels = this.monthlyRevenueData.map((item) => item.month);
-    const data = this.monthlyRevenueData.map((item) => (item.revenue * 0.3) / 1000000);
+    const profitData = this.monthlyRevenueData.map((item) => {
+      const profit = this.summary.totalProfit / this.monthlyRevenueData.length;
+      return profit / 1000000;
+    });
 
     this.profitChartData = {
       labels,
       datasets: [
         {
-          label: 'Lợi nhuận',
-          data,
-          backgroundColor: '#22c55e',
-          borderColor: '#22c55e',
+          label: 'Lợi nhuận (M đ)',
+          data: profitData,
+          backgroundColor: '#16a34a',
+          borderColor: '#16a34a',
           borderWidth: 1,
+          borderRadius: 4,
+          hoverBackgroundColor: '#15803d',
         },
       ],
     };
   }
 
-  private initTopProductsChart(): void {
-    const labels = this.topProducts.slice(0, 5).map((item) => item.name);
-    const data = this.topProducts.slice(0, 5).map((item) => item.revenue / 1000000);
+  private updateTopProductsChart(): void {
+    if (this.topProducts.length === 0) {
+      this.topProductsChartData = this.getEmptyChartData('Sản phẩm');
+      return;
+    }
 
-    const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+    const topFive = this.topProducts.slice(0, 5);
+    const labels = topFive.map((item) => item.name);
+    const data = topFive.map((item) => item.revenue / 1000000);
+
+    const colors = ['#16a34a', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+    const hoverColors = ['#15803d', '#2563eb', '#d97706', '#db2777', '#7c3aed'];
 
     this.topProductsChartData = {
       labels,
@@ -282,132 +386,133 @@ export class ReportComponent implements OnInit {
         {
           data,
           backgroundColor: colors,
-          hoverBackgroundColor: colors.map((c) => c.replace('1', '0.8')),
+          hoverBackgroundColor: hoverColors,
+          borderWidth: 0,
+        },
+      ],
+    };
+  }
+
+  private getEmptyChartData(label: string): any {
+    return {
+      labels: ['Không có dữ liệu'],
+      datasets: [
+        {
+          label,
+          data: [0],
+          backgroundColor: '#e5e7eb',
+          borderColor: '#d1d5db',
         },
       ],
     };
   }
 
   exportExcel(): void {
-    if (!this.topProducts.length) {
-      this.showError('Không có dữ liệu để xuất');
+    if (!this.topProducts.length && this.summary.totalRevenue === 0) {
+      this.showNotification('warn', 'Không có dữ liệu để xuất');
       return;
     }
 
-    const dataForExport = [
-      {
-        'Chỉ tiêu': 'Tổng doanh thu',
-        'Giá trị': `${(this.totalRevenue / 1000000).toFixed(2)}M đ`,
-      },
-      {
-        'Chỉ tiêu': 'Tổng lợi nhuận',
-        'Giá trị': `${(this.totalProfit / 1000000).toFixed(2)}M đ`,
-      },
-      {
-        'Chỉ tiêu': 'Tỷ suất lợi nhuận',
-        'Giá trị': `${this.profitMargin.toFixed(2)}%`,
-      },
-      { 'Chỉ tiêu': '', 'Giá trị': '' },
-      ...this.topProducts.map((product, index) => ({
-        STT: index + 1,
-        'Tên sản phẩm': product.name,
-        'Số lượng': product.quantity,
-        'Doanh thu': `${(product.revenue / 1000000).toFixed(2)}M đ`,
-      })),
-    ];
+    this.exporting = true;
 
-    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
-    ws['!cols'] = [{ wch: 25 }, { wch: 20 }];
+    setTimeout(() => {
+      try {
+        const wb: XLSX.WorkBook = XLSX.utils.book_new();
 
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Báo cáo kinh doanh');
+        this.addSummarySheet(wb);
 
-    const fileName = `BaoCao_KinhDoanh_${new Date().toISOString().slice(0, 10)}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+        if (this.topProducts.length > 0) {
+          this.addTopProductsSheet(wb);
+        }
 
-    this.showSuccess('Xuất báo cáo Excel thành công!');
+        if (this.monthlyRevenueData.length > 0) {
+          this.addMonthlyRevenueSheet(wb);
+        }
+
+        const fileName = `BaoCao_KinhDoanh_${this.formatDateForFile()}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        this.showNotification('success', `Đã xuất báo cáo: ${fileName}`);
+      } catch (error) {
+        console.error('Export error:', error);
+        this.showNotification('error', 'Có lỗi khi xuất file Excel');
+      } finally {
+        this.exporting = false;
+      }
+    }, 100);
   }
 
-  exportPDF(): void {
-    // 1. Lấy element HTML bằng ID bạn đã đặt
-    const reportElement = document.getElementById('reportContent');
+  private addSummarySheet(wb: XLSX.WorkBook): void {
+    const summaryData = [
+      { 'Chỉ tiêu': 'Tổng doanh thu', 'Giá trị': `${(this.summary.totalRevenue).toLocaleString('vi-VN')} đ` },
+      { 'Chỉ tiêu': 'Tổng lợi nhuận', 'Giá trị': `${(this.summary.totalProfit).toLocaleString('vi-VN')} đ` },
+      { 'Chỉ tiêu': 'Tổng đơn hàng', 'Giá trị': this.summary.totalOrders },
+      { 'Chỉ tiêu': 'Tỷ suất lợi nhuận', 'Giá trị': `${this.summary.profitMargin.toFixed(2)}%` },
+      { 'Chỉ tiêu': '', 'Giá trị': '' },
+      { 'Chỉ tiêu': 'Tăng trưởng doanh thu', 'Giá trị': `${this.growth.revenue.toFixed(1)}%` },
+      { 'Chỉ tiêu': 'Tăng trưởng lợi nhuận', 'Giá trị': `${this.growth.profit.toFixed(1)}%` },
+      { 'Chỉ tiêu': 'Tăng trưởng đơn hàng', 'Giá trị': `${this.growth.order.toFixed(1)}%` },
+    ];
 
-    if (!reportElement) {
-      this.showError('Không tìm thấy nội dung báo cáo để xuất.');
-      return;
-    }
+    const ws = XLSX.utils.json_to_sheet(summaryData);
+    ws['!cols'] = [{ wch: 25 }, { wch: 25 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Tổng quan');
+  }
 
-    this.loading = true;
+  private addTopProductsSheet(wb: XLSX.WorkBook): void {
+    if (this.topProducts.length === 0) return;
 
-    // 2. Dùng html2canvas để "chụp ảnh" element
-    html2canvas(reportElement, {
-      scale: 2, // Tăng gấp đôi chất lượng ảnh
-      useCORS: true, // Cho phép tải ảnh từ các nguồn khác (nếu có)
-    })
-      .then((canvas) => {
-        try {
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = canvas.width;
-          const imgHeight = canvas.height;
+    const productsData = this.topProducts.map((product, index) => ({
+      'STT': index + 1,
+      'Tên sản phẩm': product.name,
+      'SKU': product.sku,
+      'Số lượng': product.quantity,
+      'Doanh thu': `${(product.revenue).toLocaleString('vi-VN')} đ`,
+    }));
 
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfPageWidth = pdf.internal.pageSize.getWidth();
-          const pdfPageHeight = pdf.internal.pageSize.getHeight();
+    const ws = XLSX.utils.json_to_sheet(productsData);
+    ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Top sản phẩm');
+  }
 
-          const margin = 10;
-          const usableWidth = pdfPageWidth - margin * 2;
-          const usableHeight = pdfPageHeight - margin * 2;
+  private addMonthlyRevenueSheet(wb: XLSX.WorkBook): void {
+    if (this.monthlyRevenueData.length === 0) return;
 
-          const ratio = usableWidth / imgWidth;
-          const scaledImgHeight = imgHeight * ratio;
+    const monthlyData = this.monthlyRevenueData.map((data, index) => ({
+      'STT': index + 1,
+      'Tháng': data.month,
+      'Doanh thu': `${(data.revenue).toLocaleString('vi-VN')} đ`,
+      'Số đơn hàng': data.orders || '-',
+    }));
 
-          let heightLeft = scaledImgHeight;
-          let position = 0;
-          pdf.addImage(imgData, 'PNG', margin, margin, usableWidth, scaledImgHeight);
-          heightLeft -= usableHeight;
-          while (heightLeft > 0) {
-            position -= usableHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', margin, position + margin, usableWidth, scaledImgHeight);
-            heightLeft -= usableHeight;
-          }
+    const ws = XLSX.utils.json_to_sheet(monthlyData);
+    ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 20 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Doanh thu theo tháng');
+  }
 
-          const fileName = `BaoCao_KinhDoanh_${new Date().toISOString().slice(0, 10)}.pdf`;
-          pdf.save(fileName);
-
-          this.showSuccess('Xuất báo cáo PDF thành công!');
-        } catch (e) {
-          console.error('Lỗi khi tạo PDF:', e);
-          this.showError('Có lỗi xảy ra khi tạo file PDF.');
-        } finally {
-          this.loading = false;
-        }
-      })
-      .catch((err) => {
-        console.error('Lỗi html2canvas:', err);
-        this.showError('Không thể chụp ảnh màn hình báo cáo.');
-        this.loading = false;
-      });
+  private formatDateForFile(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   printReport(): void {
     window.print();
   }
 
-  private showSuccess(message: string): void {
-    this.message.add({
-      severity: 'success',
-      summary: 'Thành công',
-      detail: message,
-      life: 3000,
-    });
+  refreshData(): void {
+    this.loadReportData();
   }
 
-  private showError(message: string): void {
+  private showNotification(severity: 'success' | 'error' | 'warn', detail: string): void {
+    const summaryMap: Record<string, string> = {
+      success: 'Thành công',
+      error: 'Lỗi',
+      warn: 'Cảnh báo',
+    };
+
     this.message.add({
-      severity: 'error',
-      summary: 'Lỗi',
-      detail: message,
+      severity,
+      summary: summaryMap[severity],
+      detail,
       life: 3000,
     });
   }

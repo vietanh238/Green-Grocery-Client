@@ -1,11 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
+import { Subject, Subscription, forkJoin } from 'rxjs';
+import { debounceTime, finalize } from 'rxjs/operators';
+
 import { TableModule } from 'primeng/table';
 import { Select } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
@@ -59,24 +63,49 @@ interface StockFilter {
   imports: [CommonModule, FormsModule, TableModule, Select, ToastModule],
   standalone: true,
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent implements OnInit, OnDestroy {
+  private subscriptions = new Subscription();
+  private searchSubject$ = new Subject<string>();
+
   products: Product[] = [];
   filteredProducts: Product[] = [];
   filterCategories: Category[] = [];
-  stockFilters: StockFilter[] = [
+
+  readonly stockFilters: StockFilter[] = [
     { name: 'Tất cả', code: 'all' },
     { name: 'Còn hàng', code: 'in_stock' },
     { name: 'Sắp hết', code: 'low_stock' },
     { name: 'Hết hàng', code: 'out_stock' },
   ];
 
-  searchText: string = '';
+  readonly units = [
+    { name: 'Cái', code: 0 },
+    { name: 'Lon', code: 1 },
+    { name: 'Chai', code: 2 },
+    { name: 'Hộp', code: 3 },
+    { name: 'Gói', code: 4 },
+    { name: 'Vỉ', code: 5 },
+    { name: 'Cây', code: 6 },
+    { name: 'Quả', code: 7 },
+    { name: 'Bịch', code: 8 },
+    { name: 'Gram', code: 9 },
+    { name: 'Kilogram', code: 10 },
+    { name: 'Lạng', code: 11 },
+    { name: 'Mililít', code: 12 },
+    { name: 'Lít', code: 13 },
+    { name: 'Thùng', code: 14 },
+    { name: 'Bao', code: 15 },
+    { name: 'Bó', code: 16 },
+  ];
+
+  searchText = '';
   selectedFilterCategory: Category | null = null;
   selectedStockFilter: StockFilter | null = null;
-  loading: boolean = false;
+  loading = false;
+  exporting = false;
 
-  reorderCount: number = 0;
-  outOfStockCount: number = 0;
+  reorderCount = 0;
+  outOfStockCount = 0;
 
   constructor(
     private dialog: MatDialog,
@@ -86,81 +115,108 @@ export class ProductsComponent implements OnInit {
 
   ngOnInit(): void {
     this.getProducts();
+    this.setupSearchListener();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    this.searchSubject$.complete();
+  }
+
+  private setupSearchListener(): void {
+    const subscription = this.searchSubject$
+      .pipe(debounceTime(300))
+      .subscribe(() => this.applyFilters());
+
+    this.subscriptions.add(subscription);
   }
 
   getProducts(params?: any): void {
     this.loading = true;
-    this.service.getProducts(params).subscribe({
-      next: (rs: any) => {
-        this.loading = false;
-        if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.products = rs.response || [];
-          this.filteredProducts = [...this.products];
-          this.updateFilterCategories();
-          this.calculateStats();
-        } else {
-          this.showError('Không thể tải danh sách sản phẩm');
-        }
-      },
-      error: () => {
-        this.loading = false;
-        this.showError('Lỗi hệ thống');
-      },
-    });
+
+    const subscription = this.service
+      .getProducts(params)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.status === ConstantDef.STATUS_SUCCESS) {
+            this.products = response.response || [];
+            this.updateFilterCategories();
+            this.calculateStats();
+            this.applyFilters();
+          } else {
+            this.showError('Không thể tải danh sách sản phẩm');
+          }
+        },
+        error: (error: any) => {
+          console.error('Load products error:', error);
+          this.showError('Lỗi kết nối khi tải sản phẩm');
+        },
+      });
+
+    this.subscriptions.add(subscription);
   }
 
-  updateFilterCategories(): void {
-    const categories = new Set(this.products.map((p) => p.name_category).filter((cat) => cat));
-    this.filterCategories = Array.from(categories).map((cat, index) => ({
-      name: cat,
-      code: index.toString(),
-    }));
+  private updateFilterCategories(): void {
+    const uniqueCategories = new Set(
+      this.products.map((p) => p.name_category).filter(Boolean)
+    );
+
+    this.filterCategories = Array.from(uniqueCategories)
+      .sort()
+      .map((name) => ({
+        name,
+        code: name.toLowerCase().replace(/\s+/g, '_'),
+      }));
   }
 
-  calculateStats(): void {
+  private calculateStats(): void {
     this.reorderCount = this.products.filter(
       (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point
     ).length;
+
     this.outOfStockCount = this.products.filter((p) => p.stock_quantity === 0).length;
   }
 
   openAddProductDialog(): void {
-    this.service.getCategories().subscribe((catData: any) => {
-      this.service.getSuppliers().subscribe((supData: any) => {
-        const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
-          width: '90vw',
-          maxWidth: '900px',
-          disableClose: true,
-          data: {
-            isEditMode: false,
-            lstCategory: catData.status === ConstantDef.STATUS_SUCCESS ? catData.response.data : [],
-            lstUnit: this.getUnits(),
-            lstSupplier: supData.status === ConstantDef.STATUS_SUCCESS ? supData.response : [],
-          },
-        });
-        dialogRef.afterClosed().subscribe((result) => {
-          if (result) this.getProducts();
-        });
+    this.loadCategoriesAndSuppliers((categories, suppliers) => {
+      const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
+        width: '90vw',
+        maxWidth: '900px',
+        disableClose: true,
+        data: {
+          isEditMode: false,
+          lstCategory: categories,
+          lstUnit: this.units,
+          lstSupplier: suppliers,
+        },
       });
+
+      const subscription = dialogRef.afterClosed().subscribe((result) => {
+        if (result) this.getProducts();
+      });
+
+      this.subscriptions.add(subscription);
     });
   }
 
   openBulkImportDialog(): void {
-    this.service.getCategories().subscribe((catData: any) => {
-      this.service.getSuppliers().subscribe((supData: any) => {
-        const dialogRef = this.dialog.open(BulkImportDialogComponent, {
-          width: '90vw',
-          maxWidth: '800px',
-          disableClose: true,
-          data: {
-            lstCategory: catData.status === ConstantDef.STATUS_SUCCESS ? catData.response.data : [],
-            lstSupplier: supData.status === ConstantDef.STATUS_SUCCESS ? supData.response : [],
-          },
-        });
-        dialogRef.afterClosed().subscribe((result) => {
-          if (result) this.getProducts();
-        });
+    this.loadCategoriesAndSuppliers((categories, suppliers) => {
+      const dialogRef = this.dialog.open(BulkImportDialogComponent, {
+        width: '90vw',
+        maxWidth: '800px',
+        disableClose: true,
+        data: {
+          lstCategory: categories,
+          lstSupplier: suppliers,
+        },
       });
+
+      const subscription = dialogRef.afterClosed().subscribe((result) => {
+        if (result) this.getProducts();
+      });
+
+      this.subscriptions.add(subscription);
     });
   }
 
@@ -168,7 +224,7 @@ export class ProductsComponent implements OnInit {
     this.dialog.open(SupplierDialogComponent, {
       width: '900px',
       maxWidth: '95vw',
-      disableClose: false
+      disableClose: false,
     });
   }
 
@@ -176,66 +232,112 @@ export class ProductsComponent implements OnInit {
     const dialogRef = this.dialog.open(PurchaseOrderDialogComponent, {
       width: '1100px',
       maxWidth: '95vw',
-      disableClose: true
+      disableClose: true,
     });
 
-    dialogRef.afterClosed().subscribe((result) => {
+    const subscription = dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.showSuccess('Đơn đặt hàng đã được tạo thành công');
-        this.getProducts(); // Refresh products list
+        this.getProducts();
       }
     });
+
+    this.subscriptions.add(subscription);
   }
 
   editProduct(product: Product): void {
-    this.service.getCategories().subscribe((catData: any) => {
-      this.service.getSuppliers().subscribe((supData: any) => {
-        const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
-          width: '90vw',
-          maxWidth: '900px',
-          disableClose: true,
-          data: {
-            isEditMode: true,
-            product,
-            lstCategory: catData.status === ConstantDef.STATUS_SUCCESS ? catData.response.data : [],
-            lstUnit: this.getUnits(),
-            lstSupplier: supData.status === ConstantDef.STATUS_SUCCESS ? supData.response : [],
-          },
-        });
-        dialogRef.afterClosed().subscribe((result) => {
-          if (result) this.getProducts();
-        });
+    this.loadCategoriesAndSuppliers((categories, suppliers) => {
+      const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
+        width: '90vw',
+        maxWidth: '900px',
+        disableClose: true,
+        data: {
+          isEditMode: true,
+          product,
+          lstCategory: categories,
+          lstUnit: this.units,
+          lstSupplier: suppliers,
+        },
       });
+
+      const subscription = dialogRef.afterClosed().subscribe((result) => {
+        if (result) this.getProducts();
+      });
+
+      this.subscriptions.add(subscription);
     });
   }
 
+  private loadCategoriesAndSuppliers(callback: (categories: any[], suppliers: any[]) => void): void {
+    const subscription = forkJoin({
+      categories: this.service.getCategories(),
+      suppliers: this.service.getSuppliers(),
+    }).subscribe({
+      next: (result) => {
+        const categories = result.categories.status === ConstantDef.STATUS_SUCCESS
+          ? result.categories.response.data
+          : [];
+        const suppliers = result.suppliers.status === ConstantDef.STATUS_SUCCESS
+          ? result.suppliers.response
+          : [];
+
+        callback(categories, suppliers);
+      },
+      error: (error) => {
+        console.error('Load categories and suppliers error:', error);
+        this.showError('Không thể tải danh mục và nhà cung cấp');
+      },
+    });
+
+    this.subscriptions.add(subscription);
+  }
+
   confirmDelete(product: Product): void {
-    const barCode = product.bar_code || '';
-    if (barCode) {
-      const dialog = this.dialog.open(ConfirmDialogComponent, {
-        disableClose: true,
-        data: {
-          title: 'Xác nhận xóa sản phẩm',
-          message: `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`,
-          buttons: [
-            { label: 'Hủy', class: 'default', value: false, color: '', background: '' },
-            { label: 'Xóa', class: 'warn', value: true, color: '', background: '' },
-          ],
-        },
-      });
-      dialog.afterClosed().subscribe((result: any) => {
-        if (result) {
-          this.service.deleteProduct(barCode).subscribe((rs: any) => {
-            if (rs.status === ConstantDef.STATUS_SUCCESS) {
-              this.showSuccess('Xóa sản phẩm thành công');
-              this.getProducts();
-            } else {
-              this.showError('Không thể xóa sản phẩm');
-            }
-          });
-        }
-      });
+    const barCode = product.bar_code;
+
+    if (!barCode) {
+      this.showError('Không tìm thấy mã sản phẩm');
+      return;
     }
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      disableClose: true,
+      data: {
+        title: 'Xác nhận xóa sản phẩm',
+        message: `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`,
+        buttons: [
+          { label: 'Hủy', class: 'default', value: false, color: '', background: '' },
+          { label: 'Xóa', class: 'warn', value: true, color: '', background: '' },
+        ],
+      },
+    });
+
+    const subscription = dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.deleteProduct(barCode);
+      }
+    });
+
+    this.subscriptions.add(subscription);
+  }
+
+  private deleteProduct(barCode: string): void {
+    const subscription = this.service.deleteProduct(barCode).subscribe({
+      next: (response: any) => {
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          this.showSuccess('Xóa sản phẩm thành công');
+          this.getProducts();
+        } else {
+          this.showError(response.message || 'Không thể xóa sản phẩm');
+        }
+      },
+      error: (error: any) => {
+        console.error('Delete product error:', error);
+        this.showError('Lỗi khi xóa sản phẩm');
+      },
+    });
+
+    this.subscriptions.add(subscription);
   }
 
   viewDetail(product: Product): void {
@@ -247,7 +349,7 @@ export class ProductsComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.applyFilters();
+    this.searchSubject$.next(this.searchText);
   }
 
   clearSearch(): void {
@@ -259,88 +361,117 @@ export class ProductsComponent implements OnInit {
     this.applyFilters();
   }
 
-  applyFilters(): void {
+  private applyFilters(): void {
     let filtered = [...this.products];
 
-    if (this.searchText) {
-      const search = this.searchText.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(search) ||
-          p.sku.toLowerCase().includes(search) ||
-          (p.bar_code && p.bar_code.toLowerCase().includes(search)) ||
-          (p.primary_supplier_name && p.primary_supplier_name.toLowerCase().includes(search))
-      );
-    }
-
-    if (this.selectedFilterCategory) {
-      filtered = filtered.filter((p) => p.name_category === this.selectedFilterCategory!.name);
-    }
-
-    if (this.selectedStockFilter && this.selectedStockFilter.code !== 'all') {
-      switch (this.selectedStockFilter.code) {
-        case 'in_stock':
-          filtered = filtered.filter((p) => p.stock_quantity > p.reorder_point);
-          break;
-        case 'low_stock':
-          filtered = filtered.filter(
-            (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point
-          );
-          break;
-        case 'out_stock':
-          filtered = filtered.filter((p) => p.stock_quantity === 0);
-          break;
-      }
-    }
+    filtered = this.applySearchFilter(filtered);
+    filtered = this.applyCategoryFilter(filtered);
+    filtered = this.applyStockFilter(filtered);
 
     this.filteredProducts = filtered;
   }
 
+  private applySearchFilter(products: Product[]): Product[] {
+    if (!this.searchText) return products;
+
+    const searchTerm = this.searchText.toLowerCase().trim();
+
+    return products.filter((product) => {
+      const searchableFields = [
+        product.name,
+        product.sku,
+        product.bar_code,
+        product.primary_supplier_name,
+        product.name_category,
+      ];
+
+      return searchableFields.some((field) =>
+        field?.toLowerCase().includes(searchTerm)
+      );
+    });
+  }
+
+  private applyCategoryFilter(products: Product[]): Product[] {
+    if (!this.selectedFilterCategory) return products;
+
+    return products.filter(
+      (product) => product.name_category === this.selectedFilterCategory!.name
+    );
+  }
+
+  private applyStockFilter(products: Product[]): Product[] {
+    if (!this.selectedStockFilter || this.selectedStockFilter.code === 'all') {
+      return products;
+    }
+
+    const filterMap: Record<string, (p: Product) => boolean> = {
+      in_stock: (p) => p.stock_quantity > p.reorder_point,
+      low_stock: (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point,
+      out_stock: (p) => p.stock_quantity === 0,
+    };
+
+    const filterFn = filterMap[this.selectedStockFilter.code];
+    return filterFn ? products.filter(filterFn) : products;
+  }
+
   exportExcel(): void {
-    if (!this.filteredProducts || this.filteredProducts.length === 0) {
+    if (!this.filteredProducts?.length) {
       this.showError('Không có dữ liệu để xuất');
       return;
     }
 
-    const dataForExport = this.filteredProducts.map((product, index) => ({
-      STT: index + 1,
-      'Tên sản phẩm': product.name,
-      SKU: product.sku,
-      Barcode: product.bar_code || '',
-      'Phân loại': product.name_category,
-      'Nhà cung cấp': product.primary_supplier_name || '',
-      'Giá nhập': product.cost_price,
-      'Giá bán': product.price,
-      'Tồn kho': product.stock_quantity,
-      'Điểm đặt lại': product.reorder_point,
-      'Đơn vị': product.unit,
-      'Trạng thái': this.getStockStatusText(product),
-    }));
+    if (this.exporting) return;
 
-    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
-    const colWidths = [
-      { wch: 5 },
-      { wch: 40 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 25 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 10 },
-      { wch: 12 },
-      { wch: 10 },
-      { wch: 15 },
-    ];
-    ws['!cols'] = colWidths;
+    this.exporting = true;
 
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'SanPham');
+    setTimeout(() => {
+      try {
+        const dataForExport = this.filteredProducts.map((product, index) => ({
+          STT: index + 1,
+          'Tên sản phẩm': product.name,
+          SKU: product.sku,
+          Barcode: product.bar_code || '',
+          'Phân loại': product.name_category,
+          'Nhà cung cấp': product.primary_supplier_name || '',
+          'Giá nhập': product.cost_price,
+          'Giá bán': product.price,
+          'Tồn kho': product.stock_quantity,
+          'Điểm đặt lại': product.reorder_point,
+          'Đơn vị': product.unit,
+          'Trạng thái': this.getStockStatusText(product),
+        }));
 
-    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    XLSX.writeFile(wb, `DanhSach_SanPham_${timestamp}.xlsx`);
+        const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataForExport);
+        worksheet['!cols'] = [
+          { wch: 5 },
+          { wch: 40 },
+          { wch: 15 },
+          { wch: 15 },
+          { wch: 20 },
+          { wch: 25 },
+          { wch: 15 },
+          { wch: 15 },
+          { wch: 10 },
+          { wch: 12 },
+          { wch: 10 },
+          { wch: 15 },
+        ];
 
-    this.showSuccess('Xuất Excel thành công');
+        const workbook: XLSX.WorkBook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'SanPham');
+
+        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const fileName = `DanhSach_SanPham_${timestamp}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+
+        this.showSuccess('Xuất Excel thành công');
+      } catch (error) {
+        console.error('Export Excel error:', error);
+        this.showError('Không thể xuất file Excel');
+      } finally {
+        this.exporting = false;
+      }
+    }, 100);
   }
 
   getRowClass(product: Product): string {
@@ -367,42 +498,20 @@ export class ProductsComponent implements OnInit {
     return 'Còn hàng';
   }
 
-  private getUnits(): any[] {
-    return [
-      { name: 'Lon', code: 0 },
-      { name: 'Chai', code: 1 },
-      { name: 'Hộp', code: 2 },
-      { name: 'Gói', code: 3 },
-      { name: 'Vỉ', code: 4 },
-      { name: 'Cây', code: 5 },
-      { name: 'Quả', code: 6 },
-      { name: 'Bịch', code: 7 },
-      { name: 'Gram', code: 8 },
-      { name: 'Kilogram', code: 9 },
-      { name: 'Lạng', code: 10 },
-      { name: 'Mililít', code: 11 },
-      { name: 'Lít', code: 12 },
-      { name: 'Thùng', code: 13 },
-      { name: 'Bao', code: 14 },
-      { name: 'Bó', code: 15 },
-    ];
-  }
-
   private showSuccess(detail: string): void {
-    this.message.add({
-      severity: 'success',
-      summary: 'Thông báo',
-      detail,
-      life: 3000,
-    });
+    this.showNotification('success', 'Thành công', detail);
   }
 
   private showError(detail: string): void {
+    this.showNotification('error', 'Lỗi', detail);
+  }
+
+  private showNotification(severity: 'success' | 'error' | 'info', summary: string, detail: string): void {
     this.message.add({
-      severity: 'error',
-      summary: 'Thông báo',
+      severity,
+      summary,
       detail,
-      life: 3000,
+      life: severity === 'error' ? 5000 : 3000,
     });
   }
 }
