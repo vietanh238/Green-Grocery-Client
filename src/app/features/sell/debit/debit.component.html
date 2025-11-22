@@ -1,73 +1,84 @@
-<div class="debit-container">
+<div class="debit-dialog">
   <div class="dialog-header">
-    <h4 class="dialog-title">
+    <div class="header-content">
       <i class="pi pi-book"></i>
-      Ghi nợ khách hàng
-    </h4>
+      <h2>Ghi nợ khách hàng</h2>
+    </div>
     <button class="close-btn" (click)="closeDialog()">
       <i class="pi pi-times"></i>
     </button>
   </div>
 
   <div class="dialog-body">
-    <div class="amount-display">
-      <div class="amount-label">Tổng tiền cần thanh toán</div>
-      <div class="amount-value">{{ formatCurrency(totalAmount) }}</div>
+    <div class="total-badge">
+      <div class="badge-label">Tổng tiền cần thanh toán</div>
+      <div class="badge-amount">{{ formatCurrency(totalAmount) }}</div>
     </div>
 
     <form [formGroup]="debitForm">
       <div class="form-group">
-        <label for="customerName" class="form-label">
-          Tên khách hàng <span class="required">*</span>
+        <label class="form-label">
+          Tên khách hàng
+          <span class="required">*</span>
         </label>
-        <div class="input-icon-wrapper">
-          <i class="pi pi-user input-icon"></i>
+        <div class="input-wrapper">
+          <i class="pi pi-user"></i>
           <input
-            id="customerName"
             type="text"
-            class="form-control with-icon"
+            class="form-input"
             formControlName="customerName"
             placeholder="Nhập tên khách hàng"
-            [class.is-invalid]="isFieldInvalid('customerName')"
+            [class.error]="isFieldInvalid('customerName')"
           />
         </div>
-        <div class="error-message" *ngIf="isFieldInvalid('customerName')">
-          Vui lòng nhập tên khách hàng (tối thiểu 2 ký tự)
-        </div>
+        @if (isFieldInvalid('customerName')) {
+          <span class="error-text">
+            <i class="pi pi-exclamation-circle"></i>
+            Vui lòng nhập tên khách hàng (tối thiểu 2 ký tự)
+          </span>
+        }
       </div>
 
       <div class="form-group">
-        <label for="phoneNumber" class="form-label">
-          Số điện thoại <span class="required">*</span>
+        <label class="form-label">
+          Số điện thoại
+          <span class="required">*</span>
         </label>
-        <div class="input-icon-wrapper">
-          <i class="pi pi-phone input-icon"></i>
+        <div class="input-wrapper">
+          <i class="pi pi-phone"></i>
           <input
-            id="phoneNumber"
             type="tel"
-            class="form-control with-icon"
+            class="form-input"
             formControlName="phoneNumber"
             placeholder="Nhập số điện thoại"
             maxlength="11"
-            [class.is-invalid]="isFieldInvalid('phoneNumber')"
+            [class.error]="isFieldInvalid('phoneNumber')"
           />
         </div>
-        <div class="error-message" *ngIf="isFieldInvalid('phoneNumber')">
-          Số điện thoại không hợp lệ (10-11 số)
-        </div>
+        @if (isFieldInvalid('phoneNumber')) {
+          <span class="error-text">
+            <i class="pi pi-exclamation-circle"></i>
+            Số điện thoại không hợp lệ (10-11 số)
+          </span>
+        }
+        @if (customerExists && !isFieldInvalid('phoneNumber')) {
+          <span class="success-text">
+            <i class="pi pi-check-circle"></i>
+            Tìm thấy khách hàng trong hệ thống
+          </span>
+        }
       </div>
 
       <div class="form-group">
-        <label for="address" class="form-label">
+        <label class="form-label">
           Địa chỉ
           <span class="optional">(Tùy chọn)</span>
         </label>
-        <div class="input-icon-wrapper">
-          <i class="pi pi-map-marker input-icon"></i>
+        <div class="input-wrapper">
+          <i class="pi pi-map-marker"></i>
           <input
-            id="address"
             type="text"
-            class="form-control with-icon"
+            class="form-input"
             formControlName="address"
             placeholder="Nhập địa chỉ khách hàng"
           />
@@ -75,50 +86,51 @@
       </div>
 
       <div class="form-group">
-        <label for="debitAmount" class="form-label">
-          Số tiền ghi nợ <span class="required">*</span>
+        <label class="form-label">
+          Số tiền ghi nợ
+          <span class="required">*</span>
         </label>
-        <div class="price-input-wrapper">
-          <i class="pi pi-money-bill input-icon"></i>
+        <div class="price-wrapper">
+          <i class="pi pi-money-bill"></i>
           <input
-            id="debitAmount"
             type="number"
-            class="form-control with-icon"
+            class="form-input price-input"
             formControlName="debitAmount"
             placeholder="0"
             min="0"
             [max]="totalAmount"
             step="1000"
-            [class.is-invalid]="isFieldInvalid('debitAmount')"
+            [class.error]="isFieldInvalid('debitAmount')"
           />
           <span class="currency">₫</span>
         </div>
-        <div class="amount-helper">
-          <button type="button" class="quick-amount-btn" (click)="setDebitAmount(totalAmount)">
-            Ghi nợ toàn bộ
-          </button>
-        </div>
-        <div class="error-message" *ngIf="isFieldInvalid('debitAmount')">
-          <span *ngIf="debitForm.get('debitAmount')?.hasError('required')">
-            Vui lòng nhập số tiền ghi nợ
+        <button type="button" class="quick-btn full-debt" (click)="setDebitAmount(totalAmount)">
+          <i class="pi pi-dollar"></i>
+          Ghi nợ toàn bộ
+        </button>
+        @if (isFieldInvalid('debitAmount')) {
+          <span class="error-text">
+            <i class="pi pi-exclamation-circle"></i>
+            @if (debitForm.get('debitAmount')?.hasError('required')) {
+              Vui lòng nhập số tiền ghi nợ
+            }
+            @if (debitForm.get('debitAmount')?.hasError('min')) {
+              Số tiền phải lớn hơn 0
+            }
+            @if (debitForm.get('debitAmount')?.hasError('max')) {
+              Số tiền không được vượt quá tổng đơn hàng
+            }
           </span>
-          <span *ngIf="debitForm.get('debitAmount')?.hasError('min')">
-            Số tiền phải lớn hơn 0
-          </span>
-          <span *ngIf="debitForm.get('debitAmount')?.hasError('max')">
-            Số tiền không được vượt quá tổng đơn hàng
-          </span>
-        </div>
+        }
       </div>
 
       <div class="form-group">
-        <label for="paidAmount" class="form-label"> Số tiền đã trả </label>
-        <div class="price-input-wrapper readonly">
-          <i class="pi pi-wallet input-icon"></i>
+        <label class="form-label">Số tiền đã trả</label>
+        <div class="price-wrapper readonly">
+          <i class="pi pi-wallet"></i>
           <input
-            id="paidAmount"
             type="text"
-            class="form-control with-icon"
+            class="form-input price-input"
             [value]="formatCurrency(paidAmount)"
             readonly
           />
@@ -126,16 +138,15 @@
       </div>
 
       <div class="form-group">
-        <label for="dueDate" class="form-label">
+        <label class="form-label">
           Ngày hẹn trả
           <span class="optional">(Tùy chọn)</span>
         </label>
-        <div class="input-icon-wrapper">
-          <i class="pi pi-calendar input-icon"></i>
+        <div class="input-wrapper">
+          <i class="pi pi-calendar"></i>
           <input
-            id="dueDate"
             type="date"
-            class="form-control with-icon"
+            class="form-input"
             formControlName="dueDate"
             [min]="minDate"
           />
@@ -143,13 +154,12 @@
       </div>
 
       <div class="form-group">
-        <label for="note" class="form-label">
+        <label class="form-label">
           Ghi chú
           <span class="optional">(Tùy chọn)</span>
         </label>
         <textarea
-          id="note"
-          class="form-control textarea"
+          class="form-input textarea"
           formControlName="note"
           placeholder="Thêm ghi chú về khoản nợ này..."
           rows="3"
@@ -157,35 +167,47 @@
       </div>
     </form>
 
-    <div class="summary-box">
+    <div class="summary">
+      <div class="summary-header">
+        <i class="pi pi-file-check"></i>
+        <span>Tổng kết</span>
+      </div>
       <div class="summary-row">
-        <span class="summary-label">
+        <span class="label">
           <i class="pi pi-shopping-cart"></i>
           Tổng đơn hàng:
         </span>
-        <span class="summary-value">{{ formatCurrency(totalAmount) }}</span>
+        <span class="value">{{ formatCurrency(totalAmount) }}</span>
       </div>
       <div class="summary-row highlight">
-        <span class="summary-label">
+        <span class="label">
           <i class="pi pi-book"></i>
           Số tiền ghi nợ:
         </span>
-        <span class="summary-value debit">
-          {{ formatCurrency(debitForm.get('debitAmount')?.value || 0) }}
-        </span>
+        <span class="value debt">{{ formatCurrency(debitForm.get('debitAmount')?.value || 0) }}</span>
       </div>
       <div class="summary-row">
-        <span class="summary-label">
+        <span class="label">
           <i class="pi pi-wallet"></i>
           Đã thanh toán:
         </span>
-        <span class="summary-value paid">{{ formatCurrency(paidAmount) }}</span>
+        <span class="value paid">{{ formatCurrency(paidAmount) }}</span>
       </div>
     </div>
   </div>
 
-  <div class="dialog-footer d-flex justify-content-between align-items-center">
-    <p-button label="Hủy" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Xác nhận ghi nợ" [disabled]="!debitForm.valid" (click)="saveDebit()" />
+  <div class="dialog-footer">
+    <button class="btn btn-cancel" (click)="closeDialog()">
+      <i class="pi pi-times"></i>
+      <span>Hủy</span>
+    </button>
+    <button
+      class="btn btn-save"
+      [disabled]="!debitForm.valid || isLoading"
+      (click)="saveDebit()"
+    >
+      <i class="pi" [class.pi-spin]="isLoading" [class.pi-spinner]="isLoading" [class.pi-check]="!isLoading"></i>
+      <span>{{ isLoading ? 'Đang xử lý...' : 'Xác nhận ghi nợ' }}</span>
+    </button>
   </div>
 </div>

@@ -1,21 +1,23 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
+import { MessageService } from 'primeng/api';
+import { Subscription } from 'rxjs';
+
 import { PanelModule } from 'primeng/panel';
 import { ButtonModule } from 'primeng/button';
-import { FormsModule } from '@angular/forms';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { CardComponent } from '../../component/card/card.component';
+import { Skeleton } from 'primeng/skeleton';
+
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
-import { MessageService } from 'primeng/api';
-import { CommonModule } from '@angular/common';
-import { MatDialog } from '@angular/material/dialog';
+import { CardComponent } from '../../component/card/card.component';
 import { ScannerComponent } from '../../component/scanner/scanner.component';
-import { Skeleton } from 'primeng/skeleton';
 import { PaymentQrDialogComponent } from '../../component/qrpay/qrpay.component';
 import { AddManualOrder } from './addManualOrder/addManualOrder.component';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 import { DebitComponent } from './debit/debit.component';
-import { Subscription } from 'rxjs';
 
 interface CartItem {
   id: number;
@@ -61,14 +63,18 @@ interface Product {
   ],
 })
 export class SellComponent implements OnInit, OnDestroy {
+  @ViewChild('searchInput') searchInput?: ElementRef;
+
   products: Product[] = [];
   cartItems: CartItem[] = [];
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
-  isProductNotFound: boolean = false;
-  searchTerm: string = '';
-  loading: boolean = true;
-  isProcessingPayment: boolean = false;
+
+  searchTerm = '';
+  loading = false;
+  isProcessingPayment = false;
+  isProductNotFound = false;
+
   private paymentSuccessSubscription?: Subscription;
   private processingProducts = new Set<string>();
 
@@ -87,38 +93,6 @@ export class SellComponent implements OnInit, OnDestroy {
     this.paymentSuccessSubscription?.unsubscribe();
   }
 
-  private subscribeToPaymentSuccess(): void {
-    // Websocket subscription for real-time payment updates
-    this.paymentSuccessSubscription = this.service.paymentSuccess$.subscribe((data: any) => {
-      if (data && data.success) {
-        this.handlePaymentSuccess(data.data);
-      }
-    });
-  }
-
-  loadProducts(): void {
-    this.loading = true;
-    this.service.getProducts().subscribe(
-      (rs: any) => {
-        this.loading = false;
-        if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.products = rs.response.map((product: any) => ({
-            ...product,
-            original_stock_quantity: product.stock_quantity,
-          }));
-          this.allProducts = [...this.products];
-          this.filteredProducts = [...this.products];
-        } else {
-          this.showError('Không thể tải danh sách sản phẩm');
-        }
-      },
-      (error: any) => {
-        this.loading = false;
-        this.showError('Lỗi kết nối khi tải sản phẩm');
-      }
-    );
-  }
-
   get totalAmount(): number {
     return this.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }
@@ -135,93 +109,27 @@ export class SellComponent implements OnInit, OnDestroy {
     return this.cartItems.length;
   }
 
-  increaseQuantity(item: CartItem): void {
-    const product = this.findProductByBarcode(item.bar_code);
-    if (!product) {
-      this.showError('Không tìm thấy sản phẩm trong kho');
-      return;
-    }
-
-    if (product.stock_quantity > 0) {
-      item.quantity++;
-      this.updateProductStock(product.bar_code, -1);
-    } else {
-      this.showError('Sản phẩm đã hết hàng trong kho');
-    }
-  }
-
-  decreaseQuantity(item: CartItem): void {
-    if (item.quantity > 1) {
-      item.quantity--;
-      this.updateProductStock(item.bar_code, 1);
-    } else {
-      this.removeItem(item);
-    }
-  }
-
-  removeItem(item: CartItem): void {
-    this.updateProductStock(item.bar_code, item.quantity);
-    this.cartItems = this.cartItems.filter((i) => i.bar_code !== item.bar_code);
-    this.showSuccess('Đã xóa sản phẩm khỏi giỏ hàng');
-  }
-
-  handleAddToCart(product: Product): void {
-    // Prevent double-click/rapid clicks on same product
-    if (this.processingProducts.has(product.bar_code)) {
-      console.log('⚠️ Preventing duplicate add for:', product.name);
-      return;
-    }
-
-    if (this.isProcessingPayment) {
-      return;
-    }
-
-    if (product.stock_quantity <= 0) {
-      this.showError('Sản phẩm đã hết hàng');
-      return;
-    }
-
-    // Mark as processing
-    this.processingProducts.add(product.bar_code);
-
-    try {
-      const existingItem = this.cartItems.find((item) => item.bar_code === product.bar_code);
-
-      if (existingItem) {
-        // Only increase if stock allows
-        if (product.stock_quantity > 0) {
-          console.log('📦 Updating existing item:', product.name, 'Stock before:', product.stock_quantity);
-          existingItem.quantity++;
-          this.updateProductStock(product.bar_code, -1);
-          console.log('📦 Stock after:', product.stock_quantity);
-          this.showSuccess(`Đã cập nhật số lượng ${product.name}`);
+  loadProducts(): void {
+    this.loading = true;
+    this.service.getProducts().subscribe({
+      next: (response: any) => {
+        this.loading = false;
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          this.products = response.response.map((product: any) => ({
+            ...product,
+            original_stock_quantity: product.stock_quantity,
+          }));
+          this.allProducts = [...this.products];
+          this.filteredProducts = [...this.products];
         } else {
-          this.showError('Sản phẩm đã hết hàng trong kho');
+          this.showNotification('error', 'Không thể tải danh sách sản phẩm');
         }
-      } else {
-        // Add new item to cart
-        console.log('➕ Adding new item:', product.name, 'Stock before:', product.stock_quantity);
-        this.cartItems.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity: 1,
-          sku: product.sku,
-          bar_code: product.bar_code,
-          stock_quantity: product.stock_quantity,
-          unit: product.unit,
-          cost_price: product.cost_price,
-        });
-        this.updateProductStock(product.bar_code, -1);
-        console.log('➕ Stock after:', product.stock_quantity);
-        this.showSuccess(`Đã thêm ${product.name} vào giỏ hàng`);
-      }
-    } finally {
-      // Release lock after a short delay to prevent rapid clicks
-      setTimeout(() => {
-        this.processingProducts.delete(product.bar_code);
-      }, 300);
-    }
+      },
+      error: () => {
+        this.loading = false;
+        this.showNotification('error', 'Lỗi kết nối khi tải sản phẩm');
+      },
+    });
   }
 
   filterProducts(event: any): void {
@@ -244,6 +152,105 @@ export class SellComponent implements OnInit, OnDestroy {
     this.isProductNotFound = this.filteredProducts.length === 0;
   }
 
+  handleAddToCart(product: Product): void {
+    if (this.processingProducts.has(product.bar_code) || this.isProcessingPayment) {
+      return;
+    }
+
+    if (product.stock_quantity <= 0) {
+      this.showNotification('error', 'Sản phẩm đã hết hàng');
+      return;
+    }
+
+    this.processingProducts.add(product.bar_code);
+
+    try {
+      const existingItem = this.cartItems.find((item) => item.bar_code === product.bar_code);
+
+      if (existingItem) {
+        if (product.stock_quantity > 0) {
+          existingItem.quantity++;
+          this.updateProductStock(product.bar_code, -1);
+          this.showNotification('success', `Đã cập nhật số lượng ${product.name}`);
+        } else {
+          this.showNotification('error', 'Sản phẩm đã hết hàng trong kho');
+        }
+      } else {
+        this.cartItems.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          sku: product.sku,
+          bar_code: product.bar_code,
+          stock_quantity: product.stock_quantity,
+          unit: product.unit,
+          cost_price: product.cost_price,
+        });
+        this.updateProductStock(product.bar_code, -1);
+        this.showNotification('success', `Đã thêm ${product.name} vào giỏ hàng`);
+      }
+    } finally {
+      setTimeout(() => {
+        this.processingProducts.delete(product.bar_code);
+      }, 300);
+    }
+  }
+
+  increaseQuantity(item: CartItem): void {
+    const product = this.findProductByBarcode(item.bar_code);
+    if (!product) {
+      this.showNotification('error', 'Không tìm thấy sản phẩm trong kho');
+      return;
+    }
+
+    if (product.stock_quantity > 0) {
+      item.quantity++;
+      this.updateProductStock(product.bar_code, -1);
+    } else {
+      this.showNotification('error', 'Sản phẩm đã hết hàng trong kho');
+    }
+  }
+
+  decreaseQuantity(item: CartItem): void {
+    if (item.quantity > 1) {
+      item.quantity--;
+      this.updateProductStock(item.bar_code, 1);
+    } else {
+      this.removeItem(item);
+    }
+  }
+
+  removeItem(item: CartItem): void {
+    this.updateProductStock(item.bar_code, item.quantity);
+    this.cartItems = this.cartItems.filter((i) => i.bar_code !== item.bar_code);
+    this.showNotification('success', 'Đã xóa sản phẩm khỏi giỏ hàng');
+  }
+
+  clearCart(): void {
+    if (this.cartItems.length === 0) {
+      this.showNotification('info', 'Giỏ hàng đã trống');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Xác nhận xóa giỏ hàng',
+        message: 'Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?',
+        confirmText: 'Xóa',
+        cancelText: 'Hủy',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.resetCart();
+        this.showNotification('success', 'Đã xóa toàn bộ giỏ hàng');
+      }
+    });
+  }
+
   openScanner(): void {
     const dialogRef = this.dialog.open(ScannerComponent, {
       width: '400px',
@@ -255,7 +262,6 @@ export class SellComponent implements OnInit, OnDestroy {
         this.searchTerm = result;
         this.filterProducts({ target: { value: result } });
 
-        // Auto add to cart if product found
         const product = this.allProducts.find((p) => p.bar_code === result);
         if (product) {
           this.handleAddToCart(product);
@@ -276,45 +282,21 @@ export class SellComponent implements OnInit, OnDestroy {
 
         if (existingItem) {
           existingItem.quantity += result.quantity;
-          this.showSuccess('Đã cập nhật số lượng sản phẩm');
+          this.showNotification('success', 'Đã cập nhật số lượng sản phẩm');
         } else {
           this.cartItems.push({
             ...result,
             isManual: true,
           });
-          this.showSuccess(`Đã thêm ${result.name} vào giỏ hàng`);
+          this.showNotification('success', `Đã thêm ${result.name} vào giỏ hàng`);
         }
-      }
-    });
-  }
-
-  clearCart(): void {
-    if (this.cartItems.length === 0) {
-      this.showInfo('Giỏ hàng đã trống');
-      return;
-    }
-
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Xác nhận xóa giỏ hàng',
-        message: 'Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?',
-        confirmText: 'Xóa',
-        cancelText: 'Hủy',
-      },
-    });
-
-    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (confirmed) {
-        this.resetCart();
-        this.showSuccess('Đã xóa toàn bộ giỏ hàng');
       }
     });
   }
 
   cashPayment(): void {
     if (this.cartItems.length === 0) {
-      this.showError('Giỏ hàng trống');
+      this.showNotification('error', 'Giỏ hàng trống');
       return;
     }
 
@@ -337,31 +319,36 @@ export class SellComponent implements OnInit, OnDestroy {
       payment_method: 'cash',
     };
 
-    this.service.cashPayment(paymentData).subscribe(
-      (rs: any) => {
+    this.service.cashPayment(paymentData).subscribe({
+      next: (response: any) => {
         this.isProcessingPayment = false;
-        if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.handlePaymentSuccess(rs.response);
-          this.showSuccess('Thanh toán tiền mặt thành công');
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          this.handlePaymentSuccess(response.response);
+          this.showNotification('success', 'Thanh toán tiền mặt thành công');
         } else {
-          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || rs.error_message || 'Thanh toán thất bại';
-          this.showError(errorMsg);
+          const errorMsg =
+            response.response?.error_message_vn ||
+            response.response?.error_message_us ||
+            response.error_message ||
+            'Thanh toán thất bại';
+          this.showNotification('error', errorMsg);
         }
       },
-      (error: any) => {
+      error: (error: any) => {
         this.isProcessingPayment = false;
-        const errorMsg = error?.error?.response?.error_message_vn ||
-                        error?.error?.response?.error_message_us ||
-                        error?.error?.message ||
-                        'Lỗi kết nối khi thanh toán';
-        this.showError(errorMsg);
-      }
-    );
+        const errorMsg =
+          error?.error?.response?.error_message_vn ||
+          error?.error?.response?.error_message_us ||
+          error?.error?.message ||
+          'Lỗi kết nối khi thanh toán';
+        this.showNotification('error', errorMsg);
+      },
+    });
   }
 
   createPaymentQR(): void {
     if (this.cartItems.length === 0) {
-      this.showError('Giỏ hàng trống');
+      this.showNotification('error', 'Giỏ hàng trống');
       return;
     }
 
@@ -378,14 +365,14 @@ export class SellComponent implements OnInit, OnDestroy {
       if (result?.success) {
         this.handlePaymentSuccess(result.data);
       } else if (result?.cancel) {
-        this.showInfo('Đã hủy mã QR thanh toán');
+        this.showNotification('info', 'Đã hủy mã QR thanh toán');
       }
     });
   }
 
   createDebit(): void {
     if (this.cartItems.length === 0) {
-      this.showError('Giỏ hàng trống');
+      this.showNotification('error', 'Giỏ hàng trống');
       return;
     }
 
@@ -401,23 +388,34 @@ export class SellComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe((result: any) => {
       if (result?.success) {
         this.handlePaymentSuccess(result.data);
-        this.showSuccess(`Đã ghi nợ thành công cho ${result.customer.name}`);
+        this.showNotification('success', `Đã ghi nợ thành công cho ${result.customer.name}`);
+      }
+    });
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount);
+  }
+
+  private subscribeToPaymentSuccess(): void {
+    this.paymentSuccessSubscription = this.service.paymentSuccess$.subscribe((data: any) => {
+      if (data && data.success) {
+        this.handlePaymentSuccess(data.data);
       }
     });
   }
 
   private handlePaymentSuccess(paymentData: any): void {
-    // Reset cart and update product stocks
     this.cartItems = [];
-
-    // Reload products to get updated stock quantities
     this.loadProducts();
 
-    // Show success message with transaction details
     if (paymentData.order_code) {
-      this.showSuccess(`Thanh toán thành công - Mã đơn: ${paymentData.order_code}`);
+      this.showNotification('success', `Thanh toán thành công - Mã đơn: ${paymentData.order_code}`);
     } else {
-      this.showSuccess('Thanh toán thành công');
+      this.showNotification('success', 'Thanh toán thành công');
     }
   }
 
@@ -426,15 +424,9 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   private updateProductStock(barCode: string, delta: number): void {
-    // All arrays (products, allProducts, filteredProducts) share the same object references
-    // So we only need to update once in any of them
     const product = this.allProducts.find((p) => p.bar_code === barCode);
     if (product) {
-      const oldStock = product.stock_quantity;
       product.stock_quantity = Math.max(0, product.stock_quantity + delta);
-      console.log(`🔄 updateProductStock: ${barCode}, delta: ${delta}, old: ${oldStock}, new: ${product.stock_quantity}`);
-    } else {
-      console.error(`❌ Product not found in updateProductStock: ${barCode}`);
     }
   }
 
@@ -447,37 +439,18 @@ export class SellComponent implements OnInit, OnDestroy {
     this.cartItems = [];
   }
 
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount);
-  }
+  private showNotification(severity: 'success' | 'error' | 'info', detail: string): void {
+    const summaryMap = {
+      success: 'Thành công',
+      error: 'Lỗi',
+      info: 'Thông tin',
+    };
 
-  private showSuccess(message: string): void {
     this.message.add({
-      severity: 'success',
-      summary: 'Thành công',
-      detail: message,
-      life: 3000,
-    });
-  }
-
-  private showError(message: string): void {
-    this.message.add({
-      severity: 'error',
-      summary: 'Lỗi',
-      detail: message,
-      life: 5000,
-    });
-  }
-
-  private showInfo(message: string): void {
-    this.message.add({
-      severity: 'info',
-      summary: 'Thông tin',
-      detail: message,
-      life: 3000,
+      severity,
+      summary: summaryMap[severity],
+      detail,
+      life: severity === 'error' ? 5000 : 3000,
     });
   }
 }

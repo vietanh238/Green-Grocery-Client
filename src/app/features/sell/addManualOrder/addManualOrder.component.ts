@@ -5,6 +5,11 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 
+interface Unit {
+  name: string;
+  code: string;
+}
+
 @Component({
   selector: 'app-manual-order',
   templateUrl: './addManualOrder.component.html',
@@ -14,28 +19,16 @@ import { SelectModule } from 'primeng/select';
 })
 export class AddManualOrder implements OnInit {
   manualOrderForm!: FormGroup;
-  lstUnit: any[] = [];
+  lstUnit: Unit[] = [];
 
-  constructor(private fb: FormBuilder, private dialogRef: MatDialogRef<AddManualOrder>) {}
+  constructor(
+    private fb: FormBuilder,
+    private dialogRef: MatDialogRef<AddManualOrder>
+  ) {}
 
   ngOnInit(): void {
-    this.initForm();
-    this.getOptsUnit();
-  }
-
-  private initForm(): void {
-    this.manualOrderForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
-      quantity: [1, [Validators.required, Validators.min(0.01)]],
-      unit: [null, [Validators.required]],
-      price: ['', [Validators.required, Validators.min(1)]],
-      note: [''],
-    });
-
-    // Auto-calculate total when quantity or price changes
-    this.manualOrderForm.valueChanges.subscribe(() => {
-      // Trigger change detection for total amount display
-    });
+    this.initializeForm();
+    this.initializeUnits();
   }
 
   get totalAmount(): number {
@@ -56,38 +49,55 @@ export class AddManualOrder implements OnInit {
     }).format(amount);
   }
 
+  setPrice(price: number): void {
+    this.manualOrderForm.patchValue({ price });
+  }
+
+  setQuantity(quantity: number): void {
+    this.manualOrderForm.patchValue({ quantity });
+  }
+
   closeDialog(): void {
     this.dialogRef.close();
   }
 
   saveManualOrder(): void {
-    if (this.manualOrderForm.valid) {
-      const formValue = this.manualOrderForm.value;
-
-      const manualProduct = {
-        id: Date.now(),
-        sku: `MANUAL-${Date.now()}`,
-        bar_code: `MANUAL-${Date.now()}`,
-        name: formValue.name.trim(),
-        price: parseFloat(formValue.price),
-        quantity: parseFloat(formValue.quantity),
-        unit: formValue.unit.name,
-        note: formValue.note?.trim() || '',
-        isManual: true,
-        stock_quantity: 999, // Infinite stock for manual products
-        cost_price: parseFloat(formValue.price) * 0.7, // Estimate cost price
-      };
-
-      this.dialogRef.close(manualProduct);
-    } else {
-      // Mark all fields as touched to show validation errors
-      Object.keys(this.manualOrderForm.controls).forEach((key) => {
-        this.manualOrderForm.get(key)?.markAsTouched();
-      });
+    if (this.manualOrderForm.invalid) {
+      this.markAllFieldsAsTouched();
+      return;
     }
+
+    const formValue = this.manualOrderForm.value;
+    const timestamp = Date.now();
+
+    const manualProduct = {
+      id: timestamp,
+      sku: `MANUAL-${timestamp}`,
+      bar_code: `MANUAL-${timestamp}`,
+      name: formValue.name.trim(),
+      price: parseFloat(formValue.price),
+      quantity: parseFloat(formValue.quantity),
+      unit: formValue.unit.name,
+      note: formValue.note?.trim() || '',
+      isManual: true,
+      stock_quantity: 999,
+      cost_price: parseFloat(formValue.price) * 0.7,
+    };
+
+    this.dialogRef.close(manualProduct);
   }
 
-  private getOptsUnit() {
+  private initializeForm(): void {
+    this.manualOrderForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      quantity: [1, [Validators.required, Validators.min(0.01)]],
+      unit: [null, [Validators.required]],
+      price: ['', [Validators.required, Validators.min(1)]],
+      note: [''],
+    });
+  }
+
+  private initializeUnits(): void {
     this.lstUnit = [
       { name: 'Cái', code: 'piece' },
       { name: 'Chiếc', code: 'item' },
@@ -111,19 +121,14 @@ export class AddManualOrder implements OnInit {
       { name: 'Centimét', code: 'cm' },
     ];
 
-    // Set default unit to 'Cái'
     this.manualOrderForm.patchValue({
       unit: this.lstUnit.find((unit) => unit.code === 'piece'),
     });
   }
 
-  // Quick price buttons
-  setPrice(price: number): void {
-    this.manualOrderForm.patchValue({ price: price });
-  }
-
-  // Quick quantity buttons
-  setQuantity(quantity: number): void {
-    this.manualOrderForm.patchValue({ quantity: quantity });
+  private markAllFieldsAsTouched(): void {
+    Object.keys(this.manualOrderForm.controls).forEach((key) => {
+      this.manualOrderForm.get(key)?.markAsTouched();
+    });
   }
 }
