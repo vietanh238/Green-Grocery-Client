@@ -25,7 +25,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   max-width: 550px;
-  width: calc(100vw - 32px);
+  width: 100%;
   max-height: 90vh;
   background: $white;
   border-radius: 16px;
@@ -132,6 +132,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
 .form-group {
   margin-bottom: 20px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .form-label {
@@ -193,6 +195,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
 .form-input {
   width: 100%;
+  max-width: 100%;
   height: 48px;
   padding: 0 48px;
   border: 2px solid $gray-200;
@@ -202,6 +205,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   color: $gray-800;
   background: $white;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
@@ -421,7 +425,8 @@ textarea.form-input {
 
 @media (max-width: 768px) {
   .debit-dialog {
-    width: calc(100vw - 24px);
+    width: 100%;
+    max-width: calc(100vw - 24px);
     max-height: 95vh;
   }
 
@@ -458,7 +463,8 @@ textarea.form-input {
 
 @media (max-width: 480px) {
   .debit-dialog {
-    width: calc(100vw - 16px);
+    width: 100%;
+    max-width: calc(100vw - 16px);
   }
 
   .dialog-header {

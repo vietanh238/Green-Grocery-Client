@@ -255,6 +255,7 @@ export class SellComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ScannerComponent, {
       width: '400px',
       maxWidth: '95vw',
+      panelClass: 'custom-dialog-panel',
     });
 
     dialogRef.afterClosed().subscribe((result: string) => {
@@ -274,6 +275,7 @@ export class SellComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(AddManualOrder, {
       width: '500px',
       maxWidth: '95vw',
+      panelClass: 'custom-dialog-panel',
     });
 
     dialogRef.afterClosed().subscribe((result: any) => {
@@ -355,6 +357,7 @@ export class SellComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(PaymentQrDialogComponent, {
       width: '500px',
       maxWidth: '95vw',
+      panelClass: 'custom-dialog-panel',
       data: {
         amount: this.totalAmount,
         cartItems: this.cartItems,
@@ -379,6 +382,7 @@ export class SellComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(DebitComponent, {
       width: '500px',
       maxWidth: '95vw',
+      panelClass: 'custom-dialog-panel',
       data: {
         totalAmount: this.totalAmount,
         cartItems: this.cartItems,

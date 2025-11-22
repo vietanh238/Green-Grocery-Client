@@ -202,3 +202,17 @@ input[type='number'] {
     }
   }
 }
+
+// Custom Dialog với transparent background
+// Chỉ áp dụng cho dialog có class 'custom-dialog-panel'
+.custom-dialog-panel {
+  .mat-mdc-dialog-surface {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .mdc-dialog__surface {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}

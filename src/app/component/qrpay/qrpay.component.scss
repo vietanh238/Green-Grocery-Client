@@ -41,16 +41,15 @@ $shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.3);
 .qr-dialog-container {
   border-radius: 24px;
   max-width: 550px;
-  width: calc(100vw - 32px);
+  width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: $shadow-xl;
   animation: slideUp 0.3s ease;
-  background: $white;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 0px;
   }
 
   &::-webkit-scrollbar-track {
@@ -225,7 +224,11 @@ $shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 
   &.success {
-    background: linear-gradient(135deg, $primary-green-light 0%, lighten($primary-green-light, 5%) 100%);
+    background: linear-gradient(
+      135deg,
+      $primary-green-light 0%,
+      lighten($primary-green-light, 5%) 100%
+    );
     color: $dark-green;
     box-shadow: 0 4px 12px rgba($primary-green, 0.2);
 
@@ -600,11 +603,12 @@ $shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.3);
 
 @media (max-width: 768px) {
   .qr-dialog-overlay {
-    padding: 10px;
+    padding: 12px;
   }
 
   .qr-dialog-container {
-    width: calc(100vw - 24px);
+    width: 100%;
+    max-width: calc(100vw - 24px);
     max-height: 95vh;
   }
 
@@ -725,8 +729,13 @@ $shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 480px) {
+  .qr-dialog-overlay {
+    padding: 8px;
+  }
+
   .qr-dialog-container {
-    width: calc(100vw - 16px);
+    width: 100%;
+    max-width: calc(100vw - 16px);
   }
 
   .dialog-header {

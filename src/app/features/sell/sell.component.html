@@ -10,9 +10,12 @@
         #searchInput
       />
       @if (searchTerm) {
-        <button class="clear-search" (click)="searchTerm = ''; filterProducts({ target: { value: '' } })">
-          <i class="pi pi-times"></i>
-        </button>
+      <button
+        class="clear-search"
+        (click)="searchTerm = ''; filterProducts({ target: { value: '' } })"
+      >
+        <i class="pi pi-times"></i>
+      </button>
       }
     </div>
 
@@ -21,7 +24,7 @@
         <i class="pi pi-camera"></i>
         <span>Quét mã</span>
       </button>
-      <button class="btn-icon manual-btn" (click)="addManualOrder()" title="Thêm sản phẩm thủ công">
+      <button class="btn-icon scan-btn" (click)="addManualOrder()" title="Thêm sản phẩm thủ công">
         <i class="pi pi-plus-circle"></i>
         <span>Thêm thủ công</span>
       </button>
@@ -48,26 +51,29 @@
 
       <div class="panel-body">
         @if (loading) {
-          <div class="loading-grid">
-            @for (i of [1, 2, 3, 4, 5, 6]; track i) {
-              <p-skeleton height="140px" borderRadius="12px"></p-skeleton>
-            }
-          </div>
+        <div class="loading-grid">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <p-skeleton height="140px" borderRadius="12px"></p-skeleton>
+          }
+        </div>
         } @else if (isProductNotFound) {
-          <div class="empty-state">
-            <i class="pi pi-search"></i>
-            <h3>Không tìm thấy sản phẩm</h3>
-            <p>Không có sản phẩm nào phù hợp với từ khóa "{{ searchTerm }}"</p>
-            <button class="btn-primary" (click)="searchTerm = ''; filterProducts({ target: { value: '' } })">
-              Xem tất cả sản phẩm
-            </button>
-          </div>
+        <div class="empty-state">
+          <i class="pi pi-search"></i>
+          <h3>Không tìm thấy sản phẩm</h3>
+          <p>Không có sản phẩm nào phù hợp với từ khóa "{{ searchTerm }}"</p>
+          <button
+            class="btn-primary"
+            (click)="searchTerm = ''; filterProducts({ target: { value: '' } })"
+          >
+            Xem tất cả sản phẩm
+          </button>
+        </div>
         } @else {
-          <div class="products-grid">
-            @for (product of filteredProducts; track product.id) {
-              <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
-            }
-          </div>
+        <div class="products-grid">
+          @for (product of filteredProducts; track product.id) {
+          <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
+          }
+        </div>
         }
       </div>
     </div>
@@ -91,91 +97,91 @@
 
       <div class="panel-body cart-body">
         @if (cartItems.length === 0) {
-          <div class="empty-cart">
-            <div class="empty-icon">
-              <i class="pi pi-shopping-cart"></i>
-            </div>
-            <h3>Giỏ hàng trống</h3>
-            <p>Thêm sản phẩm để bắt đầu thanh toán</p>
+        <div class="empty-cart">
+          <div class="empty-icon">
+            <i class="pi pi-shopping-cart"></i>
           </div>
+          <h3>Giỏ hàng trống</h3>
+          <p>Thêm sản phẩm để bắt đầu thanh toán</p>
+        </div>
         } @else {
-          <div class="cart-list">
-            @for (item of cartItems; track item.bar_code) {
-              <div class="cart-item">
-                <div class="item-info">
-                  <div class="item-name">{{ item.name }}</div>
-                  <div class="item-meta">
-                    <span class="meta-item">
-                      <i class="pi pi-tag"></i>
-                      {{ item.sku }}
-                    </span>
-                    @if (item.isManual) {
-                      <span class="badge badge-warning">Thủ công</span>
-                    }
-                  </div>
-                  <div class="item-price">{{ formatCurrency(item.price) }} / {{ item.unit || 'cái' }}</div>
-                </div>
-
-                <div class="item-actions">
-                  <div class="quantity-control">
-                    <button
-                      class="qty-btn"
-                      (click)="decreaseQuantity(item)"
-                      [disabled]="item.quantity <= 1"
-                    >
-                      <i class="pi pi-minus"></i>
-                    </button>
-                    <span class="qty-value">{{ item.quantity }}</span>
-                    <button class="qty-btn" (click)="increaseQuantity(item)">
-                      <i class="pi pi-plus"></i>
-                    </button>
-                  </div>
-
-                  <div class="item-total">{{ formatCurrency(item.price * item.quantity) }}</div>
-
-                  <button class="btn-remove" (click)="removeItem(item)">
-                    <i class="pi pi-trash"></i>
-                  </button>
-                </div>
+        <div class="cart-list">
+          @for (item of cartItems; track item.bar_code) {
+          <div class="cart-item">
+            <div class="item-info">
+              <div class="item-name">{{ item.name }}</div>
+              <div class="item-meta">
+                <span class="meta-item">
+                  <i class="pi pi-tag"></i>
+                  {{ item.sku }}
+                </span>
+                @if (item.isManual) {
+                <span class="badge badge-warning">Thủ công</span>
+                }
               </div>
-            }
+              <div class="item-price">
+                {{ formatCurrency(item.price) }} / {{ item.unit || 'cái' }}
+              </div>
+            </div>
+
+            <div class="item-actions">
+              <div class="quantity-control">
+                <button
+                  class="qty-btn"
+                  (click)="decreaseQuantity(item)"
+                  [disabled]="item.quantity <= 1"
+                >
+                  <i class="pi pi-minus"></i>
+                </button>
+                <span class="qty-value">{{ item.quantity }}</span>
+                <button class="qty-btn" (click)="increaseQuantity(item)">
+                  <i class="pi pi-plus"></i>
+                </button>
+              </div>
+
+              <div class="item-total">{{ formatCurrency(item.price * item.quantity) }}</div>
+
+              <button class="btn-remove" (click)="removeItem(item)">
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
           </div>
+          }
+        </div>
         }
       </div>
 
       @if (cartItems.length > 0) {
-        <div class="cart-footer">
-          <div class="summary">
-            <div class="summary-row">
-              <span class="label">Tổng cộng:</span>
-              <span class="value">{{ formatCurrency(totalAmount) }}</span>
-            </div>
-            <div class="summary-meta">
-              {{ totalItemsCount }} sản phẩm • {{ cartItemsCount }} món
-            </div>
+      <div class="cart-footer">
+        <div class="summary">
+          <div class="summary-row">
+            <span class="label">Tổng cộng:</span>
+            <span class="value">{{ formatCurrency(totalAmount) }}</span>
           </div>
-
-          <div class="payment-buttons">
-            <button
-              class="btn-payment btn-cash"
-              (click)="cashPayment()"
-              [disabled]="isProcessingPayment"
-            >
-              <i class="pi pi-money-bill"></i>
-              <span>{{ isProcessingPayment ? 'Đang xử lý...' : 'Tiền mặt' }}</span>
-            </button>
-
-            <button class="btn-payment btn-qr" (click)="createPaymentQR()">
-              <i class="pi pi-qrcode"></i>
-              <span>QR Code</span>
-            </button>
-
-            <button class="btn-payment btn-debt" (click)="createDebit()">
-              <i class="pi pi-book"></i>
-              <span>Ghi nợ</span>
-            </button>
-          </div>
+          <div class="summary-meta">{{ totalItemsCount }} sản phẩm • {{ cartItemsCount }} món</div>
         </div>
+
+        <div class="payment-buttons">
+          <button
+            class="btn-payment btn-cash"
+            (click)="cashPayment()"
+            [disabled]="isProcessingPayment"
+          >
+            <i class="pi pi-money-bill"></i>
+            <span>{{ isProcessingPayment ? 'Đang xử lý...' : 'Tiền mặt' }}</span>
+          </button>
+
+          <button class="btn-payment btn-qr" (click)="createPaymentQR()">
+            <i class="pi pi-qrcode"></i>
+            <span>QR Code</span>
+          </button>
+
+          <button class="btn-payment btn-debt" (click)="createDebit()">
+            <i class="pi pi-book"></i>
+            <span>Ghi nợ</span>
+          </button>
+        </div>
+      </div>
       }
     </div>
   </div>
