@@ -99,24 +99,32 @@ export class AiReorderComponent implements OnInit {
     this.chartOptions = {
       maintainAspectRatio: false,
       responsive: true,
+      cutout: '65%',
       plugins: {
         legend: {
-          position: 'bottom',
+          position: 'right',
           labels: {
-            color: '#1f2937',
-            font: { size: 11 },
+            color: '#374151',
+            font: { size: 12, family: "'Inter', sans-serif" },
             usePointStyle: true,
-            padding: 10,
+            boxWidth: 8,
+            padding: 15,
           },
         },
         tooltip: {
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          titleColor: '#111827',
+          bodyColor: '#4b5563',
+          borderColor: '#e5e7eb',
+          borderWidth: 1,
+          padding: 10,
+          displayColors: true,
           callbacks: {
             label: (context: any) => {
-              const label = context.label || '';
               const value = context.parsed || 0;
               const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return `${label}: ${value} SP (${percentage}%)`;
+              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+              return ` ${context.label}: ${value} SP (${percentage}%)`;
             },
           },
         },
@@ -177,30 +185,19 @@ export class AiReorderComponent implements OnInit {
       this.summary.low_urgency || 0,
     ];
 
-    // Only show chart if there's data
-    const hasData = urgencyData.some(val => val > 0);
+    const hasData = urgencyData.some((val) => val > 0);
 
     this.chartData = {
       labels: ['Cực kỳ khẩn cấp', 'Khẩn cấp', 'Trung bình', 'Thấp'],
       datasets: [
         {
-          data: hasData ? urgencyData : [1, 1, 1, 1], // Show dummy data if empty
-          backgroundColor: hasData
-            ? ['#dc2626', '#ef4444', '#f59e0b', '#16a34a']
-            : ['#e5e7eb', '#e5e7eb', '#e5e7eb', '#e5e7eb'],
-          hoverBackgroundColor: hasData
-            ? ['#b91c1c', '#dc2626', '#d97706', '#15803d']
-            : ['#d1d5db', '#d1d5db', '#d1d5db', '#d1d5db'],
+          data: hasData ? urgencyData : [0, 0, 0, 1],
+          backgroundColor: ['#991b1b', '#ef4444', '#f59e0b', '#10b981'],
+          hoverBackgroundColor: ['#7f1d1d', '#dc2626', '#d97706', '#059669'],
           borderWidth: 0,
         },
       ],
     };
-
-    console.log('Chart updated:', {
-      hasData,
-      urgencyData,
-      summary: this.summary
-    });
   }
 
   onSearch(): void {
@@ -214,7 +211,6 @@ export class AiReorderComponent implements OnInit {
   applyFilters(): void {
     let filtered = [...this.recommendations];
 
-    // Search filter
     if (this.searchText) {
       const searchLower = this.searchText.toLowerCase();
       filtered = filtered.filter(
@@ -224,12 +220,12 @@ export class AiReorderComponent implements OnInit {
       );
     }
 
-    // Urgency filter
     if (this.selectedUrgency) {
       filtered = filtered.filter((r) => r.urgency === this.selectedUrgency);
     }
 
     this.filteredRecommendations = filtered;
+    this.updateSelectAll();
   }
 
   onSelectAllChange(): void {
@@ -248,9 +244,7 @@ export class AiReorderComponent implements OnInit {
         this.selectedProducts.push(item);
       }
     } else {
-      this.selectedProducts = this.selectedProducts.filter(
-        (p) => p.product_id !== item.product_id
-      );
+      this.selectedProducts = this.selectedProducts.filter((p) => p.product_id !== item.product_id);
     }
     this.updateSelectAll();
   }
@@ -282,7 +276,6 @@ export class AiReorderComponent implements OnInit {
       return;
     }
 
-    // Transform AI recommendations to purchase order items
     const items = this.selectedProducts.map((r) => ({
       product_id: r.product_id,
       product_name: r.product_name,
@@ -303,7 +296,6 @@ export class AiReorderComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.showSuccess('Đã tạo đơn đặt hàng thành công!');
-        // Clear selection
         this.selectedProducts = [];
         this.selectAll = false;
         this.recommendations.forEach((r) => (r.selected = false));
@@ -319,36 +311,31 @@ export class AiReorderComponent implements OnInit {
     }
 
     const exportData = this.filteredRecommendations.map((r, index) => ({
-      'STT': index + 1,
+      STT: index + 1,
       'Sản phẩm': r.product_name,
-      'SKU': r.product_sku,
+      SKU: r.product_sku,
       'Độ ưu tiên': this.getUrgencyLabel(r.urgency),
       'Tồn kho hiện tại': `${r.current_stock} ${r.unit}`,
       'Hết hàng sau (ngày)': r.days_until_stockout,
-      'Nhu cầu 7 ngày': r.predicted_demand_7_days.toFixed(1),
       'Nhu cầu 30 ngày': r.predicted_demand_30_days.toFixed(1),
       'Đề xuất nhập': `${Math.ceil(r.optimal_order_quantity)} ${r.unit}`,
       'Chi phí dự kiến (đ)': r.estimated_cost,
-      'Điểm đặt lại': r.reorder_point.toFixed(1),
       'Khuyến nghị': r.recommendation,
     }));
 
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
 
-    // Set column widths
     const colWidths = [
-      { wch: 5 },  // STT
-      { wch: 30 }, // Sản phẩm
-      { wch: 15 }, // SKU
-      { wch: 12 }, // Độ ưu tiên
-      { wch: 15 }, // Tồn kho
-      { wch: 15 }, // Hết hàng sau
-      { wch: 15 }, // Nhu cầu 7 ngày
-      { wch: 15 }, // Nhu cầu 30 ngày
-      { wch: 15 }, // Đề xuất nhập
-      { wch: 18 }, // Chi phí
-      { wch: 12 }, // Điểm đặt lại
-      { wch: 50 }, // Khuyến nghị
+      { wch: 5 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 50 },
     ];
     ws['!cols'] = colWidths;
 
@@ -379,13 +366,6 @@ export class AiReorderComponent implements OnInit {
       low: 'success',
     };
     return severities[urgency] || 'success';
-  }
-
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(value);
   }
 
   private showSuccess(detail: string): void {
