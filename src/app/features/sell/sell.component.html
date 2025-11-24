@@ -91,7 +91,7 @@
           [disabled]="cartItems.length === 0"
           title="Xóa giỏ hàng"
         >
-          <i class="pi pi-trash"></i>
+          <i class="pi pi-trash" style="color: #16a34a"></i>
         </button>
       </div>
 
@@ -133,7 +133,15 @@
                 >
                   <i class="pi pi-minus"></i>
                 </button>
-                <span class="qty-value">{{ item.quantity }}</span>
+                <input
+                  type="number"
+                  class="qty-input"
+                  [value]="item.quantity"
+                  (blur)="updateQuantityDirectly(item, $event)"
+                  (keyup.enter)="updateQuantityDirectly(item, $event)"
+                  min="1"
+                  [max]="getMaxQuantity(item)"
+                />
                 <button class="qty-btn" (click)="increaseQuantity(item)">
                   <i class="pi pi-plus"></i>
                 </button>

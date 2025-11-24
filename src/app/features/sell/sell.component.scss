@@ -523,6 +523,37 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.
   color: $black;
 }
 
+.qty-input {
+  width: 48px;
+  min-width: 48px;
+  height: 32px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: $black;
+  border: none;
+  background: transparent;
+  padding: 0 4px;
+  outline: none;
+  -moz-appearance: textfield; // Ẩn spinner trên Firefox
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none; // Ẩn spinner trên Chrome/Safari
+    margin: 0;
+  }
+
+  &:focus {
+    background: $white;
+    border-radius: 6px;
+    box-shadow: 0 0 0 2px rgba($primary-green, 0.2);
+  }
+
+  &:hover {
+    background: rgba($white, 0.8);
+  }
+}
+
 .item-total {
   flex: 1;
   text-align: right;
