@@ -115,15 +115,24 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
       this.dialogRef.close({ success: true, data });
     };
 
-    if (data?.message) {
+    if (data && (data.amount || data.orderCode || data.message)) {
       const speechText = this.generatePaymentMessage(data);
-      this.speakMessage(speechText, 'vi-VN', closeDialogCallback);
-    } else {
-      closeDialogCallback();
+      if (speechText) {
+        this.speakMessage(speechText, 'vi-VN', closeDialogCallback);
+        return;
+      }
     }
+
+    closeDialogCallback();
   }
 
   private speakMessage(text: string, lang: string = 'vi-VN', onEndCallback?: () => void): void {
+    if (!text || text.trim() === '') {
+      console.warn('Không có văn bản để phát âm thanh');
+      if (onEndCallback) onEndCallback();
+      return;
+    }
+
     const SpeechSynthesisUtterance =
       window.SpeechSynthesisUtterance || (window as any).webkitSpeechSynthesisUtterance;
     const speechSynthesis = window.speechSynthesis || (window as any).webkitSpeechSynthesis;
@@ -136,27 +145,40 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
 
     this.stopSpeech();
 
-    this.synth = new SpeechSynthesisUtterance(text);
-    this.synth.lang = lang;
-    this.synth.rate = 1;
-    this.synth.pitch = 1;
-    this.synth.volume = 1;
+    try {
+      this.synth = new SpeechSynthesisUtterance(text);
+      this.synth.lang = lang;
+      this.synth.rate = 1.0;
+      this.synth.pitch = 1.0;
+      this.synth.volume = 1.0;
 
-    this.synth.onstart = () => {
-      console.log('🔊 Phát âm thanh:', text);
-    };
+      this.synth.onstart = () => {
+        console.log('🔊 Bắt đầu phát âm thanh:', text);
+      };
 
-    this.synth.onend = () => {
-      console.log('✓ Kết thúc phát âm thanh');
+      this.synth.onend = () => {
+        console.log('✓ Kết thúc phát âm thanh');
+        this.synth = null;
+        if (onEndCallback) {
+          setTimeout(() => {
+            onEndCallback();
+          }, 100);
+        }
+      };
+
+      this.synth.onerror = (event) => {
+        console.error('❌ Lỗi phát âm thanh:', event.error);
+        this.synth = null;
+        if (onEndCallback) {
+          onEndCallback();
+        }
+      };
+
+      speechSynthesis.speak(this.synth);
+    } catch (error) {
+      console.error('❌ Lỗi khi khởi tạo Speech Synthesis:', error);
       if (onEndCallback) onEndCallback();
-    };
-
-    this.synth.onerror = (event) => {
-      console.error('❌ Lỗi phát âm thanh:', event.error);
-      if (onEndCallback) onEndCallback();
-    };
-
-    speechSynthesis.speak(this.synth);
+    }
   }
 
   private stopSpeech(): void {
@@ -167,20 +189,36 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
   }
 
   private generatePaymentMessage(data: any): string {
-    const amount = this.formatCurrencyForSpeech(data.amount);
-    const baseMessage = `Thanh toán thành công ${amount} đồng`;
-
-    if (data.orderCode) {
-      const orderCode = this.formatNumberForSpeech(data.orderCode);
-      return `${baseMessage}. Mã đơn hàng: ${orderCode}`;
+    if (!data) {
+      return 'Thanh toán thành công';
     }
 
-    if (data.transactionId) {
-      const txnId = this.formatNumberForSpeech(data.transactionId);
-      return `${baseMessage}. Mã giao dịch: ${txnId}`;
+    const amount = data.amount || data.data?.amount;
+
+    if (amount && amount > 0) {
+      const amountText = this.formatCurrencyForSpeech(amount);
+      const baseMessage = `Thanh toán thành công ${amountText} đồng`;
+
+      const orderCode = data.orderCode || data.data?.orderCode || data.order_code;
+      if (orderCode) {
+        const orderCodeText = this.formatNumberForSpeech(orderCode);
+        return `${baseMessage}. Mã đơn hàng: ${orderCodeText}`;
+      }
+
+      const transactionId = data.transactionId || data.data?.transactionId || data.transaction_id;
+      if (transactionId) {
+        const txnIdText = this.formatNumberForSpeech(transactionId);
+        return `${baseMessage}. Mã giao dịch: ${txnIdText}`;
+      }
+
+      return baseMessage;
     }
 
-    return baseMessage;
+    if (data.message) {
+      return data.message;
+    }
+
+    return 'Thanh toán thành công';
   }
 
   private formatCurrencyForSpeech(amount: number): string {
@@ -241,24 +279,18 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
     this.isLoadingQR = true;
     this.qrLoaded = false;
 
-    // ✅ Generate PayOS-compatible orderCode (max 9 digits)
-    // Use modulo to keep it within 100000000-999999999 range
     const timestamp = Date.now();
-    const orderCode = (timestamp % 900000000) + 100000000; // Ensures 9 digits: 100000000-999999999
+    const orderCode = (timestamp % 900000000) + 100000000;
 
-    console.log('🔢 Generated orderCode:', orderCode, 'Length:', orderCode.toString().length);
-
-    // Get full URL for returnUrl and cancelUrl
     const currentUrl = window.location.origin + this.router.url;
 
-    // Map cart items to correct format for API
     const mappedItems = this.cartItems.map((item: any) => ({
       bar_code: item.bar_code,
       sku: item.sku,
       name: item.name,
       quantity: item.quantity,
       unit_price: item.price || item.unit_price,
-      total_price: (item.price || item.unit_price) * item.quantity
+      total_price: (item.price || item.unit_price) * item.quantity,
     }));
 
     const params = {
@@ -279,14 +311,18 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
           sessionStorage.setItem(`qrCodeUrl_${this.orderCode}`, this.qrCodeUrl);
           sessionStorage.setItem('orderCode', this.orderCode);
         } else {
-          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tạo mã';
+          this.dialogRef.close();
+          const errorMsg =
+            rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tạo mã';
           this.showError(errorMsg);
         }
       },
       (error: any) => {
-        const errorMsg = error?.error?.response?.error_message_vn ||
-                        error?.error?.response?.error_message_us ||
-                        'Lỗi hệ thống';
+        this.dialogRef.close();
+        const errorMsg =
+          error?.error?.response?.error_message_vn ||
+          error?.error?.response?.error_message_us ||
+          'Lỗi hệ thống';
         this.showError(errorMsg);
       }
     );

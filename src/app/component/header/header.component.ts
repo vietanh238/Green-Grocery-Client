@@ -315,15 +315,46 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private playNotificationSound(): void {
-    if (this.userSettings.notificationSound && this.notificationAudio) {
-      this.notificationAudio.play().catch((err) => {
-        console.warn('Không thể phát âm thanh:', err);
-      });
+    if (!this.userSettings.notificationSound) {
+      return;
+    }
+
+    // Sử dụng Web Audio API để tạo âm thanh notification không cần file MP3
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Tạo âm thanh notification (2 beep ngắn)
+      const now = audioContext.currentTime;
+
+      // Beep đầu tiên
+      oscillator.frequency.setValueAtTime(800, now);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
+
+      // Beep thứ hai
+      oscillator.frequency.setValueAtTime(1000, now + 0.15);
+      gainNode.gain.setValueAtTime(0, now + 0.15);
+      gainNode.gain.linearRampToValueAtTime(0.3, now + 0.16);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.25);
+
+      oscillator.type = 'sine';
+      oscillator.start(now);
+      oscillator.stop(now + 0.35);
+    } catch (error) {
+      console.warn('Không thể phát âm thanh thông báo:', error);
     }
   }
 
   private initNotificationAudio(): void {
-    this.notificationAudio = new Audio('assets/notification.mp3');
+    // Không cần khởi tạo Audio element nữa vì sử dụng Web Audio API
+    // Giữ lại để tương thích với code cũ nếu có
+    this.notificationAudio = null;
   }
 
   addAttribute() {
