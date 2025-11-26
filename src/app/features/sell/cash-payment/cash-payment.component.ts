@@ -38,6 +38,7 @@ export class CashPaymentComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeForm();
+    this.setupAmountValidation();
   }
 
   get changeAmount(): number {
@@ -140,11 +141,16 @@ export class CashPaymentComponent implements OnInit {
 
   private initializeForm(): void {
     this.cashForm = this.fb.group({
-      receivedAmount: [
-        this.totalAmount,
-        [Validators.required, Validators.min(this.totalAmount)],
-      ],
+      receivedAmount: [this.totalAmount, [Validators.required, Validators.min(this.totalAmount)]],
       note: [''],
+    });
+  }
+
+  private setupAmountValidation(): void {
+    this.cashForm.get('receivedAmount')?.valueChanges.subscribe((value) => {
+      if (value && value < this.totalAmount) {
+        this.cashForm.get('receivedAmount')?.setErrors({ min: true });
+      }
     });
   }
 
