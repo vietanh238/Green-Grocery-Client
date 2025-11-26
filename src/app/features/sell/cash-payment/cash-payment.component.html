@@ -1,0 +1,185 @@
+<div class="cash-payment-dialog">
+  <div class="dialog-header">
+    <div class="header-content">
+      <i class="pi pi-money-bill"></i>
+      <h2>Thanh toán tiền mặt</h2>
+    </div>
+    <button class="close-btn" (click)="closeDialog()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="dialog-body">
+    <div class="total-badge">
+      <div class="badge-label">Tổng tiền cần thanh toán</div>
+      <div class="badge-amount">{{ formatCurrency(totalAmount) }}</div>
+    </div>
+
+    <form [formGroup]="cashForm">
+      <div class="form-group">
+        <label class="form-label">
+          Số tiền khách đưa
+          <span class="required">*</span>
+        </label>
+        <div class="price-wrapper">
+          <i class="pi pi-money-bill"></i>
+          <input
+            type="number"
+            class="form-input price-input"
+            formControlName="receivedAmount"
+            placeholder="0"
+            min="0"
+            step="1000"
+            [class.error]="isFieldInvalid('receivedAmount')"
+            (focus)="$event.target.select()"
+          />
+          <span class="currency">₫</span>
+        </div>
+        <div class="quick-amounts">
+          <button
+            type="button"
+            class="quick-btn"
+            (click)="setQuickAmount(totalAmount)"
+            [class.active]="currentReceivedAmount === totalAmount"
+          >
+            <i class="pi pi-check"></i>
+            Đúng bằng
+          </button>
+          @if (commonDenominations.length > 0) {
+            @for (denom of commonDenominations.slice(0, 3); track denom) {
+              <button
+                type="button"
+                class="quick-btn"
+                (click)="setQuickAmount(denom)"
+                [class.active]="currentReceivedAmount === denom"
+              >
+                {{ formatCurrency(denom) }}
+              </button>
+            }
+          }
+        </div>
+        <div class="quick-amounts-add">
+          <button
+            type="button"
+            class="quick-btn-add"
+            (click)="addAmount(10000)"
+            title="Thêm 10,000 VND"
+          >
+            <i class="pi pi-plus"></i>
+            +10k
+          </button>
+          <button
+            type="button"
+            class="quick-btn-add"
+            (click)="addAmount(50000)"
+            title="Thêm 50,000 VND"
+          >
+            <i class="pi pi-plus"></i>
+            +50k
+          </button>
+          <button
+            type="button"
+            class="quick-btn-add"
+            (click)="addAmount(100000)"
+            title="Thêm 100,000 VND"
+          >
+            <i class="pi pi-plus"></i>
+            +100k
+          </button>
+        </div>
+        @if (isFieldInvalid('receivedAmount')) {
+          <span class="error-text">
+            <i class="pi pi-exclamation-circle"></i>
+            @if (cashForm.get('receivedAmount')?.hasError('required')) {
+              Vui lòng nhập số tiền khách đưa
+            }
+            @if (cashForm.get('receivedAmount')?.hasError('min')) {
+              Số tiền phải lớn hơn hoặc bằng {{ formatCurrency(totalAmount) }}
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tiền thối lại</label>
+        <div class="price-wrapper readonly">
+          <i class="pi pi-wallet"></i>
+          <input
+            type="text"
+            class="form-input price-input"
+            [value]="formatCurrency(changeAmount)"
+            readonly
+            [class.has-change]="changeAmount > 0"
+          />
+        </div>
+        @if (changeAmount > 0) {
+          <span class="change-info">
+            <i class="pi pi-info-circle"></i>
+            Khách sẽ nhận lại {{ formatCurrency(changeAmount) }}
+          </span>
+        } @else if (cashForm.get('receivedAmount')?.value === totalAmount) {
+          <span class="change-info exact">
+            <i class="pi pi-check-circle"></i>
+            Khách đưa đúng số tiền, không cần thối lại
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Ghi chú
+          <span class="optional">(Tùy chọn)</span>
+        </label>
+        <textarea
+          class="form-input textarea"
+          formControlName="note"
+          placeholder="Thêm ghi chú cho đơn hàng..."
+          rows="2"
+        ></textarea>
+      </div>
+    </form>
+
+    <div class="summary">
+      <div class="summary-header">
+        <i class="pi pi-file-check"></i>
+        <span>Tổng kết thanh toán</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">
+          <i class="pi pi-shopping-cart"></i>
+          Tổng đơn hàng:
+        </span>
+        <span class="value">{{ formatCurrency(totalAmount) }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">
+          <i class="pi pi-money-bill"></i>
+          Khách đưa:
+        </span>
+        <span class="value received">{{ formatCurrency(cashForm.get('receivedAmount')?.value || 0) }}</span>
+      </div>
+      <div class="summary-row highlight" [class.has-change]="changeAmount > 0">
+        <span class="label">
+          <i class="pi pi-wallet"></i>
+          Tiền thối lại:
+        </span>
+        <span class="value change">{{ formatCurrency(changeAmount) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn btn-cancel" (click)="closeDialog()" [disabled]="isLoading">
+      <i class="pi pi-times"></i>
+      <span>Hủy</span>
+    </button>
+    <button
+      class="btn btn-pay"
+      [disabled]="!canProcessPayment"
+      (click)="processPayment()"
+    >
+      <i class="pi" [class.pi-spin]="isLoading" [class.pi-spinner]="isLoading" [class.pi-check]="!isLoading"></i>
+      <span>{{ isLoading ? 'Đang xử lý...' : 'Xác nhận thanh toán' }}</span>
+    </button>
+  </div>
+</div>

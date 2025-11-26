@@ -18,6 +18,7 @@ import { PaymentQrDialogComponent } from '../../component/qrpay/qrpay.component'
 import { AddManualOrder } from './addManualOrder/addManualOrder.component';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
 import { DebitComponent } from './debit/debit.component';
+import { CashPaymentComponent } from './cash-payment/cash-payment.component';
 
 interface CartItem {
   id: number;
@@ -393,45 +394,21 @@ export class SellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.isProcessingPayment = true;
-
-    const paymentData = {
-      amount: this.totalAmount,
-      items: this.cartItems.map((item) => ({
-        bar_code: item.bar_code,
-        sku: item.sku,
-        name: item.name,
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity,
-      })),
-      payment_method: 'cash',
-    };
-
-    this.service.cashPayment(paymentData).subscribe({
-      next: (response: any) => {
-        this.isProcessingPayment = false;
-        if (response.status === ConstantDef.STATUS_SUCCESS) {
-          this.handlePaymentSuccess(response.response);
-          this.showNotification('success', 'Thanh toán tiền mặt thành công');
-        } else {
-          const errorMsg =
-            response.response?.error_message_vn ||
-            response.response?.error_message_us ||
-            response.error_message ||
-            'Thanh toán thất bại';
-          this.showNotification('error', errorMsg);
-        }
+    const dialogRef = this.dialog.open(CashPaymentComponent, {
+      width: '550px',
+      maxWidth: '95vw',
+      panelClass: 'custom-dialog-panel',
+      disableClose: true,
+      data: {
+        totalAmount: this.totalAmount,
+        cartItems: this.cartItems,
       },
-      error: (error: any) => {
-        this.isProcessingPayment = false;
-        const errorMsg =
-          error?.error?.response?.error_message_vn ||
-          error?.error?.response?.error_message_us ||
-          error?.error?.message ||
-          'Lỗi kết nối khi thanh toán';
-        this.showNotification('error', errorMsg);
-      },
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result?.success) {
+        this.handlePaymentSuccess(result.data);
+      }
     });
   }
 
@@ -500,18 +477,25 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   private handlePaymentSuccess(paymentData: any): void {
-    this.saveCartBackup();
-    this.cartItems = [];
-    this.clearCartFromStorage();
-    this.loadProducts();
+    if (paymentData && (paymentData.order_code || paymentData.status === 'completed')) {
+      this.saveCartBackup();
+      this.cartItems = [];
+      this.clearCartFromStorage();
+      this.loadProducts();
 
-    if (paymentData.order_code) {
-      this.showNotification('success', `Thanh toán thành công - Mã đơn: ${paymentData.order_code}`);
+      if (paymentData.order_code) {
+        this.showNotification(
+          'success',
+          `Thanh toán thành công - Mã đơn: ${paymentData.order_code}`
+        );
+      } else {
+        this.showNotification('success', 'Thanh toán thành công');
+      }
+
+      this.clearCartBackupAfterDelay();
     } else {
-      this.showNotification('success', 'Thanh toán thành công');
+      this.showNotification('error', 'Thanh toán không thành công, vui lòng thử lại');
     }
-
-    this.clearCartBackupAfterDelay();
   }
 
   private findProductByBarcode(barCode: string): Product | undefined {
