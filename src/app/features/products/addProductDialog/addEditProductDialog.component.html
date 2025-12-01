@@ -49,6 +49,7 @@
         <div class="form-group">
           <label class="form-label"> Tên sản phẩm <span class="require-input">*</span> </label>
           <input
+            #productNameInput
             type="text"
             [(ngModel)]="productName"
             name="productName"
@@ -57,6 +58,10 @@
             [class.input-error]="errors['productName']"
             class="form-input"
           />
+          <small *ngIf="errors['productName']" class="error-message">
+            <i class="pi pi-exclamation-triangle"></i>
+            Vui lòng nhập tên sản phẩm
+          </small>
         </div>
 
         <div class="form-row">
@@ -70,7 +75,12 @@
               maxlength="64"
               [class.input-error]="errors['sku']"
               class="form-input"
+              (blur)="checkSkuExists()"
             />
+            <small *ngIf="errors['sku']" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              {{ isEditMode ? 'Vui lòng nhập SKU' : 'SKU đã tồn tại hoặc không hợp lệ' }}
+            </small>
           </div>
 
           <div class="form-group">
@@ -192,6 +202,10 @@
               [class.input-error]="errors['costPrice']"
               class="form-input"
             />
+            <small *ngIf="errors['costPrice']" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              Giá nhập phải lớn hơn 0
+            </small>
           </div>
 
           <div class="form-group">
@@ -208,6 +222,10 @@
               [class.input-error]="errors['price']"
               class="form-input"
             />
+            <small *ngIf="errors['price']" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              {{ costPrice >= price ? 'Giá bán phải lớn hơn giá nhập' : 'Giá bán phải lớn hơn 0' }}
+            </small>
           </div>
         </div>
 
@@ -270,6 +288,13 @@
               [class.input-error]="errors['quantity']"
               class="form-input"
             />
+            <small *ngIf="errors['quantity']" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              Số lượng không được âm
+            </small>
+            <small *ngIf="!errors['quantity']" class="input-hint">
+              Số lượng tồn kho ban đầu (có thể = 0)
+            </small>
           </div>
 
           <div class="form-group">
@@ -283,7 +308,13 @@
               [class.input-error]="errors['reorderPoint']"
               class="form-input"
             />
-            <small class="input-hint">Cảnh báo khi tồn kho dưới mức này</small>
+            <small *ngIf="errors['reorderPoint']" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              {{ reorderPoint >= maxStockLevel ? 'Điểm đặt lại phải nhỏ hơn tồn kho tối đa' : 'Điểm đặt lại không được âm' }}
+            </small>
+            <small *ngIf="!errors['reorderPoint']" class="input-hint">
+              Cảnh báo khi tồn kho dưới mức này
+            </small>
           </div>
 
           <div class="form-group">
@@ -297,7 +328,13 @@
               [class.input-error]="errors['maxStockLevel']"
               class="form-input"
             />
-            <small class="input-hint">Cảnh báo khi vượt mức này</small>
+            <small *ngIf="errors['maxStockLevel']" class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              {{ maxStockLevel <= reorderPoint ? 'Tồn kho tối đa phải lớn hơn điểm đặt lại' : 'Tồn kho tối đa phải lớn hơn 0' }}
+            </small>
+            <small *ngIf="!errors['maxStockLevel']" class="input-hint">
+              Cảnh báo khi vượt mức này
+            </small>
           </div>
         </div>
       </div>
@@ -343,12 +380,12 @@
   <mat-dialog-actions class="dialog-actions">
     <button type="button" class="btn-cancel" (click)="cancel()">
       <i class="pi pi-times"></i>
-      Hủy
+      Hủy (Esc)
     </button>
     <button type="button" class="btn-save" (click)="save()" [disabled]="loading || checkingBarcode">
       <mat-spinner *ngIf="loading" diameter="20" class="spinner"></mat-spinner>
       <i *ngIf="!loading" class="pi pi-check"></i>
-      {{ isEditMode ? 'Cập nhật' : 'Lưu' }}
+      {{ isEditMode ? 'Cập nhật' : 'Lưu' }} (Ctrl+Enter)
     </button>
   </mat-dialog-actions>
 

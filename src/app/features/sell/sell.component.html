@@ -71,7 +71,11 @@
         } @else {
         <div class="products-grid">
           @for (product of filteredProducts; track product.id) {
-          <app-card [product]="product" (addToCart)="handleAddToCart($event)"></app-card>
+          <app-card
+            [product]="product"
+            [availableStock]="getAvailableStock(product)"
+            (addToCart)="handleAddToCart($event)">
+          </app-card>
           }
         </div>
         }

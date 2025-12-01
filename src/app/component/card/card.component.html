@@ -1,13 +1,13 @@
-<div class="product-card" [class.out-of-stock]="product.stock_quantity === 0" (click)="onAddToCart($event)">
-  @if (product.stock_quantity === 0) {
+<div class="product-card" [class.out-of-stock]="isOutOfStock" [class.low-stock]="isLowStock" (click)="onAddToCart($event)">
+  @if (isOutOfStock) {
     <div class="stock-badge out">
       <i class="pi pi-times-circle"></i>
       <span>Hết hàng</span>
     </div>
-  } @else if (product.stock_quantity <= 5) {
+  } @else if (isLowStock) {
     <div class="stock-badge warning">
       <i class="pi pi-exclamation-triangle"></i>
-      <span>{{ product.stock_quantity }}</span>
+      <span>{{ stockDisplay }}</span>
     </div>
   }
 
@@ -16,9 +16,9 @@
       <div class="product-icon">
         <i class="pi pi-box"></i>
       </div>
-      <div class="product-stock">
+      <div class="product-stock" [class.low-stock]="isLowStock" [class.out-of-stock]="isOutOfStock">
         <i class="pi pi-database"></i>
-        <span>{{ product.stock_quantity }}</span>
+        <span>{{ stockDisplay }}</span>
       </div>
     </div>
 
@@ -35,7 +35,7 @@
         <span class="price-amount">{{ formatPrice(product.price) }}</span>
         <span class="price-unit">/ {{ product.unit || 'sp' }}</span>
       </div>
-      <button class="btn-add" [disabled]="product.stock_quantity === 0">
+      <button class="btn-add" [disabled]="isOutOfStock">
         <i class="pi pi-plus"></i>
       </button>
     </div>

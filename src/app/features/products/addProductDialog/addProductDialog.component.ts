@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -68,6 +68,8 @@ interface Supplier {
   standalone: true,
 })
 export class AddEditProductDialogComponent implements OnInit {
+  @ViewChild('productNameInput') productNameInput?: ElementRef<HTMLInputElement>;
+
   isEditMode: boolean = false;
   product: Product | null = null;
   lstCategory: any[] = [];
@@ -116,6 +118,34 @@ export class AddEditProductDialogComponent implements OnInit {
   ngOnInit(): void {
     if (this.isEditMode && this.product) {
       this.populateForm();
+    }
+
+    // Auto focus vào input đầu tiên sau khi dialog mở
+    setTimeout(() => {
+      if (this.productNameInput) {
+        this.productNameInput.nativeElement.focus();
+      }
+    }, 100);
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent): void {
+    // Ctrl/Cmd + Enter để lưu
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      if (!this.loading) {
+        this.save();
+      }
+      return;
+    }
+
+    // Escape để đóng (chỉ khi không đang nhập)
+    if (event.key === 'Escape' && !this.loading) {
+      const target = event.target as HTMLElement;
+      if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
+        event.preventDefault();
+        this.cancel();
+      }
     }
   }
 
@@ -291,7 +321,50 @@ export class AddEditProductDialogComponent implements OnInit {
   }
 
   checkBarcodeExists(): void {
-    if (!this.barCode) return;
+    if (!this.barCode || this.isEditMode) return;
+
+    this.checkingBarcode = true;
+    // Check if barcode exists by searching products
+    this.service.getProducts({ bar_code: this.barCode }).subscribe({
+      next: (response: any) => {
+        this.checkingBarcode = false;
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          const products = response.response || [];
+          this.barcodeExists = products.length > 0 &&
+            products.some((p: any) => p.bar_code === this.barCode);
+
+          if (this.barcodeExists) {
+            this.showError('Barcode đã tồn tại trong hệ thống');
+          }
+        }
+      },
+      error: () => {
+        this.checkingBarcode = false;
+      }
+    });
+  }
+
+  checkSkuExists(): void {
+    if (!this.sku || this.isEditMode) return;
+
+    // Check if SKU exists by searching products
+    this.service.getProducts({ sku: this.sku }).subscribe({
+      next: (response: any) => {
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          const products = response.response || [];
+          const skuExists = products.length > 0 &&
+            products.some((p: any) => p.sku === this.sku);
+
+          if (skuExists) {
+            this.showError('SKU đã tồn tại trong hệ thống');
+            this.errors['sku'] = true;
+          }
+        }
+      },
+      error: () => {
+        // Ignore errors
+      }
+    });
   }
 
   onExpiryChange(): void {
@@ -311,41 +384,59 @@ export class AddEditProductDialogComponent implements OnInit {
     }
     if (!this.costPrice || this.costPrice <= 0) {
       this.errors['costPrice'] = true;
+      this.showError('Giá nhập phải lớn hơn 0');
     }
     if (!this.price || this.price <= 0) {
       this.errors['price'] = true;
+      this.showError('Giá bán phải lớn hơn 0');
     }
-    if (this.costPrice >= this.price) {
+    if (this.costPrice > 0 && this.price > 0 && this.costPrice >= this.price) {
       this.errors['price'] = true;
       this.showError('Giá bán phải lớn hơn giá nhập');
+      return false;
     }
     if (this.quantity < 0) {
       this.errors['quantity'] = true;
+      this.showError('Số lượng không được âm');
     }
     if (this.reorderPoint < 0) {
       this.errors['reorderPoint'] = true;
+      this.showError('Điểm đặt lại không được âm');
     }
     if (this.maxStockLevel <= 0) {
       this.errors['maxStockLevel'] = true;
+      this.showError('Tồn kho tối đa phải lớn hơn 0');
     }
     if (this.reorderPoint >= this.maxStockLevel) {
       this.errors['reorderPoint'] = true;
       this.showError('Điểm đặt lại phải nhỏ hơn tồn kho tối đa');
+      return false;
+    }
+    if (this.maxStockLevel <= this.reorderPoint) {
+      this.errors['maxStockLevel'] = true;
+      this.showError('Tồn kho tối đa phải lớn hơn điểm đặt lại');
+      return false;
     }
     if (!this.unitSld) {
       this.errors['unit'] = true;
+      this.showError('Vui lòng chọn đơn vị');
     }
     if (!this.category?.trim()) {
       this.errors['category'] = true;
+      this.showError('Vui lòng nhập hoặc chọn phân loại');
     }
     if (!this.barCode?.trim()) {
       this.errors['barCode'] = true;
+      this.showError('Vui lòng nhập barcode');
     }
     if (this.barcodeExists && !this.isEditMode) {
       this.errors['barCode'] = true;
+      this.showError('Barcode đã tồn tại trong hệ thống');
+      return false;
     }
     if (this.hasExpiry && (!this.shelfLifeDays || this.shelfLifeDays <= 0)) {
       this.errors['shelfLifeDays'] = true;
+      this.showError('Vui lòng nhập thời hạn sử dụng (số ngày)');
     }
 
     return Object.keys(this.errors).length === 0;
