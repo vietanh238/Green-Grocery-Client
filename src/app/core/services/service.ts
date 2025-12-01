@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../../environment/environment';
 import { Observable, Subject } from 'rxjs';
+import { environment } from '../../../environment/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -16,308 +16,318 @@ export class Service {
   private readonly API_PURCHASE_ORDER = environment.apiPurchaseOrder;
   private readonly API_INVENTORY = environment.apiInventory;
 
-  private paymentSuccessSubject = new Subject<any>();
-  public paymentSuccess$ = this.paymentSuccessSubject.asObservable();
+  private readonly paymentSuccessSubject = new Subject<any>();
+  public readonly paymentSuccess$ = this.paymentSuccessSubject.asObservable();
 
-  constructor(private _http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
-  login(params: any): Observable<any> {
-    return this._http.post(`${this.API_AUTH}login/`, {
-      phone_number: params.phone_number,
-      password: params.password,
+  private buildHttpParams(params: Record<string, any>): HttpParams {
+    let httpParams = new HttpParams();
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        httpParams = httpParams.set(key, params[key]);
+      }
     });
+    return httpParams;
   }
 
-  register(params: any): Observable<any> {
-    return this._http.post(`${this.API_AUTH}register/`, {
-      phone_number: params.phone_number,
-      password: params.password,
-      first_name: params.first_name,
-      last_name: params.last_name,
-    });
+  login(credentials: { phone_number: string; password: string }): Observable<any> {
+    return this.http.post(`${this.API_AUTH}login/`, credentials);
+  }
+
+  register(userData: {
+    phone_number: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+  }): Observable<any> {
+    return this.http.post(`${this.API_AUTH}register/`, userData);
   }
 
   getNotifications(): Observable<any> {
-    return this._http.get(`${this.API_HOME}notifications/`);
+    return this.http.get(`${this.API_HOME}notifications/`);
   }
 
   getCategories(): Observable<any> {
-    return this._http.get(`${this.API_PRODUCT}categories/`);
+    return this.http.get(`${this.API_PRODUCT}categories/`);
   }
 
-  getProducts(params?: any): Observable<any> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        if (params[key]) {
-          httpParams = httpParams.set(key, params[key]);
-        }
-      });
-    }
-    return this._http.get(`${this.API_PRODUCT}products/`, { params: httpParams });
+  getProducts(filters?: Record<string, any>): Observable<any> {
+    const params = filters ? this.buildHttpParams(filters) : new HttpParams();
+    return this.http.get(`${this.API_PRODUCT}products/`, { params });
   }
 
-  createProduct(params: any): Observable<any> {
-    return this._http.post(`${this.API_PRODUCT}create/`, params);
+  checkBarcodeExists(barcode: string): Observable<any> {
+    return this.http.get(`${this.API_PRODUCT}products/`, {
+      params: new HttpParams().set('bar_code', barcode),
+    });
   }
 
-  updateProduct(params: any): Observable<any> {
-    return this._http.put(`${this.API_PRODUCT}update/`, params);
+  checkSkuExists(sku: string): Observable<any> {
+    return this.http.get(`${this.API_PRODUCT}products/`, {
+      params: new HttpParams().set('sku', sku),
+    });
+  }
+
+  createProduct(productData: any): Observable<any> {
+    return this.http.post(`${this.API_PRODUCT}create/`, productData);
+  }
+
+  updateProduct(productData: any): Observable<any> {
+    return this.http.put(`${this.API_PRODUCT}update/`, productData);
   }
 
   deleteProduct(barCode: string): Observable<any> {
-    return this._http.delete(`${this.API_PRODUCT}delete/${barCode}/`);
+    return this.http.delete(`${this.API_PRODUCT}delete/${barCode}/`);
   }
 
-  bulkCreateProducts(params: any): Observable<any> {
-    return this._http.post(`${this.API_PRODUCT}bulk-create/`, params);
+  bulkCreateProducts(productsData: any): Observable<any> {
+    return this.http.post(`${this.API_PRODUCT}bulk-create/`, productsData);
   }
 
   getSuppliers(): Observable<any> {
-    return this._http.get(`${this.API_PRODUCT}suppliers/`);
+    return this.http.get(`${this.API_PRODUCT}suppliers/`);
   }
 
-  createSupplier(params: any): Observable<any> {
-    return this._http.post(`${this.API_PRODUCT}supplier/create/`, params);
+  createSupplier(supplierData: any): Observable<any> {
+    return this.http.post(`${this.API_PRODUCT}supplier/create/`, supplierData);
   }
 
-  updateSupplier(params: any): Observable<any> {
-    return this._http.put(`${this.API_PRODUCT}supplier/update/`, params);
+  updateSupplier(supplierData: any): Observable<any> {
+    return this.http.put(`${this.API_PRODUCT}supplier/update/`, supplierData);
   }
 
   deleteSupplier(supplierCode: string): Observable<any> {
-    return this._http.delete(`${this.API_PRODUCT}supplier/delete/${supplierCode}/`);
+    return this.http.delete(`${this.API_PRODUCT}supplier/delete/${supplierCode}/`);
   }
 
-  createPayment(params: any): Observable<any> {
-    return this._http.post(`${this.API_PAYMENT}create/`, {
-      orderCode: params.orderCode,
-      amount: params.amount,
-      description: params.description,
-      returnUrl: params.returnUrl,
-      cancelUrl: params.cancelUrl,
-      items: params.items,
-      buyerName: params.buyerName || '',
-      buyerPhone: params.buyerPhone || '',
+  createPayment(paymentData: {
+    orderCode: string;
+    amount: number;
+    description: string;
+    returnUrl: string;
+    cancelUrl: string;
+    items: any[];
+    buyerName?: string;
+    buyerPhone?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.API_PAYMENT}create/`, {
+      orderCode: paymentData.orderCode,
+      amount: paymentData.amount,
+      description: paymentData.description,
+      returnUrl: paymentData.returnUrl,
+      cancelUrl: paymentData.cancelUrl,
+      items: paymentData.items,
+      buyerName: paymentData.buyerName || '',
+      buyerPhone: paymentData.buyerPhone || '',
     });
   }
 
   deletePayment(orderCode: string): Observable<any> {
-    return this._http.delete(`${this.API_PAYMENT}delete/${orderCode}/`);
+    return this.http.delete(`${this.API_PAYMENT}delete/${orderCode}/`);
   }
 
-  cashPayment(params: any): Observable<any> {
-    return this._http.post(`${this.API_PAYMENT}cash/`, {
-      amount: params.amount,
-      items: params.items,
-      payment_method: params.payment_method || 'cash',
-      note: params.note || '',
+  cashPayment(paymentData: {
+    amount: number;
+    items: any[];
+    payment_method?: string;
+    note?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.API_PAYMENT}cash/`, {
+      amount: paymentData.amount,
+      items: paymentData.items,
+      payment_method: paymentData.payment_method || 'cash',
+      note: paymentData.note || '',
     });
   }
 
   getCustomers(): Observable<any> {
-    return this._http.get(`${this.API_DEBIT}get/customer/`);
+    return this.http.get(`${this.API_DEBIT}get/customer/`);
   }
 
   getDebits(): Observable<any> {
-    return this._http.get(`${this.API_DEBIT}get/debit/`);
+    return this.http.get(`${this.API_DEBIT}get/debit/`);
   }
 
-  createCustomer(params: any): Observable<any> {
-    return this._http.post(`${this.API_DEBIT}create/customer/`, {
-      name: params.name,
-      phone: params.phone,
-      address: params.address || '',
+  createCustomer(customerData: {
+    name: string;
+    phone: string;
+    address?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.API_DEBIT}create/customer/`, {
+      name: customerData.name,
+      phone: customerData.phone,
+      address: customerData.address || '',
     });
   }
 
-  createDebit(params: any): Observable<any> {
-    return this._http.post(`${this.API_DEBIT}create/debit/`, params);
+  createDebit(debitData: any): Observable<any> {
+    return this.http.post(`${this.API_DEBIT}create/debit/`, debitData);
   }
 
-  payDebit(params: any): Observable<any> {
-    return this._http.post(`${this.API_DEBIT}pay/debit/`, {
-      customer_code: params.customer_code,
-      paid_amount: params.paid_amount,
-      note: params.note || '',
+  payDebit(paymentData: {
+    customer_code: string;
+    paid_amount: number;
+    note?: string;
+  }): Observable<any> {
+    return this.http.post(`${this.API_DEBIT}pay/debit/`, {
+      customer_code: paymentData.customer_code,
+      paid_amount: paymentData.paid_amount,
+      note: paymentData.note || '',
     });
   }
 
-  deleteCustomer(customer_code: string): Observable<any> {
-    return this._http.delete(`${this.API_DEBIT}delete/customer/`, {
-      body: { customer_code },
+  deleteCustomer(customerCode: string): Observable<any> {
+    return this.http.delete(`${this.API_DEBIT}delete/customer/`, {
+      body: { customer_code: customerCode },
     });
   }
 
-  getBusinessReport(params: any): Observable<any> {
-    let queryParams = new HttpParams();
-
-    if (params.period === 'custom') {
-      queryParams = queryParams.set('period', 'custom');
-      queryParams = queryParams.set('date_from', params.date_from);
-      queryParams = queryParams.set('date_to', params.date_to);
-    } else {
-      queryParams = queryParams.set('period', params.period);
+  getBusinessReport(reportParams: {
+    period: string;
+    date_from?: string;
+    date_to?: string;
+  }): Observable<any> {
+    const params = new HttpParams().set('period', reportParams.period);
+    if (reportParams.period === 'custom' && reportParams.date_from && reportParams.date_to) {
+      return this.http.get(`${this.API_REPORT}get/`, {
+        params: params
+          .set('date_from', reportParams.date_from)
+          .set('date_to', reportParams.date_to),
+      });
     }
-
-    return this._http.get(`${this.API_REPORT}get/`, { params: queryParams });
+    return this.http.get(`${this.API_REPORT}get/`, { params });
   }
 
   getDashboardData(period: string = 'today'): Observable<any> {
-    const queryParams = new HttpParams().set('period', period);
-    return this._http.get(`${this.API_HOME}get/dashboard/`, { params: queryParams });
+    return this.http.get(`${this.API_HOME}get/dashboard/`, {
+      params: new HttpParams().set('period', period),
+    });
   }
 
   getUserProfile(): Observable<any> {
-    return this._http.get(`${this.API_HOME}user/profile/`);
+    return this.http.get(`${this.API_HOME}user/profile/`);
   }
 
   quickSearch(query: string): Observable<any> {
-    const queryParams = new HttpParams().set('q', query);
-    return this._http.get(`${this.API_HOME}quick/search/`, { params: queryParams });
+    return this.http.get(`${this.API_HOME}quick/search/`, {
+      params: new HttpParams().set('q', query),
+    });
   }
 
-  getTransactionHistory(params: any = {}): Observable<any> {
-    let queryParams = new HttpParams();
-
-    if (params.date_from) queryParams = queryParams.set('date_from', params.date_from);
-    if (params.date_to) queryParams = queryParams.set('date_to', params.date_to);
-    if (params.type) queryParams = queryParams.set('type', params.type);
-    if (params.status) queryParams = queryParams.set('status', params.status);
-    if (params.payment_method)
-      queryParams = queryParams.set('payment_method', params.payment_method);
-
-    return this._http.get(`${this.API_HOME}transactions/history/`, { params: queryParams });
+  getTransactionHistory(filters: {
+    date_from?: string;
+    date_to?: string;
+    type?: string;
+    status?: string;
+    payment_method?: string;
+  } = {}): Observable<any> {
+    return this.http.get(`${this.API_HOME}transactions/history/`, {
+      params: this.buildHttpParams(filters),
+    });
   }
 
   trainAIModel(): Observable<any> {
-    return this._http.post(`${this.API_HOME}ai/train/`, {});
+    return this.http.post(`${this.API_HOME}ai/train/`, {});
   }
 
   getReorderRecommendations(): Observable<any> {
-    return this._http.get(`${this.API_HOME}ai/reorder-recommendations/`);
+    return this.http.get(`${this.API_HOME}ai/reorder-recommendations/`);
   }
 
   getProductForecast(productId: number): Observable<any> {
-    return this._http.get(`${this.API_HOME}ai/forecast/${productId}/`);
+    return this.http.get(`${this.API_HOME}ai/forecast/${productId}/`);
   }
 
   notifyPaymentSuccess(data: any): void {
     this.paymentSuccessSubject.next(data);
   }
 
-  // Purchase Order APIs
-  createPurchaseOrder(params: any): Observable<any> {
-    return this._http.post(`${this.API_PURCHASE_ORDER}create/`, params);
+  createPurchaseOrder(orderData: any): Observable<any> {
+    return this.http.post(`${this.API_PURCHASE_ORDER}create/`, orderData);
   }
 
-  getPurchaseOrders(params?: any): Observable<any> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        if (params[key]) {
-          httpParams = httpParams.set(key, params[key]);
-        }
-      });
-    }
-    return this._http.get(`${this.API_PURCHASE_ORDER}list/`, { params: httpParams });
+  getPurchaseOrders(filters?: Record<string, any>): Observable<any> {
+    const params = filters ? this.buildHttpParams(filters) : new HttpParams();
+    return this.http.get(`${this.API_PURCHASE_ORDER}list/`, { params });
   }
 
   getPurchaseOrderDetail(poId: number): Observable<any> {
-    return this._http.get(`${this.API_PURCHASE_ORDER}detail/${poId}/`);
+    return this.http.get(`${this.API_PURCHASE_ORDER}detail/${poId}/`);
   }
 
   updatePurchaseOrderStatus(poId: number, status: string): Observable<any> {
-    return this._http.put(`${this.API_PURCHASE_ORDER}update-status/${poId}/`, { status });
+    return this.http.put(`${this.API_PURCHASE_ORDER}update-status/${poId}/`, { status });
   }
 
   receivePurchaseOrder(poId: number, receivedItems: any[]): Observable<any> {
-    return this._http.post(`${this.API_PURCHASE_ORDER}receive/${poId}/`, { received_items: receivedItems });
+    return this.http.post(`${this.API_PURCHASE_ORDER}receive/${poId}/`, {
+      received_items: receivedItems,
+    });
   }
 
   deletePurchaseOrder(poId: number): Observable<any> {
-    return this._http.delete(`${this.API_PURCHASE_ORDER}delete/${poId}/`);
+    return this.http.delete(`${this.API_PURCHASE_ORDER}delete/${poId}/`);
   }
 
   sendPurchaseOrderEmail(poId: number): Observable<any> {
-    return this._http.post(`${this.API_PURCHASE_ORDER}send-email/${poId}/`, {});
+    return this.http.post(`${this.API_PURCHASE_ORDER}send-email/${poId}/`, {});
   }
 
-  // ============ INVENTORY APIs ============
-
-  getInventoryHistory(productId: number, params?: any): Observable<any> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        if (params[key]) {
-          httpParams = httpParams.set(key, params[key]);
-        }
-      });
-    }
-    return this._http.get(`${this.API_INVENTORY}history/${productId}/`, { params: httpParams });
+  getInventoryHistory(productId: number, filters?: Record<string, any>): Observable<any> {
+    const params = filters ? this.buildHttpParams(filters) : new HttpParams();
+    return this.http.get(`${this.API_INVENTORY}history/${productId}/`, { params });
   }
 
-  adjustInventory(payload: any): Observable<any> {
-    return this._http.post(`${this.API_INVENTORY}adjust/`, payload);
+  adjustInventory(adjustmentData: any): Observable<any> {
+    return this.http.post(`${this.API_INVENTORY}adjust/`, adjustmentData);
   }
 
-  recordDamage(payload: any): Observable<any> {
-    return this._http.post(`${this.API_INVENTORY}damage/`, payload);
+  recordDamage(damageData: any): Observable<any> {
+    return this.http.post(`${this.API_INVENTORY}damage/`, damageData);
   }
 
-  recordLost(payload: any): Observable<any> {
-    return this._http.post(`${this.API_INVENTORY}lost/`, payload);
+  recordLost(lostData: any): Observable<any> {
+    return this.http.post(`${this.API_INVENTORY}lost/`, lostData);
   }
 
-  returnStock(payload: any): Observable<any> {
-    return this._http.post(`${this.API_INVENTORY}return/`, payload);
+  returnStock(returnData: any): Observable<any> {
+    return this.http.post(`${this.API_INVENTORY}return/`, returnData);
   }
 
-  getInventorySummary(params?: any): Observable<any> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        if (params[key]) {
-          httpParams = httpParams.set(key, params[key]);
-        }
-      });
-    }
-    return this._http.get(`${this.API_INVENTORY}summary/`, { params: httpParams });
+  getInventorySummary(filters?: Record<string, any>): Observable<any> {
+    const params = filters ? this.buildHttpParams(filters) : new HttpParams();
+    return this.http.get(`${this.API_INVENTORY}summary/`, { params });
   }
-
-  // ============ ADVANCED REPORTS APIs ============
 
   getInventoryMovementReport(startDate?: string, endDate?: string): Observable<any> {
-    let httpParams = new HttpParams();
-    if (startDate) httpParams = httpParams.set('start_date', startDate);
-    if (endDate) httpParams = httpParams.set('end_date', endDate);
-    return this._http.get(`${this.API_REPORT}inventory-movement/`, { params: httpParams });
+    const params = this.buildHttpParams({ start_date: startDate, end_date: endDate });
+    return this.http.get(`${this.API_REPORT}inventory-movement/`, { params });
   }
 
   getSupplierPerformanceReport(startDate?: string, endDate?: string): Observable<any> {
-    let httpParams = new HttpParams();
-    if (startDate) httpParams = httpParams.set('start_date', startDate);
-    if (endDate) httpParams = httpParams.set('end_date', endDate);
-    return this._http.get(`${this.API_REPORT}supplier-performance/`, { params: httpParams });
+    const params = this.buildHttpParams({ start_date: startDate, end_date: endDate });
+    return this.http.get(`${this.API_REPORT}supplier-performance/`, { params });
   }
 
   getCustomerBehaviorReport(startDate?: string, endDate?: string): Observable<any> {
-    let httpParams = new HttpParams();
-    if (startDate) httpParams = httpParams.set('start_date', startDate);
-    if (endDate) httpParams = httpParams.set('end_date', endDate);
-    return this._http.get(`${this.API_REPORT}customer-behavior/`, { params: httpParams });
+    const params = this.buildHttpParams({ start_date: startDate, end_date: endDate });
+    return this.http.get(`${this.API_REPORT}customer-behavior/`, { params });
   }
-
-  // ============ ORDER MANAGEMENT APIs ============
 
   cancelOrder(orderCode: string, reason: string): Observable<any> {
-    return this._http.post(`${this.API_PAYMENT}cancel/${orderCode}/`, { reason });
+    return this.http.post(`${this.API_PAYMENT}cancel/${orderCode}/`, { reason });
   }
 
-  refundOrder(orderCode: string, refundAmount?: number, reason?: string, items?: any[]): Observable<any> {
-    const payload: any = { reason: reason || 'Hoàn tiền' };
-    if (refundAmount) payload.refund_amount = refundAmount;
-    if (items) payload.items = items;
-    return this._http.post(`${this.API_PAYMENT}refund/${orderCode}/`, payload);
+  refundOrder(refundData: {
+    orderCode: string;
+    refundAmount?: number;
+    reason?: string;
+    items?: any[];
+  }): Observable<any> {
+    const payload: any = { reason: refundData.reason || 'Hoàn tiền' };
+    if (refundData.refundAmount) payload.refund_amount = refundData.refundAmount;
+    if (refundData.items) payload.items = refundData.items;
+    return this.http.post(`${this.API_PAYMENT}refund/${refundData.orderCode}/`, payload);
   }
 }

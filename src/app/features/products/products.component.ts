@@ -4,12 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Subject, Subscription, forkJoin } from 'rxjs';
 import { debounceTime, finalize } from 'rxjs/operators';
-
 import { TableModule } from 'primeng/table';
 import { Select } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
 import { ConfirmDialogComponent } from '../../component/confirmDialog/confirmDialog.component';
@@ -56,6 +54,14 @@ interface StockFilter {
   code: string;
 }
 
+interface DialogData {
+  isEditMode?: boolean;
+  product?: Product;
+  lstCategory?: any[];
+  lstUnit?: any[];
+  lstSupplier?: any[];
+}
+
 @Component({
   selector: 'app-products',
   templateUrl: './products.component.html',
@@ -64,12 +70,21 @@ interface StockFilter {
   standalone: true,
 })
 export class ProductsComponent implements OnInit, OnDestroy {
-  private subscriptions = new Subscription();
-  private searchSubject$ = new Subject<string>();
+  private readonly subscriptions = new Subscription();
+  private readonly searchSubject$ = new Subject<string>();
+  private readonly SEARCH_DEBOUNCE_MS = 300;
+  private readonly EXPORT_DELAY_MS = 100;
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
   filterCategories: Category[] = [];
+  searchText = '';
+  selectedFilterCategory: Category | null = null;
+  selectedStockFilter: StockFilter | null = null;
+  loading = false;
+  exporting = false;
+  reorderCount = 0;
+  outOfStockCount = 0;
 
   readonly stockFilters: StockFilter[] = [
     { name: 'Tất cả', code: 'all' },
@@ -98,19 +113,10 @@ export class ProductsComponent implements OnInit, OnDestroy {
     { name: 'Bó', code: 16 },
   ];
 
-  searchText = '';
-  selectedFilterCategory: Category | null = null;
-  selectedStockFilter: StockFilter | null = null;
-  loading = false;
-  exporting = false;
-
-  reorderCount = 0;
-  outOfStockCount = 0;
-
   constructor(
-    private dialog: MatDialog,
-    private service: Service,
-    private message: MessageService
+    private readonly dialog: MatDialog,
+    private readonly service: Service,
+    private readonly messageService: MessageService
   ) {}
 
   ngOnInit(): void {
@@ -123,24 +129,18 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.searchSubject$.complete();
   }
 
-  private setupSearchListener(): void {
-    const subscription = this.searchSubject$
-      .pipe(debounceTime(300))
-      .subscribe(() => this.applyFilters());
+  getProducts(filters?: Record<string, any>): void {
+    if (this.loading) return;
 
-    this.subscriptions.add(subscription);
-  }
-
-  getProducts(params?: any): void {
     this.loading = true;
 
     const subscription = this.service
-      .getProducts(params)
+      .getProducts(filters)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (response: any) => {
           if (response.status === ConstantDef.STATUS_SUCCESS) {
-            this.products = response.response || [];
+            this.products = Array.isArray(response.response) ? response.response : [];
             this.updateFilterCategories();
             this.calculateStats();
             this.applyFilters();
@@ -150,50 +150,37 @@ export class ProductsComponent implements OnInit, OnDestroy {
         },
         error: (error: any) => {
           console.error('Load products error:', error);
-          this.showError('Lỗi kết nối khi tải sản phẩm');
+          const errorMsg =
+            error?.error?.response?.error_message_vn ||
+            error?.error?.response?.error_message_us ||
+            'Lỗi kết nối khi tải sản phẩm';
+          this.showError(errorMsg);
         },
       });
 
     this.subscriptions.add(subscription);
   }
 
-  private updateFilterCategories(): void {
-    const uniqueCategories = new Set(
-      this.products.map((p) => p.name_category).filter(Boolean)
-    );
-
-    this.filterCategories = Array.from(uniqueCategories)
-      .sort()
-      .map((name) => ({
-        name,
-        code: name.toLowerCase().replace(/\s+/g, '_'),
-      }));
-  }
-
-  private calculateStats(): void {
-    this.reorderCount = this.products.filter(
-      (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point
-    ).length;
-
-    this.outOfStockCount = this.products.filter((p) => p.stock_quantity === 0).length;
-  }
-
   openAddProductDialog(): void {
     this.loadCategoriesAndSuppliers((categories, suppliers) => {
+      const dialogData: DialogData = {
+        isEditMode: false,
+        lstCategory: categories,
+        lstUnit: this.units,
+        lstSupplier: suppliers,
+      };
+
       const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
         width: '90vw',
         maxWidth: '900px',
         disableClose: true,
-        data: {
-          isEditMode: false,
-          lstCategory: categories,
-          lstUnit: this.units,
-          lstSupplier: suppliers,
-        },
+        data: dialogData,
       });
 
       const subscription = dialogRef.afterClosed().subscribe((result) => {
-        if (result) this.getProducts();
+        if (result) {
+          this.getProducts();
+        }
       });
 
       this.subscriptions.add(subscription);
@@ -213,7 +200,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
       });
 
       const subscription = dialogRef.afterClosed().subscribe((result) => {
-        if (result) this.getProducts();
+        if (result) {
+          this.getProducts();
+        }
       });
 
       this.subscriptions.add(subscription);
@@ -247,55 +236,33 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
   editProduct(product: Product): void {
     this.loadCategoriesAndSuppliers((categories, suppliers) => {
+      const dialogData: DialogData = {
+        isEditMode: true,
+        product,
+        lstCategory: categories,
+        lstUnit: this.units,
+        lstSupplier: suppliers,
+      };
+
       const dialogRef = this.dialog.open(AddEditProductDialogComponent, {
         width: '90vw',
         maxWidth: '900px',
         disableClose: true,
-        data: {
-          isEditMode: true,
-          product,
-          lstCategory: categories,
-          lstUnit: this.units,
-          lstSupplier: suppliers,
-        },
+        data: dialogData,
       });
 
       const subscription = dialogRef.afterClosed().subscribe((result) => {
-        if (result) this.getProducts();
+        if (result) {
+          this.getProducts();
+        }
       });
 
       this.subscriptions.add(subscription);
     });
   }
 
-  private loadCategoriesAndSuppliers(callback: (categories: any[], suppliers: any[]) => void): void {
-    const subscription = forkJoin({
-      categories: this.service.getCategories(),
-      suppliers: this.service.getSuppliers(),
-    }).subscribe({
-      next: (result) => {
-        const categories = result.categories.status === ConstantDef.STATUS_SUCCESS
-          ? result.categories.response.data
-          : [];
-        const suppliers = result.suppliers.status === ConstantDef.STATUS_SUCCESS
-          ? result.suppliers.response
-          : [];
-
-        callback(categories, suppliers);
-      },
-      error: (error) => {
-        console.error('Load categories and suppliers error:', error);
-        this.showError('Không thể tải danh mục và nhà cung cấp');
-      },
-    });
-
-    this.subscriptions.add(subscription);
-  }
-
   confirmDelete(product: Product): void {
-    const barCode = product.bar_code;
-
-    if (!barCode) {
+    if (!product.bar_code) {
       this.showError('Không tìm thấy mã sản phẩm');
       return;
     }
@@ -314,27 +281,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
     const subscription = dialogRef.afterClosed().subscribe((confirmed: boolean) => {
       if (confirmed) {
-        this.deleteProduct(barCode);
+        this.deleteProduct(product.bar_code!);
       }
-    });
-
-    this.subscriptions.add(subscription);
-  }
-
-  private deleteProduct(barCode: string): void {
-    const subscription = this.service.deleteProduct(barCode).subscribe({
-      next: (response: any) => {
-        if (response.status === ConstantDef.STATUS_SUCCESS) {
-          this.showSuccess('Xóa sản phẩm thành công');
-          this.getProducts();
-        } else {
-          this.showError(response.message || 'Không thể xóa sản phẩm');
-        }
-      },
-      error: (error: any) => {
-        console.error('Delete product error:', error);
-        this.showError('Lỗi khi xóa sản phẩm');
-      },
     });
 
     this.subscriptions.add(subscription);
@@ -359,59 +307,6 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
   onFilterChange(): void {
     this.applyFilters();
-  }
-
-  private applyFilters(): void {
-    let filtered = [...this.products];
-
-    filtered = this.applySearchFilter(filtered);
-    filtered = this.applyCategoryFilter(filtered);
-    filtered = this.applyStockFilter(filtered);
-
-    this.filteredProducts = filtered;
-  }
-
-  private applySearchFilter(products: Product[]): Product[] {
-    if (!this.searchText) return products;
-
-    const searchTerm = this.searchText.toLowerCase().trim();
-
-    return products.filter((product) => {
-      const searchableFields = [
-        product.name,
-        product.sku,
-        product.bar_code,
-        product.primary_supplier_name,
-        product.name_category,
-      ];
-
-      return searchableFields.some((field) =>
-        field?.toLowerCase().includes(searchTerm)
-      );
-    });
-  }
-
-  private applyCategoryFilter(products: Product[]): Product[] {
-    if (!this.selectedFilterCategory) return products;
-
-    return products.filter(
-      (product) => product.name_category === this.selectedFilterCategory!.name
-    );
-  }
-
-  private applyStockFilter(products: Product[]): Product[] {
-    if (!this.selectedStockFilter || this.selectedStockFilter.code === 'all') {
-      return products;
-    }
-
-    const filterMap: Record<string, (p: Product) => boolean> = {
-      in_stock: (p) => p.stock_quantity > p.reorder_point,
-      low_stock: (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point,
-      out_stock: (p) => p.stock_quantity === 0,
-    };
-
-    const filterFn = filterMap[this.selectedStockFilter.code];
-    return filterFn ? products.filter(filterFn) : products;
   }
 
   exportExcel(): void {
@@ -471,7 +366,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
       } finally {
         this.exporting = false;
       }
-    }, 100);
+    }, this.EXPORT_DELAY_MS);
   }
 
   getRowClass(product: Product): string {
@@ -498,6 +393,141 @@ export class ProductsComponent implements OnInit, OnDestroy {
     return 'Còn hàng';
   }
 
+  private setupSearchListener(): void {
+    const subscription = this.searchSubject$
+      .pipe(debounceTime(this.SEARCH_DEBOUNCE_MS))
+      .subscribe(() => this.applyFilters());
+
+    this.subscriptions.add(subscription);
+  }
+
+  private updateFilterCategories(): void {
+    const uniqueCategories = new Set(
+      this.products.map((p) => p.name_category).filter(Boolean)
+    );
+
+    this.filterCategories = Array.from(uniqueCategories)
+      .sort()
+      .map((name) => ({
+        name,
+        code: name.toLowerCase().replace(/\s+/g, '_'),
+      }));
+  }
+
+  private calculateStats(): void {
+    this.reorderCount = this.products.filter(
+      (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point
+    ).length;
+
+    this.outOfStockCount = this.products.filter((p) => p.stock_quantity === 0).length;
+  }
+
+  private loadCategoriesAndSuppliers(
+    callback: (categories: any[], suppliers: any[]) => void
+  ): void {
+    const subscription = forkJoin({
+      categories: this.service.getCategories(),
+      suppliers: this.service.getSuppliers(),
+    }).subscribe({
+      next: (result) => {
+        const categories =
+          result.categories.status === ConstantDef.STATUS_SUCCESS
+            ? result.categories.response.data
+            : [];
+        const suppliers =
+          result.suppliers.status === ConstantDef.STATUS_SUCCESS
+            ? result.suppliers.response
+            : [];
+
+        callback(categories, suppliers);
+      },
+      error: (error) => {
+        console.error('Load categories and suppliers error:', error);
+        this.showError('Không thể tải danh mục và nhà cung cấp');
+      },
+    });
+
+    this.subscriptions.add(subscription);
+  }
+
+  private deleteProduct(barCode: string): void {
+    const subscription = this.service.deleteProduct(barCode).subscribe({
+      next: (response: any) => {
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          this.showSuccess('Xóa sản phẩm thành công');
+          this.getProducts();
+        } else {
+          const errorMsg =
+            response.response?.error_message_vn ||
+            response.response?.error_message_us ||
+            'Không thể xóa sản phẩm';
+          this.showError(errorMsg);
+        }
+      },
+      error: (error: any) => {
+        console.error('Delete product error:', error);
+        const errorMsg =
+          error?.error?.response?.error_message_vn ||
+          error?.error?.response?.error_message_us ||
+          'Lỗi khi xóa sản phẩm';
+        this.showError(errorMsg);
+      },
+    });
+
+    this.subscriptions.add(subscription);
+  }
+
+  private applyFilters(): void {
+    let filtered = [...this.products];
+
+    filtered = this.applySearchFilter(filtered);
+    filtered = this.applyCategoryFilter(filtered);
+    filtered = this.applyStockFilter(filtered);
+
+    this.filteredProducts = filtered;
+  }
+
+  private applySearchFilter(products: Product[]): Product[] {
+    if (!this.searchText) return products;
+
+    const searchTerm = this.searchText.toLowerCase().trim();
+
+    return products.filter((product) => {
+      const searchableFields = [
+        product.name,
+        product.sku,
+        product.bar_code,
+        product.primary_supplier_name,
+        product.name_category,
+      ];
+
+      return searchableFields.some((field) => field?.toLowerCase().includes(searchTerm));
+    });
+  }
+
+  private applyCategoryFilter(products: Product[]): Product[] {
+    if (!this.selectedFilterCategory) return products;
+
+    return products.filter(
+      (product) => product.name_category === this.selectedFilterCategory!.name
+    );
+  }
+
+  private applyStockFilter(products: Product[]): Product[] {
+    if (!this.selectedStockFilter || this.selectedStockFilter.code === 'all') {
+      return products;
+    }
+
+    const filterMap: Record<string, (p: Product) => boolean> = {
+      in_stock: (p) => p.stock_quantity > p.reorder_point,
+      low_stock: (p) => p.stock_quantity > 0 && p.stock_quantity <= p.reorder_point,
+      out_stock: (p) => p.stock_quantity === 0,
+    };
+
+    const filterFn = filterMap[this.selectedStockFilter.code];
+    return filterFn ? products.filter(filterFn) : products;
+  }
+
   private showSuccess(detail: string): void {
     this.showNotification('success', 'Thành công', detail);
   }
@@ -506,8 +536,12 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.showNotification('error', 'Lỗi', detail);
   }
 
-  private showNotification(severity: 'success' | 'error' | 'info', summary: string, detail: string): void {
-    this.message.add({
+  private showNotification(
+    severity: 'success' | 'error' | 'info',
+    summary: string,
+    detail: string
+  ): void {
+    this.messageService.add({
       severity,
       summary,
       detail,

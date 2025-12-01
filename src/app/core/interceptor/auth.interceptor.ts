@@ -1,9 +1,9 @@
 import { HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { TokenService } from '../services/token.service';
-import { Router } from '@angular/router';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { TokenService } from '../services/token.service';
 
 export const authInterceptor = (
   req: HttpRequest<unknown>,

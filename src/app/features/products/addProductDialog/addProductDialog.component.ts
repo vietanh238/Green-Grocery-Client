@@ -120,7 +120,6 @@ export class AddEditProductDialogComponent implements OnInit {
       this.populateForm();
     }
 
-    // Auto focus vào input đầu tiên sau khi dialog mở
     setTimeout(() => {
       if (this.productNameInput) {
         this.productNameInput.nativeElement.focus();
@@ -130,7 +129,6 @@ export class AddEditProductDialogComponent implements OnInit {
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent): void {
-    // Ctrl/Cmd + Enter để lưu
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
       if (!this.loading) {
@@ -139,7 +137,6 @@ export class AddEditProductDialogComponent implements OnInit {
       return;
     }
 
-    // Escape để đóng (chỉ khi không đang nhập)
     if (event.key === 'Escape' && !this.loading) {
       const target = event.target as HTMLElement;
       if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && target.tagName !== 'SELECT') {
@@ -324,7 +321,6 @@ export class AddEditProductDialogComponent implements OnInit {
     if (!this.barCode || this.isEditMode) return;
 
     this.checkingBarcode = true;
-    // Check if barcode exists by searching products
     this.service.getProducts({ bar_code: this.barCode }).subscribe({
       next: (response: any) => {
         this.checkingBarcode = false;
@@ -347,7 +343,6 @@ export class AddEditProductDialogComponent implements OnInit {
   checkSkuExists(): void {
     if (!this.sku || this.isEditMode) return;
 
-    // Check if SKU exists by searching products
     this.service.getProducts({ sku: this.sku }).subscribe({
       next: (response: any) => {
         if (response.status === ConstantDef.STATUS_SUCCESS) {
@@ -362,7 +357,6 @@ export class AddEditProductDialogComponent implements OnInit {
         }
       },
       error: () => {
-        // Ignore errors
       }
     });
   }

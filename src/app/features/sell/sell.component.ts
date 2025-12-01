@@ -4,12 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MessageService } from 'primeng/api';
 import { Subscription } from 'rxjs';
-
 import { PanelModule } from 'primeng/panel';
 import { ButtonModule } from 'primeng/button';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { Skeleton } from 'primeng/skeleton';
-
 import { Service } from '../../core/services/service';
 import { ConstantDef } from '../../core/constanDef';
 import { CardComponent } from '../../component/card/card.component';
@@ -48,6 +46,11 @@ interface Product {
   description?: string;
 }
 
+interface StockValidationResult {
+  valid: boolean;
+  message: string;
+}
+
 @Component({
   selector: 'app-sell',
   templateUrl: './sell.component.html',
@@ -70,53 +73,50 @@ export class SellComponent implements OnInit, OnDestroy {
   cartItems: CartItem[] = [];
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
-
   searchTerm = '';
   loading = false;
   isProcessingPayment = false;
   isProductNotFound = false;
 
+  private readonly CART_STORAGE_KEY = 'pos_cart_backup';
+  private readonly CART_BACKUP_KEY = 'pos_last_order_backup';
+  private readonly CART_EXPIRY_MS = 3600000;
+  private readonly BACKUP_CLEAR_DELAY_MS = 300000;
+  private readonly LOW_STOCK_THRESHOLD = 5;
+  private readonly PROCESSING_DELAY_MS = 300;
+
   private paymentSuccessSubscription?: Subscription;
   private processingProducts = new Set<string>();
 
   constructor(
-    private service: Service,
-    private message: MessageService,
-    private dialog: MatDialog
+    private readonly service: Service,
+    private readonly messageService: MessageService,
+    private readonly dialog: MatDialog
   ) {}
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent): void {
-    // Chỉ xử lý khi không đang nhập vào input/textarea
     const target = event.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
       return;
     }
 
-    // Enter để thanh toán tiền mặt (khi có sản phẩm trong giỏ)
     if (event.key === 'Enter' && this.cartItems.length > 0 && !this.isProcessingPayment) {
       event.preventDefault();
       this.cashPayment();
       return;
     }
 
-    // Escape để xóa giỏ hàng
     if (event.key === 'Escape' && this.cartItems.length > 0) {
       event.preventDefault();
       this.clearCart();
       return;
     }
 
-    // Ctrl/Cmd + K để mở scanner
     if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
       event.preventDefault();
       this.openScanner();
       return;
-    }
-
-    // Số 1-9 để set quick amount (chỉ khi đang ở dialog thanh toán)
-    if (event.key >= '1' && event.key <= '9' && !event.ctrlKey && !event.metaKey) {
-      // Logic này sẽ được xử lý trong cash-payment component
     }
   }
 
@@ -195,7 +195,6 @@ export class SellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Tính stock available = stock hiện tại - số lượng đã có trong giỏ
     const existingItem = this.cartItems.find((item) => item.bar_code === product.bar_code);
     const quantityInCart = existingItem ? existingItem.quantity : 0;
     const availableStock = product.stock_quantity - quantityInCart;
@@ -230,7 +229,7 @@ export class SellComponent implements OnInit, OnDestroy {
     } finally {
       setTimeout(() => {
         this.processingProducts.delete(product.bar_code);
-      }, 300);
+      }, this.PROCESSING_DELAY_MS);
     }
   }
 
@@ -241,7 +240,6 @@ export class SellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Tính stock available = stock hiện tại - số lượng đã có trong giỏ
     const availableStock = product.stock_quantity - item.quantity;
 
     if (availableStock > 0) {
@@ -272,7 +270,6 @@ export class SellComponent implements OnInit, OnDestroy {
     }
 
     newQuantity = Math.floor(newQuantity);
-
     const oldQuantity = item.quantity;
     const quantityDiff = newQuantity - oldQuantity;
 
@@ -284,26 +281,27 @@ export class SellComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Tính stock available = stock hiện tại - số lượng đã có trong giỏ (trừ item hiện tại)
       const otherItemsQuantity = this.cartItems
-        .filter(i => i.bar_code === item.bar_code && i !== item)
+        .filter((i) => i.bar_code === item.bar_code && i !== item)
         .reduce((sum, i) => sum + i.quantity, 0);
 
       const availableStock = product.stock_quantity - otherItemsQuantity;
 
       if (quantityDiff > 0) {
-        // Đang tăng số lượng
         if (availableStock < quantityDiff) {
           const maxQuantity = oldQuantity + availableStock;
           newQuantity = Math.max(oldQuantity, maxQuantity);
           input.value = newQuantity;
           if (availableStock <= 0) {
             this.showNotification('error', 'Sản phẩm đã hết hàng trong kho');
-            item.quantity = oldQuantity; // Giữ nguyên số lượng cũ
+            item.quantity = oldQuantity;
             input.value = oldQuantity;
             return;
           } else {
-            this.showNotification('warn', `Chỉ còn ${availableStock} sản phẩm trong kho. Đã tự động điều chỉnh số lượng.`);
+            this.showNotification(
+              'warn',
+              `Chỉ còn ${availableStock} sản phẩm trong kho. Đã tự động điều chỉnh số lượng.`
+            );
           }
         }
       }
@@ -320,7 +318,6 @@ export class SellComponent implements OnInit, OnDestroy {
         this.showNotification('info', `Đã giảm số lượng ${item.name}`);
       }
     } else {
-      // Nếu không thay đổi, đảm bảo input hiển thị đúng
       input.value = oldQuantity;
     }
   }
@@ -335,10 +332,8 @@ export class SellComponent implements OnInit, OnDestroy {
       return item.quantity;
     }
 
-    // Stock available = stock hiện tại - số lượng đã có trong giỏ (trừ item hiện tại)
-    // Tìm tất cả items khác có cùng barcode
     const otherItemsQuantity = this.cartItems
-      .filter(i => i.bar_code === item.bar_code && i !== item)
+      .filter((i) => i.bar_code === item.bar_code && i !== item)
       .reduce((sum, i) => sum + i.quantity, 0);
 
     const availableStock = product.stock_quantity - otherItemsQuantity;
@@ -353,7 +348,7 @@ export class SellComponent implements OnInit, OnDestroy {
 
   isLowStock(product: Product): boolean {
     const availableStock = this.getAvailableStock(product);
-    return availableStock > 0 && availableStock <= 5; // Cảnh báo khi còn <= 5
+    return availableStock > 0 && availableStock <= this.LOW_STOCK_THRESHOLD;
   }
 
   isOutOfStock(product: Product): boolean {
@@ -394,6 +389,7 @@ export class SellComponent implements OnInit, OnDestroy {
         ],
       },
     });
+
     dialog.afterClosed().subscribe((result: any) => {
       if (result) {
         this.resetCart();
@@ -414,33 +410,6 @@ export class SellComponent implements OnInit, OnDestroy {
         this.handleBarcodeScanned(result);
       }
     });
-  }
-
-  private handleBarcodeScanned(barcode: string): void {
-    this.searchTerm = barcode;
-    this.filterProducts({ target: { value: barcode } });
-
-    const product = this.allProducts.find((p) => p.bar_code === barcode);
-    if (product) {
-      // Tự động thêm vào giỏ hàng
-      this.handleAddToCart(product);
-
-      // Focus lại vào search input để sẵn sàng scan tiếp
-      setTimeout(() => {
-        if (this.searchInput) {
-          this.searchInput.nativeElement.focus();
-          this.searchInput.nativeElement.select();
-        }
-      }, 100);
-    } else {
-      this.showNotification('error', `Không tìm thấy sản phẩm với barcode: ${barcode}`);
-      // Focus vào search input
-      setTimeout(() => {
-        if (this.searchInput) {
-          this.searchInput.nativeElement.focus();
-        }
-      }, 100);
-    }
   }
 
   addManualOrder(): void {
@@ -479,11 +448,9 @@ export class SellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate stock trước khi thanh toán
     const stockValidation = this.validateStockBeforePayment();
     if (!stockValidation.valid) {
       this.showNotification('error', stockValidation.message);
-      // Reload products để cập nhật stock mới nhất
       this.loadProducts();
       return;
     }
@@ -518,7 +485,6 @@ export class SellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate stock trước khi thanh toán
     const stockValidation = this.validateStockBeforePayment();
     if (!stockValidation.valid) {
       this.showNotification('error', stockValidation.message);
@@ -557,7 +523,6 @@ export class SellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate stock trước khi thanh toán
     const stockValidation = this.validateStockBeforePayment();
     if (!stockValidation.valid) {
       this.showNotification('error', stockValidation.message);
@@ -592,6 +557,29 @@ export class SellComponent implements OnInit, OnDestroy {
     }).format(amount);
   }
 
+  private handleBarcodeScanned(barcode: string): void {
+    this.searchTerm = barcode;
+    this.filterProducts({ target: { value: barcode } });
+
+    const product = this.allProducts.find((p) => p.bar_code === barcode);
+    if (product) {
+      this.handleAddToCart(product);
+      setTimeout(() => {
+        if (this.searchInput) {
+          this.searchInput.nativeElement.focus();
+          this.searchInput.nativeElement.select();
+        }
+      }, 100);
+    } else {
+      this.showNotification('error', `Không tìm thấy sản phẩm với barcode: ${barcode}`);
+      setTimeout(() => {
+        if (this.searchInput) {
+          this.searchInput.nativeElement.focus();
+        }
+      }, 100);
+    }
+  }
+
   private subscribeToPaymentSuccess(): void {
     this.paymentSuccessSubscription = this.service.paymentSuccess$.subscribe((data: any) => {
       if (data && data.success) {
@@ -604,7 +592,6 @@ export class SellComponent implements OnInit, OnDestroy {
     this.saveCartBackup();
     this.cartItems = [];
     this.clearCartFromStorage();
-    // Reload products để cập nhật stock mới nhất sau khi thanh toán
     this.loadProducts();
     this.showNotification('success', 'Thanh toán thành công');
     this.clearCartBackupAfterDelay();
@@ -613,7 +600,6 @@ export class SellComponent implements OnInit, OnDestroy {
   private findProductByBarcode(barCode: string): Product | undefined {
     return this.allProducts.find((p) => p.bar_code === barCode);
   }
-
 
   private resetCart(): void {
     this.cartItems = [];
@@ -626,7 +612,7 @@ export class SellComponent implements OnInit, OnDestroy {
         items: this.cartItems,
         timestamp: Date.now(),
       };
-      localStorage.setItem('pos_cart_backup', JSON.stringify(cartData));
+      localStorage.setItem(this.CART_STORAGE_KEY, JSON.stringify(cartData));
     } catch (error) {
       console.error('Error saving cart to storage:', error);
     }
@@ -634,27 +620,26 @@ export class SellComponent implements OnInit, OnDestroy {
 
   private restoreCart(): void {
     try {
-      const cartBackup = localStorage.getItem('pos_cart_backup');
+      const cartBackup = localStorage.getItem(this.CART_STORAGE_KEY);
       if (cartBackup) {
         const data = JSON.parse(cartBackup);
-        const hourInMs = 3600000;
 
-        if (data.timestamp && Date.now() - data.timestamp < hourInMs) {
+        if (data.timestamp && Date.now() - data.timestamp < this.CART_EXPIRY_MS) {
           this.cartItems = data.items || [];
           this.showNotification('info', 'Đã khôi phục giỏ hàng trước đó');
         } else {
-          localStorage.removeItem('pos_cart_backup');
+          localStorage.removeItem(this.CART_STORAGE_KEY);
         }
       }
     } catch (error) {
       console.error('Error restoring cart:', error);
-      localStorage.removeItem('pos_cart_backup');
+      localStorage.removeItem(this.CART_STORAGE_KEY);
     }
   }
 
   private clearCartFromStorage(): void {
     try {
-      localStorage.removeItem('pos_cart_backup');
+      localStorage.removeItem(this.CART_STORAGE_KEY);
     } catch (error) {
       console.error('Error clearing cart from storage:', error);
     }
@@ -666,7 +651,7 @@ export class SellComponent implements OnInit, OnDestroy {
         items: [...this.cartItems],
         timestamp: Date.now(),
       };
-      localStorage.setItem('pos_last_order_backup', JSON.stringify(backup));
+      localStorage.setItem(this.CART_BACKUP_KEY, JSON.stringify(backup));
     } catch (error) {
       console.error('Error saving cart backup:', error);
     }
@@ -675,19 +660,19 @@ export class SellComponent implements OnInit, OnDestroy {
   private clearCartBackupAfterDelay(): void {
     setTimeout(() => {
       try {
-        localStorage.removeItem('pos_last_order_backup');
+        localStorage.removeItem(this.CART_BACKUP_KEY);
       } catch (error) {
         console.error('Error clearing cart backup:', error);
       }
-    }, 300000);
+    }, this.BACKUP_CLEAR_DELAY_MS);
   }
 
-  private validateStockBeforePayment(): { valid: boolean; message: string } {
+  private validateStockBeforePayment(): StockValidationResult {
     const invalidItems: string[] = [];
 
     for (const item of this.cartItems) {
       if (item.isManual) {
-        continue; // Bỏ qua sản phẩm thủ công
+        continue;
       }
 
       const product = this.findProductByBarcode(item.bar_code);
@@ -721,7 +706,7 @@ export class SellComponent implements OnInit, OnDestroy {
       warn: 'Cảnh báo',
     };
 
-    this.message.add({
+    this.messageService.add({
       severity,
       summary: summaryMap[severity],
       detail,

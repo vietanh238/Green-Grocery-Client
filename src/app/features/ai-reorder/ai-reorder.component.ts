@@ -133,46 +133,89 @@ export class AiReorderComponent implements OnInit {
   }
 
   trainAI(): void {
+    if (this.trainingAI) return;
+
     this.trainingAI = true;
 
     this.service.trainAIModel().subscribe({
       next: (rs: any) => {
         this.trainingAI = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.showSuccess('Đã train AI thành công! Đang tải dữ liệu mới...');
+          const message = rs.response?.message || 'Đã train AI thành công! Đang tải dữ liệu mới...';
+          this.showSuccess(message);
           setTimeout(() => {
             this.loadRecommendations();
           }, 1000);
         } else {
-          this.showError(rs.response.error_message_vn || 'Không thể train AI');
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể train AI';
+          const suggestion = rs.response?.suggestion;
+          this.showError(suggestion ? `${errorMsg}. ${suggestion}` : errorMsg);
         }
       },
-      error: (_error: any) => {
+      error: (error: any) => {
         this.trainingAI = false;
-        this.showError('Lỗi khi train AI');
+        console.error('Train AI error:', error);
+        const errorMsg = error?.error?.response?.error_message_vn || error?.error?.response?.error_message_us || 'Lỗi hệ thống khi train AI';
+        this.showError(errorMsg);
       },
     });
   }
 
   loadRecommendations(): void {
+    if (this.loading) return;
+
     this.loading = true;
 
     this.service.getReorderRecommendations().subscribe({
       next: (rs: any) => {
         this.loading = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.recommendations = rs.response.recommendations || [];
-          this.recommendations.forEach((r) => (r.selected = false));
-          this.summary = rs.response.summary || this.summary;
-          this.updateChart();
-          this.applyFilters();
+          try {
+            this.recommendations = Array.isArray(rs.response?.recommendations)
+              ? rs.response.recommendations
+              : [];
+            this.recommendations.forEach((r) => {
+              r.selected = false;
+              r.product_id = r.product_id || 0;
+              r.current_stock = Number(r.current_stock) || 0;
+              r.optimal_order_quantity = Number(r.optimal_order_quantity) || 0;
+              r.estimated_cost = Number(r.estimated_cost) || 0;
+              r.predicted_demand_7_days = Number(r.predicted_demand_7_days) || 0;
+              r.predicted_demand_30_days = Number(r.predicted_demand_30_days) || 0;
+              r.days_until_stockout = Number(r.days_until_stockout) || 999;
+            });
+
+            this.summary = {
+              total_products_need_reorder: Number(rs.response?.summary?.total_products_need_reorder) || 0,
+              high_urgency: Number(rs.response?.summary?.high_urgency) || 0,
+              medium_urgency: Number(rs.response?.summary?.medium_urgency) || 0,
+              low_urgency: Number(rs.response?.summary?.low_urgency) || 0,
+              critical_urgency: Number(rs.response?.summary?.critical_urgency) || 0,
+              total_estimated_cost: Number(rs.response?.summary?.total_estimated_cost) || 0,
+            };
+
+            this.updateChart();
+            this.applyFilters();
+          } catch (error) {
+            console.error('Error processing recommendations:', error);
+            this.showError('Lỗi khi xử lý dữ liệu đề xuất');
+            this.recommendations = [];
+            this.filteredRecommendations = [];
+          }
         } else {
-          this.showError('Không thể tải dữ liệu');
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tải dữ liệu';
+          this.showError(errorMsg);
+          this.recommendations = [];
+          this.filteredRecommendations = [];
         }
       },
-      error: (_error: any) => {
+      error: (error: any) => {
         this.loading = false;
-        this.showError('Lỗi hệ thống');
+        console.error('Load recommendations error:', error);
+        const errorMsg = error?.error?.response?.error_message_vn || error?.error?.response?.error_message_us || 'Lỗi hệ thống khi tải dữ liệu';
+        this.showError(errorMsg);
+        this.recommendations = [];
+        this.filteredRecommendations = [];
       },
     });
   }
@@ -276,15 +319,39 @@ export class AiReorderComponent implements OnInit {
       return;
     }
 
-    const items = this.selectedProducts.map((r) => ({
-      product_id: r.product_id,
-      product_name: r.product_name,
-      product_sku: r.product_sku,
-      quantity: Math.ceil(r.optimal_order_quantity),
-      unit_price: r.cost_price || r.estimated_cost / r.optimal_order_quantity,
-      unit: r.unit,
-      note: r.recommendation,
-    }));
+    const validProducts = this.selectedProducts.filter(r => {
+      if (!r.product_id || r.product_id <= 0) {
+        console.warn('Invalid product_id:', r);
+        return false;
+      }
+      if (!r.optimal_order_quantity || r.optimal_order_quantity <= 0) {
+        console.warn('Invalid optimal_order_quantity:', r);
+        return false;
+      }
+      return true;
+    });
+
+    if (validProducts.length === 0) {
+      this.showError('Không có sản phẩm hợp lệ để tạo đơn hàng');
+      return;
+    }
+
+    const items = validProducts.map((r) => {
+      const quantity = Math.max(1, Math.ceil(r.optimal_order_quantity));
+      const costPrice = r.cost_price || (r.estimated_cost > 0 && r.optimal_order_quantity > 0
+        ? r.estimated_cost / r.optimal_order_quantity
+        : 0);
+
+      return {
+        product_id: r.product_id,
+        product_name: r.product_name || 'Sản phẩm không tên',
+        product_sku: r.product_sku || '',
+        quantity: quantity,
+        unit_price: Math.max(0, costPrice),
+        unit: r.unit || 'cái',
+        note: r.recommendation || '',
+      };
+    });
 
     const dialogRef = this.dialog.open(PurchaseOrderDialogComponent, {
       width: '1200px',
@@ -310,18 +377,19 @@ export class AiReorderComponent implements OnInit {
       return;
     }
 
-    const exportData = this.filteredRecommendations.map((r, index) => ({
-      STT: index + 1,
-      'Sản phẩm': r.product_name,
-      SKU: r.product_sku,
-      'Độ ưu tiên': this.getUrgencyLabel(r.urgency),
-      'Tồn kho hiện tại': `${r.current_stock} ${r.unit}`,
-      'Hết hàng sau (ngày)': r.days_until_stockout,
-      'Nhu cầu 30 ngày': r.predicted_demand_30_days.toFixed(1),
-      'Đề xuất nhập': `${Math.ceil(r.optimal_order_quantity)} ${r.unit}`,
-      'Chi phí dự kiến (đ)': r.estimated_cost,
-      'Khuyến nghị': r.recommendation,
-    }));
+    try {
+      const exportData = this.filteredRecommendations.map((r, index) => ({
+        STT: index + 1,
+        'Sản phẩm': r.product_name || 'N/A',
+        SKU: r.product_sku || 'N/A',
+        'Độ ưu tiên': this.getUrgencyLabel(r.urgency || 'low'),
+        'Tồn kho hiện tại': `${Number(r.current_stock) || 0} ${r.unit || 'cái'}`,
+        'Hết hàng sau (ngày)': Number(r.days_until_stockout) || 0,
+        'Nhu cầu 30 ngày': (Number(r.predicted_demand_30_days) || 0).toFixed(1),
+        'Đề xuất nhập': `${Math.max(1, Math.ceil(Number(r.optimal_order_quantity) || 0))} ${r.unit || 'cái'}`,
+        'Chi phí dự kiến (đ)': Number(r.estimated_cost) || 0,
+        'Khuyến nghị': r.recommendation || 'Không có khuyến nghị',
+      }));
 
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
 
@@ -339,13 +407,17 @@ export class AiReorderComponent implements OnInit {
     ];
     ws['!cols'] = colWidths;
 
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'AI Recommendations');
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'AI Recommendations');
 
-    const fileName = `AI_Reorder_Recommendations_${new Date().toISOString().slice(0, 10)}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+      const fileName = `AI_Reorder_Recommendations_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
 
-    this.showSuccess(`Đã xuất file ${fileName}`);
+      this.showSuccess(`Đã xuất file ${fileName}`);
+    } catch (error) {
+      console.error('Export Excel error:', error);
+      this.showError('Có lỗi khi xuất file Excel');
+    }
   }
 
   getUrgencyLabel(urgency: string): string {

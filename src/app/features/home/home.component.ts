@@ -245,6 +245,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private loadDashboardData(): void {
+    if (this.loading) return;
+
     this.loading = true;
 
     const subscription = this.service
@@ -253,15 +255,22 @@ export class HomeComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: any) => {
           if (response.status === ConstantDef.STATUS_SUCCESS) {
-            this.processDashboardData(response.response);
-            this.initializeCharts(response.response);
+            try {
+              this.processDashboardData(response.response);
+              this.initializeCharts(response.response);
+            } catch (error) {
+              console.error('Error processing dashboard data:', error);
+              this.showError('Lỗi khi xử lý dữ liệu dashboard');
+            }
           } else {
-            this.showError('Không thể tải dữ liệu dashboard');
+            const errorMsg = response.response?.error_message_vn || response.response?.error_message_us || 'Không thể tải dữ liệu dashboard';
+            this.showError(errorMsg);
           }
         },
         error: (error: any) => {
           console.error('Dashboard data error:', error);
-          this.showError('Lỗi kết nối khi tải dữ liệu');
+          const errorMsg = error?.error?.response?.error_message_vn || error?.error?.response?.error_message_us || 'Lỗi kết nối khi tải dữ liệu';
+          this.showError(errorMsg);
         },
       });
 
@@ -286,25 +295,25 @@ export class HomeComponent implements OnInit, OnDestroy {
       top_products = [],
       inventory_stats = null,
       low_stock_products = [],
-    } = data;
+    } = data || {};
 
     Object.assign(this, {
-      todayRevenue: today_revenue,
-      todayOrders: today_orders,
-      todayProfit: today_profit,
-      todayCustomers: today_customers,
-      newCustomers: new_customers,
-      profitMargin: profit_margin,
-      revenueGrowth: revenue_growth,
-      orderGrowth: order_growth,
-      profitGrowth: profit_growth,
-      customerGrowth: customer_growth,
-      revenueComparison: revenue_comparison,
-      orderComparison: order_comparison,
-      recentSales: recent_sales,
-      topProducts: top_products,
-      inventoryStats: inventory_stats,
-      lowStockProducts: low_stock_products,
+      todayRevenue: Number(today_revenue) || 0,
+      todayOrders: Number(today_orders) || 0,
+      todayProfit: Number(today_profit) || 0,
+      todayCustomers: Number(today_customers) || 0,
+      newCustomers: Number(new_customers) || 0,
+      profitMargin: Number(profit_margin) || 0,
+      revenueGrowth: Number(revenue_growth) || 0,
+      orderGrowth: Number(order_growth) || 0,
+      profitGrowth: Number(profit_growth) || 0,
+      customerGrowth: Number(customer_growth) || 0,
+      revenueComparison: Number(revenue_comparison) || 0,
+      orderComparison: Number(order_comparison) || 0,
+      recentSales: Array.isArray(recent_sales) ? recent_sales : [],
+      topProducts: Array.isArray(top_products) ? top_products : [],
+      inventoryStats: inventory_stats || null,
+      lowStockProducts: Array.isArray(low_stock_products) ? low_stock_products : [],
     });
 
     this.generateActivities(data);
@@ -510,16 +519,23 @@ export class HomeComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: any) => {
           if (response.status === ConstantDef.STATUS_SUCCESS) {
-            this.processDashboardData(response.response);
-            this.updateChartData(response.response);
-            this.showSuccess('Đã cập nhật dữ liệu');
+            try {
+              this.processDashboardData(response.response);
+              this.updateChartData(response.response);
+              this.showSuccess('Đã cập nhật dữ liệu');
+            } catch (error) {
+              console.error('Error refreshing dashboard data:', error);
+              this.showError('Lỗi khi cập nhật dữ liệu');
+            }
           } else {
-            this.showError('Không thể tải dữ liệu dashboard');
+            const errorMsg = response.response?.error_message_vn || response.response?.error_message_us || 'Không thể tải dữ liệu dashboard';
+            this.showError(errorMsg);
           }
         },
         error: (error: any) => {
           console.error('Dashboard refresh error:', error);
-          this.showError('Lỗi kết nối khi làm mới dữ liệu');
+          const errorMsg = error?.error?.response?.error_message_vn || error?.error?.response?.error_message_us || 'Lỗi kết nối khi làm mới dữ liệu';
+          this.showError(errorMsg);
         },
       });
 

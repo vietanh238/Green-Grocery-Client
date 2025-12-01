@@ -1,12 +1,20 @@
 import { Component, OnInit } from '@angular/core';
-import { Service } from '../../../core/services/service';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ConstantDef } from '../../../core/constanDef';
 import { Router } from '@angular/router';
-import { TokenService } from '../../../core/services/token.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { CommonModule } from '@angular/common';
+import { Service } from '../../../core/services/service';
+import { ConstantDef } from '../../../core/constanDef';
+import { TokenService } from '../../../core/services/token.service';
+
+interface RegisterFormData {
+  phone_number: string;
+  password: string;
+  confirm_password: string;
+  first_name: string;
+  last_name: string;
+}
 
 @Component({
   selector: 'app-login',
@@ -17,28 +25,26 @@ import { CommonModule } from '@angular/common';
   providers: [MessageService],
 })
 export class LoginComponent implements OnInit {
-  // Login data
-  phoneNum: string = '';
+  phoneNumber: string = '';
   password: string = '';
-
-  // Register data
-  registerData = {
+  registerData: RegisterFormData = {
     phone_number: '',
     password: '',
     confirm_password: '',
     first_name: '',
     last_name: '',
   };
-
-  // UI states
   activeTab: 'login' | 'register' = 'login';
   isLoading: boolean = false;
 
+  private readonly MIN_PHONE_LENGTH = 10;
+  private readonly MIN_PASSWORD_LENGTH = 6;
+
   constructor(
-    private service: Service,
-    private router: Router,
-    private token: TokenService,
-    private message: MessageService
+    private readonly service: Service,
+    private readonly router: Router,
+    private readonly tokenService: TokenService,
+    private readonly messageService: MessageService
   ) {}
 
   ngOnInit(): void {}
@@ -49,11 +55,8 @@ export class LoginComponent implements OnInit {
   }
 
   resetForms(): void {
-    // Reset login form
-    this.phoneNum = '';
+    this.phoneNumber = '';
     this.password = '';
-
-    // Reset register form
     this.registerData = {
       phone_number: '',
       password: '',
@@ -63,225 +66,164 @@ export class LoginComponent implements OnInit {
     };
   }
 
-  validateInput(event: KeyboardEvent): void {
-    if (event.key === 'e' || event.key === 'E' || event.key === '+' || event.key === '-') {
+  validateNumericInput(event: KeyboardEvent): void {
+    const invalidKeys = ['e', 'E', '+', '-', '.'];
+    if (invalidKeys.includes(event.key)) {
       event.preventDefault();
     }
   }
 
   login(): void {
-    if (!this.validateLogin()) return;
-    if (this.isLoading) return;
+    if (!this.validateLoginForm() || this.isLoading) {
+      return;
+    }
 
     this.isLoading = true;
-
-    const params = {
-      phone_number: String(this.phoneNum.trim()),
+    const credentials = {
+      phone_number: this.phoneNumber.trim(),
       password: this.password.trim(),
     };
 
-    this.service.login(params).subscribe(
-      (data: any) => {
+    this.service.login(credentials).subscribe({
+      next: (response: any) => {
         this.isLoading = false;
-
-        if (data.status === ConstantDef.STATUS_SUCCESS) {
-          this.saveAccessToken(data.response.access);
-          this.message.add({
-            severity: 'success',
-            summary: 'Thành công',
-            detail: 'Đăng nhập thành công đang tải dữ liệu',
-            life: 1500,
-          });
-
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          this.tokenService.setAccessToken(response.response.access);
+          this.showSuccessMessage('Đăng nhập thành công đang tải dữ liệu');
           setTimeout(() => {
             this.router.navigate(['page/home']);
           }, 1000);
         } else {
-          this.message.add({
-            severity: 'error',
-            summary: 'Thông báo',
-            detail: data.response.error_message_vn,
-            life: 2000,
-          });
+          this.showErrorMessage(
+            response.response?.error_message_vn || 'Đăng nhập thất bại'
+          );
         }
       },
-      (error: any) => {
+      error: () => {
         this.isLoading = false;
-        this.message.add({
-          severity: 'error',
-          summary: 'Thông báo',
-          detail: 'Đã có lỗi xảy ra, vui lòng thử lại sau',
-          life: 2000,
-        });
-      }
-    );
+        this.showErrorMessage('Đã có lỗi xảy ra, vui lòng thử lại sau');
+      },
+    });
   }
 
   register(): void {
-    if (!this.validateRegister()) return;
-    if (this.isLoading) return;
+    if (!this.validateRegisterForm() || this.isLoading) {
+      return;
+    }
 
     this.isLoading = true;
-
-    const params = {
-      phone_number: String(this.registerData.phone_number.trim()),
+    const userData = {
+      phone_number: this.registerData.phone_number.trim(),
       password: this.registerData.password.trim(),
       first_name: this.registerData.first_name.trim(),
       last_name: this.registerData.last_name.trim(),
     };
 
-    this.service.register(params).subscribe(
-      (data: any) => {
+    this.service.register(userData).subscribe({
+      next: (response: any) => {
         this.isLoading = false;
-
-        if (data.status === ConstantDef.STATUS_SUCCESS) {
-          this.message.add({
-            severity: 'success',
-            summary: 'Thành công',
-            detail: 'Đăng ký thành công! Vui lòng đăng nhập',
-            life: 2000,
-          });
-
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          this.showSuccessMessage('Đăng ký thành công! Vui lòng đăng nhập');
           setTimeout(() => {
             this.activeTab = 'login';
-            this.phoneNum = this.registerData.phone_number;
+            this.phoneNumber = this.registerData.phone_number;
             this.resetForms();
           }, 1000);
         } else {
-          this.message.add({
-            severity: 'error',
-            summary: 'Thông báo',
-            detail: data.response.error_message_vn,
-            life: 2000,
-          });
+          this.showErrorMessage(
+            response.response?.error_message_vn || 'Đăng ký thất bại'
+          );
         }
       },
-      (error: any) => {
+      error: () => {
         this.isLoading = false;
-        this.message.add({
-          severity: 'error',
-          summary: 'Thông báo',
-          detail: 'Đã có lỗi xảy ra, vui lòng thử lại sau',
-          life: 2000,
-        });
-      }
-    );
+        this.showErrorMessage('Đã có lỗi xảy ra, vui lòng thử lại sau');
+      },
+    });
   }
 
-  saveAccessToken(token: string): void {
-    this.token.setAccessToken(token);
-  }
-
-  validateLogin(): boolean {
-    if (!this.phoneNum || String(this.phoneNum.trim()) === '') {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Vui lòng nhập số điện thoại',
-        life: 1500,
-      });
+  private validateLoginForm(): boolean {
+    if (!this.phoneNumber?.trim()) {
+      this.showWarningMessage('Vui lòng nhập số điện thoại');
       return false;
     }
 
-    if (String(this.phoneNum.trim()).length < 10) {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Số điện thoại phải có ít nhất 10 số',
-        life: 1500,
-      });
+    if (this.phoneNumber.trim().length < this.MIN_PHONE_LENGTH) {
+      this.showWarningMessage(`Số điện thoại phải có ít nhất ${this.MIN_PHONE_LENGTH} số`);
       return false;
     }
 
-    if (!this.password || this.password.trim() === '') {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Vui lòng nhập mật khẩu đăng nhập',
-        life: 1500,
-      });
+    if (!this.password?.trim()) {
+      this.showWarningMessage('Vui lòng nhập mật khẩu đăng nhập');
       return false;
     }
 
     return true;
   }
 
-  validateRegister(): boolean {
-    // Validate phone number
-    if (!this.registerData.phone_number || String(this.registerData.phone_number.trim()) === '') {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Vui lòng nhập số điện thoại',
-        life: 1500,
-      });
+  private validateRegisterForm(): boolean {
+    if (!this.registerData.phone_number?.trim()) {
+      this.showWarningMessage('Vui lòng nhập số điện thoại');
       return false;
     }
 
-    if (String(this.registerData.phone_number.trim()).length < 10) {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Số điện thoại phải có ít nhất 10 số',
-        life: 1500,
-      });
+    if (this.registerData.phone_number.trim().length < this.MIN_PHONE_LENGTH) {
+      this.showWarningMessage(`Số điện thoại phải có ít nhất ${this.MIN_PHONE_LENGTH} số`);
       return false;
     }
 
-    // Validate password
-    if (!this.registerData.password || this.registerData.password.trim() === '') {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Vui lòng nhập mật khẩu',
-        life: 1500,
-      });
+    if (!this.registerData.password?.trim()) {
+      this.showWarningMessage('Vui lòng nhập mật khẩu');
       return false;
     }
 
-    if (this.registerData.password.length < 6) {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Mật khẩu phải có ít nhất 6 ký tự',
-        life: 1500,
-      });
+    if (this.registerData.password.length < this.MIN_PASSWORD_LENGTH) {
+      this.showWarningMessage(`Mật khẩu phải có ít nhất ${this.MIN_PASSWORD_LENGTH} ký tự`);
       return false;
     }
 
-    // Validate confirm password
     if (this.registerData.password !== this.registerData.confirm_password) {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Mật khẩu xác nhận không khớp',
-        life: 1500,
-      });
+      this.showWarningMessage('Mật khẩu xác nhận không khớp');
       return false;
     }
 
-    // Validate first name
-    if (!this.registerData.first_name || this.registerData.first_name.trim() === '') {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Vui lòng nhập họ',
-        life: 1500,
-      });
+    if (!this.registerData.first_name?.trim()) {
+      this.showWarningMessage('Vui lòng nhập họ');
       return false;
     }
 
-    // Validate last name
-    if (!this.registerData.last_name || this.registerData.last_name.trim() === '') {
-      this.message.add({
-        severity: 'warn',
-        summary: 'Thông báo',
-        detail: 'Vui lòng nhập tên',
-        life: 1500,
-      });
+    if (!this.registerData.last_name?.trim()) {
+      this.showWarningMessage('Vui lòng nhập tên');
       return false;
     }
 
     return true;
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: message,
+      life: 1500,
+    });
+  }
+
+  private showErrorMessage(message: string): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Thông báo',
+      detail: message,
+      life: 2000,
+    });
+  }
+
+  private showWarningMessage(message: string): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Thông báo',
+      detail: message,
+      life: 1500,
+    });
   }
 }

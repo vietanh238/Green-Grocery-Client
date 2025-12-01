@@ -232,16 +232,52 @@ export class ReportComponent implements OnInit, OnDestroy {
   }
 
   onDateRangeSelect(): void {
-    if (this.customDateFrom && this.customDateTo) {
-      if (this.customDateFrom > this.customDateTo) {
-        this.showNotification('error', 'Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
-        return;
-      }
-      this.loadReportData();
+    if (!this.customDateFrom || !this.customDateTo) {
+      this.showNotification('warn', 'Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc');
+      return;
     }
+
+    if (this.customDateFrom > this.customDateTo) {
+      this.showNotification('error', 'Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
+      return;
+    }
+
+    const fromDate = new Date(this.customDateFrom);
+    const toDate = new Date(this.customDateTo);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (toDate > today) {
+      this.showNotification('error', 'Ngày kết thúc không được là ngày trong tương lai');
+      return;
+    }
+
+    const maxDaysDiff = 365 * 2;
+    const daysDiff = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysDiff > maxDaysDiff) {
+      this.showNotification('error', `Khoảng thời gian không được vượt quá ${maxDaysDiff} ngày`);
+      return;
+    }
+
+    if (daysDiff < 0) {
+      this.showNotification('error', 'Khoảng thời gian không hợp lệ');
+      return;
+    }
+
+    this.loadReportData();
   }
 
   private loadReportData(): void {
+    if (this.loading) return;
+
+    if (this.selectedPeriod === 'custom') {
+      if (!this.customDateFrom || !this.customDateTo) {
+        this.showNotification('warn', 'Vui lòng chọn khoảng thời gian tùy chỉnh');
+        return;
+      }
+    }
+
     this.loading = true;
 
     const params = this.buildRequestParams();
@@ -252,15 +288,22 @@ export class ReportComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (rs: any) => {
           if (rs.status === ConstantDef.STATUS_SUCCESS) {
-            this.processReportData(rs.response);
-            this.updateCharts();
+            try {
+              this.processReportData(rs.response);
+              this.updateCharts();
+            } catch (error) {
+              console.error('Error processing report data:', error);
+              this.showNotification('error', 'Lỗi khi xử lý dữ liệu báo cáo');
+            }
           } else {
-            this.showNotification('error', rs.response?.error_message_vn || 'Không thể tải báo cáo');
+            const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tải báo cáo';
+            this.showNotification('error', errorMsg);
           }
         },
         error: (error: any) => {
           console.error('Report loading error:', error);
-          this.showNotification('error', 'Lỗi hệ thống khi tải báo cáo');
+          const errorMsg = error?.error?.response?.error_message_vn || error?.error?.response?.error_message_us || 'Lỗi hệ thống khi tải báo cáo';
+          this.showNotification('error', errorMsg);
         },
       });
 
@@ -280,27 +323,41 @@ export class ReportComponent implements OnInit, OnDestroy {
 
   private processReportData(data: any): void {
     this.summary = {
-      totalRevenue: data.total_revenue || 0,
-      totalProfit: data.total_profit || 0,
-      totalOrders: data.orders_count || 0,
-      profitMargin: data.profit_margin || 0,
+      totalRevenue: Number(data.total_revenue) || 0,
+      totalProfit: Number(data.total_profit) || 0,
+      totalOrders: Number(data.orders_count) || 0,
+      profitMargin: Number(data.profit_margin) || 0,
     };
 
     this.growth = {
-      revenue: data.revenue_growth || 0,
-      profit: data.profit_growth || 0,
-      order: data.order_growth || 0,
-      margin: data.margin_growth || 0,
+      revenue: Number(data.revenue_growth) || 0,
+      profit: Number(data.profit_growth) || 0,
+      order: Number(data.order_growth) || 0,
+      margin: Number(data.margin_growth) || 0,
     };
 
     this.comparison = {
-      revenue: data.revenue_comparison || 0,
-      profit: data.profit_comparison || 0,
-      order: data.order_comparison || 0,
+      revenue: Number(data.revenue_comparison) || 0,
+      profit: Number(data.profit_comparison) || 0,
+      order: Number(data.order_comparison) || 0,
     };
 
-    this.topProducts = data.top_products || [];
-    this.monthlyRevenueData = data.monthly_revenue || [];
+    this.topProducts = Array.isArray(data.top_products)
+      ? data.top_products.map((p: any) => ({
+          name: p.name || 'N/A',
+          sku: p.sku || '',
+          quantity: Number(p.quantity) || 0,
+          revenue: Number(p.revenue) || 0,
+        }))
+      : [];
+
+    this.monthlyRevenueData = Array.isArray(data.monthly_revenue)
+      ? data.monthly_revenue.map((m: any) => ({
+          month: m.month || '',
+          revenue: Number(m.revenue) || 0,
+          orders: Number(m.orders) || 0,
+        }))
+      : [];
   }
 
   private updateCharts(): void {
@@ -347,8 +404,11 @@ export class ReportComponent implements OnInit, OnDestroy {
 
     const labels = this.monthlyRevenueData.map((item) => item.month);
     const profitData = this.monthlyRevenueData.map((item) => {
-      const profit = this.summary.totalProfit / this.monthlyRevenueData.length;
-      return profit / 1000000;
+      const totalRevenue = this.summary.totalRevenue || 1;
+      const monthlyRevenue = item.revenue || 0;
+      const profitRatio = this.summary.totalProfit / totalRevenue;
+      const monthlyProfit = monthlyRevenue * profitRatio;
+      return monthlyProfit / 1000000;
     });
 
     this.profitChartData = {
@@ -408,10 +468,12 @@ export class ReportComponent implements OnInit, OnDestroy {
   }
 
   exportExcel(): void {
-    if (!this.topProducts.length && this.summary.totalRevenue === 0) {
+    if (!this.topProducts.length && this.summary.totalRevenue === 0 && this.monthlyRevenueData.length === 0) {
       this.showNotification('warn', 'Không có dữ liệu để xuất');
       return;
     }
+
+    if (this.exporting) return;
 
     this.exporting = true;
 
@@ -429,13 +491,14 @@ export class ReportComponent implements OnInit, OnDestroy {
           this.addMonthlyRevenueSheet(wb);
         }
 
-        const fileName = `BaoCao_KinhDoanh_${this.formatDateForFile()}.xlsx`;
+        const periodLabel = this.periodOptions.find(p => p.value === this.selectedPeriod)?.label || this.selectedPeriod;
+        const fileName = `BaoCao_KinhDoanh_${periodLabel}_${this.formatDateForFile()}.xlsx`;
         XLSX.writeFile(wb, fileName);
 
         this.showNotification('success', `Đã xuất báo cáo: ${fileName}`);
       } catch (error) {
         console.error('Export error:', error);
-        this.showNotification('error', 'Có lỗi khi xuất file Excel');
+        this.showNotification('error', 'Có lỗi khi xuất file Excel. Vui lòng thử lại.');
       } finally {
         this.exporting = false;
       }

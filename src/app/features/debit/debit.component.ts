@@ -169,40 +169,58 @@ export class DebtComponent implements OnInit {
   }
 
   getCustomer() {
+    this.loading = true;
     this.service.getCustomers().subscribe(
       (rs: any) => {
+        this.loading = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          if (rs.response && rs.response.length > 0) {
-            let data = rs.response;
-            data = data.map((item: any, index: number) => ({
-              id: item?.customer_code,
-              name: item?.name,
-              phone: item?.phone,
-              address: item?.address,
-              totalDebt: item?.total_debt || 0,
-              lastTransaction: item?.last_transaction_date
-                ? moment(item?.last_transaction_date).format('DD/MM/YYYY')
-                : 'Không có giao dịch',
-              dueDate: item?.due_date
-                ? moment(item.due_date).format('DD/MM/YYYY')
-                : 'Không có kì hạn',
-              status: item?.debt_status,
-              colorStatus: this.getColorStatus(item?.debt_status),
-              customerType: item?.customer_type,
-              totalOrders: item?.total_orders || 0,
-              totalSpent: item?.total_spent || 0,
-              lastPurchaseDate: item?.last_purchase_date
-                ? moment(item?.last_purchase_date).format('DD/MM/YYYY')
-                : 'Không có mua hàng',
-              history: item?.history || [],
-            }));
-            this.customers = data;
-            this.filteredCustomers = [...this.customers];
+          try {
+            if (rs.response && Array.isArray(rs.response) && rs.response.length > 0) {
+              let data = rs.response;
+              data = data.map((item: any) => ({
+                id: item?.customer_code || '',
+                name: item?.name || '',
+                phone: item?.phone || '',
+                address: item?.address || '',
+                totalDebt: Number(item?.total_debt) || 0,
+                lastTransaction: item?.last_transaction_date
+                  ? moment(item?.last_transaction_date).format('DD/MM/YYYY')
+                  : 'Không có giao dịch',
+                dueDate: item?.due_date
+                  ? moment(item.due_date).format('DD/MM/YYYY')
+                  : 'Không có kì hạn',
+                status: item?.debt_status || 'no_debt',
+                colorStatus: this.getColorStatus(item?.debt_status),
+                customerType: item?.customer_type || '',
+                totalOrders: Number(item?.total_orders) || 0,
+                totalSpent: Number(item?.total_spent) || 0,
+                lastPurchaseDate: item?.last_purchase_date
+                  ? moment(item?.last_purchase_date).format('DD/MM/YYYY')
+                  : 'Không có mua hàng',
+                history: Array.isArray(item?.history) ? item.history : [],
+              }));
+              this.customers = data;
+              this.filteredCustomers = [...this.customers];
+            } else {
+              this.customers = [];
+              this.filteredCustomers = [];
+            }
+          } catch (error) {
+            console.error('Error processing customer data:', error);
+            this.showError('Lỗi khi xử lý dữ liệu khách hàng');
+            this.customers = [];
+            this.filteredCustomers = [];
           }
+        } else {
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tải danh sách khách hàng';
+          this.showError(errorMsg);
         }
       },
-      (_error: any) => {
-        this.showError('Lỗi hệ thống');
+      (error: any) => {
+        this.loading = false;
+        console.error('Get customer error:', error);
+        const errorMsg = error?.error?.response?.error_message_vn || error?.error?.response?.error_message_us || 'Lỗi hệ thống khi tải danh sách khách hàng';
+        this.showError(errorMsg);
       }
     );
   }
@@ -230,20 +248,33 @@ export class DebtComponent implements OnInit {
   }
 
   getDebit() {
+    this.loading = true;
     this.service.getDebits().subscribe(
       (rs: any) => {
+        this.loading = false;
         if (rs.status === ConstantDef.STATUS_SUCCESS) {
-          this.totalDebt = rs.response?.total_debt || 0;
-          this.change_percent = rs.response?.change_percent || 0;
-          this.totalCustomers = rs.response?.customer_count || 0;
-          this.thisMonthDebt = rs.response?.debt_this_month?.this_month_amount || 0;
-          this.countTransaction = rs.response?.debt_this_month?.this_month_transactions || 0;
-          this.overdueDebt = rs.response?.debt_overdue?.overdue_amount || 0;
-          this.overdue_customers = rs.response?.debt_overdue?.overdue_customers || 0;
+          try {
+            this.totalDebt = Number(rs.response?.total_debt) || 0;
+            this.change_percent = Number(rs.response?.change_percent) || 0;
+            this.totalCustomers = Number(rs.response?.customer_count) || 0;
+            this.thisMonthDebt = Number(rs.response?.debt_this_month?.this_month_amount) || 0;
+            this.countTransaction = Number(rs.response?.debt_this_month?.this_month_transactions) || 0;
+            this.overdueDebt = Number(rs.response?.debt_overdue?.overdue_amount) || 0;
+            this.overdue_customers = Number(rs.response?.debt_overdue?.overdue_customers) || 0;
+          } catch (error) {
+            console.error('Error processing debit data:', error);
+            this.showError('Lỗi khi xử lý dữ liệu công nợ');
+          }
+        } else {
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể tải dữ liệu công nợ';
+          this.showError(errorMsg);
         }
       },
-      (_error: any) => {
-        this.showError('Lỗi hệ thống');
+      (error: any) => {
+        this.loading = false;
+        console.error('Get debit error:', error);
+        const errorMsg = error?.error?.response?.error_message_vn || error?.error?.response?.error_message_us || 'Lỗi hệ thống khi tải dữ liệu công nợ';
+        this.showError(errorMsg);
       }
     );
   }
@@ -311,6 +342,9 @@ export class DebtComponent implements OnInit {
     this.checkWindowSize();
     this.showAddDebtDialog = true;
     this.resetDebtForm();
+    const defaultDueDate = new Date();
+    defaultDueDate.setDate(defaultDueDate.getDate() + 30);
+    this.dueDate = defaultDueDate;
   }
 
   openPaymentDialog() {
@@ -324,11 +358,42 @@ export class DebtComponent implements OnInit {
   }
 
   addCustomer() {
-    if (!this.newCustomer.name || !this.newCustomer.phone) {
+    if (!this.newCustomer.name || !this.newCustomer.name.trim()) {
       this.message.add({
         severity: 'error',
         summary: 'Lỗi',
-        detail: 'Vui lòng nhập tên và số điện thoại khách hàng',
+        detail: 'Vui lòng nhập tên khách hàng',
+        life: 3000,
+      });
+      return;
+    }
+
+    if (!this.newCustomer.phone || !this.newCustomer.phone.trim()) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Vui lòng nhập số điện thoại khách hàng',
+        life: 3000,
+      });
+      return;
+    }
+
+    const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8,9})\b$/;
+    if (!phoneRegex.test(this.newCustomer.phone.trim())) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam (10-11 số, bắt đầu bằng 0)',
+        life: 5000,
+      });
+      return;
+    }
+
+    if (this.newCustomer.name.trim().length < 2) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Tên khách hàng phải có ít nhất 2 ký tự',
         life: 3000,
       });
       return;
@@ -355,14 +420,13 @@ export class DebtComponent implements OnInit {
           this.resetCustomerForm();
           this.getCustomer();
         } else {
-          if (rs.error_code == 2) {
-            this.message.add({
-              severity: 'error',
-              summary: 'Lỗi',
-              detail: 'Số điện thoại khách hàng đã được đăng kí',
-              life: 3000,
-            });
-          }
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể thêm khách hàng';
+          this.message.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: errorMsg,
+            life: 5000,
+          });
         }
       },
       (error: any) => {
@@ -378,15 +442,51 @@ export class DebtComponent implements OnInit {
   }
 
   addDebt() {
-    if (!this.newDebt.customerId || !this.newDebt.amount) {
+    if (!this.newDebt.customerId) {
       this.message.add({
         severity: 'error',
         summary: 'Lỗi',
-        detail: 'Vui lòng nhập đầy đủ thông tin',
+        detail: 'Vui lòng chọn khách hàng',
         life: 3000,
       });
       return;
     }
+
+    if (!this.newDebt.amount || this.newDebt.amount <= 0) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Số tiền nợ phải lớn hơn 0',
+        life: 3000,
+      });
+      return;
+    }
+
+    if (!this.dueDate) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Vui lòng chọn ngày đến hạn',
+        life: 3000,
+      });
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(this.dueDate);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Ngày đến hạn không được là ngày trong quá khứ',
+        life: 3000,
+      });
+      return;
+    }
+
     const params = {
       customer_code: this.newDebt.customerId,
       debit_amount: this.newDebt.amount,
@@ -431,12 +531,33 @@ export class DebtComponent implements OnInit {
   }
 
   addPayment() {
-    if (!this.newPayment.customerId || !this.newPayment.amount) {
+    if (!this.newPayment.customerId) {
       this.message.add({
         severity: 'error',
         summary: 'Lỗi',
-        detail: 'Vui lòng nhập đầy đủ thông tin',
+        detail: 'Vui lòng chọn khách hàng',
         life: 3000,
+      });
+      return;
+    }
+
+    if (!this.newPayment.amount || this.newPayment.amount <= 0) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Số tiền thanh toán phải lớn hơn 0',
+        life: 3000,
+      });
+      return;
+    }
+
+    const customer = this.customers.find(c => c.id === this.newPayment.customerId);
+    if (customer && this.newPayment.amount > customer.totalDebt) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: `Số tiền thanh toán (${this.formatCurrency(this.newPayment.amount)}) vượt quá số nợ hiện tại (${this.formatCurrency(customer.totalDebt)})`,
+        life: 5000,
       });
       return;
     }
@@ -462,11 +583,6 @@ export class DebtComponent implements OnInit {
           this.resetPaymentForm();
           this.getCustomer();
           this.getDebit();
-
-          // Hiển thị thông tin chi tiết thanh toán nếu có
-          if (rs.response.processed_debts && rs.response.processed_debts.length > 0) {
-            console.log('Chi tiết thanh toán:', rs.response.processed_debts);
-          }
         } else {
           this.message.add({
             severity: 'error',
@@ -527,14 +643,13 @@ export class DebtComponent implements OnInit {
               this.getCustomer();
               this.getDebit();
             } else {
-              if (rs.error_code == 1) {
-                this.message.add({
-                  severity: 'error',
-                  summary: 'Lỗi',
-                  detail: 'không thể xóa khách hàng vẫn còn nợ',
-                  life: 3000,
-                });
-              }
+              const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Không thể xóa khách hàng';
+              this.message.add({
+                severity: 'error',
+                summary: 'Lỗi',
+                detail: errorMsg,
+                life: 5000,
+              });
             }
           },
           (error: any) => {
@@ -566,6 +681,7 @@ export class DebtComponent implements OnInit {
       note: '',
     };
     this.amountDisplay = '';
+    this.dueDate = undefined;
   }
 
   resetPaymentForm() {
@@ -636,6 +752,14 @@ export class DebtComponent implements OnInit {
     const cleanNumber = numericString.replace(/^0+/, '') || '0';
     if (cleanNumber === '0') return '';
     return cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0,
+    }).format(amount);
   }
 
   exportData() {
