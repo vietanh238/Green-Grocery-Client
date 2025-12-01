@@ -1,5 +1,5 @@
-export const URL_SERVER = 'https://api.green-grocery.io.vn';
-// export const URL_SERVER = 'http://127.0.0.1:8000';
+// export const URL_SERVER = 'https://api.green-grocery.io.vn';
+export const URL_SERVER = 'http://127.0.0.1:8000';
 const apiConnectServer = URL_SERVER + '/api/';
 export const environment = {
   apiCommon: apiConnectServer,

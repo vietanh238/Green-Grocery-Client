@@ -2,14 +2,14 @@
   <div class="dialog-header">
     <h2 class="dialog-title">
       <i class="pi pi-building"></i>
-      Quản lý nhà cung cấp
+      {{ isSelectMode ? 'Chọn nhà cung cấp' : 'Quản lý nhà cung cấp' }}
     </h2>
     <button class="close-btn" (click)="close()">
       <i class="pi pi-times"></i>
     </button>
   </div>
 
-  <div class="dialog-actions">
+  <div class="dialog-actions" *ngIf="!isSelectMode">
     <button class="btn-add" (click)="openAddDialog()">
       <i class="pi pi-plus"></i>
       Thêm nhà cung cấp
@@ -30,11 +30,11 @@
           <th>Tên nhà cung cấp</th>
           <th style="width: 140px">Số điện thoại</th>
           <th style="width: 180px">Email</th>
-          <th style="width: 100px" class="text-center">Thao tác</th>
+          <th style="width: 150px" class="text-center">Thao tác</th>
         </tr>
       </ng-template>
       <ng-template #body let-supplier>
-        <tr>
+        <tr [class.selectable-row]="isSelectMode" (click)="onRowClick(supplier)">
           <td>
             <span class="supplier-code">{{ supplier.supplier_code }}</span>
           </td>
@@ -49,10 +49,24 @@
           <td>{{ supplier.phone }}</td>
           <td>{{ supplier.email || '-' }}</td>
           <td class="text-center">
-            <button class="btn-select" (click)="selectSupplier(supplier)">
-              <i class="pi pi-check"></i>
-              Chọn
-            </button>
+            <!-- Chế độ chọn: hiển thị nút chọn -->
+            <div *ngIf="isSelectMode" class="action-buttons">
+              <button class="btn-select" (click)="selectSupplier(supplier); $event.stopPropagation()" title="Chọn">
+                <i class="pi pi-check"></i>
+                Chọn
+              </button>
+            </div>
+            <!-- Chế độ quản lý: hiển thị nút sửa/xóa -->
+            <div *ngIf="!isSelectMode" class="action-buttons">
+              <button class="btn-edit" (click)="editSupplier(supplier); $event.stopPropagation()" title="Sửa">
+                <i class="pi pi-pencil"></i>
+                Sửa
+              </button>
+              <button class="btn-delete" (click)="deleteSupplier(supplier); $event.stopPropagation()" title="Xóa">
+                <i class="pi pi-trash"></i>
+                Xóa
+              </button>
+            </div>
           </td>
         </tr>
       </ng-template>
@@ -193,6 +207,129 @@
     </div>
   </ng-template>
 </p-dialog>
+
+<!-- Edit Supplier Dialog -->
+<p-dialog
+  [(visible)]="showEditDialog"
+  [modal]="true"
+  [closable]="false"
+  [style]="{ width: '600px' }"
+  styleClass="add-supplier-dialog"
+>
+  <ng-template pTemplate="header">
+    <h3 class="dialog-title">
+      <i class="pi pi-pencil"></i>
+      Sửa nhà cung cấp
+    </h3>
+  </ng-template>
+
+  <div class="form-container" *ngIf="editingSupplier">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Mã nhà cung cấp <span class="required">*</span></label>
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="editingSupplier.supplier_code"
+          readonly
+          class="form-control"
+        />
+      </div>
+      <div class="form-group">
+        <label>Tên nhà cung cấp <span class="required">*</span></label>
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="editingSupplier.name"
+          placeholder="Nhập tên nhà cung cấp"
+          class="form-control"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Người liên hệ</label>
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="editingSupplier.contact_person"
+          placeholder="Tên người liên hệ"
+          class="form-control"
+        />
+      </div>
+      <div class="form-group">
+        <label>Số điện thoại <span class="required">*</span></label>
+        <input
+          type="tel"
+          pInputText
+          [(ngModel)]="editingSupplier.phone"
+          placeholder="0xxx xxx xxx"
+          class="form-control"
+        />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Email</label>
+        <input
+          type="email"
+          pInputText
+          [(ngModel)]="editingSupplier.email"
+          placeholder="email@example.com"
+          class="form-control"
+        />
+      </div>
+      <div class="form-group">
+        <label>Mã số thuế</label>
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="editingSupplier.tax_code"
+          placeholder="Mã số thuế"
+          class="form-control"
+        />
+      </div>
+    </div>
+
+    <div class="form-group full-width">
+      <label>Địa chỉ</label>
+      <input
+        type="text"
+        pInputText
+        [(ngModel)]="editingSupplier.address"
+        placeholder="Địa chỉ nhà cung cấp"
+        class="form-control"
+      />
+    </div>
+
+    <div class="form-group full-width">
+      <label>Ghi chú</label>
+      <textarea
+        pInputText
+        [(ngModel)]="editingSupplier.note"
+        placeholder="Ghi chú thêm"
+        rows="3"
+        class="form-control"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <button class="btn-cancel" (click)="showEditDialog = false; editingSupplier = null">
+        <i class="pi pi-times"></i>
+        Hủy
+      </button>
+      <button class="btn-save" (click)="updateSupplier()">
+        <i class="pi pi-check"></i>
+        Cập nhật
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
+
 
 
 

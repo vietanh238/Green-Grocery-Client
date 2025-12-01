@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogRef, MatDialogModule, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -9,6 +9,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Service } from '../../../core/services/service';
 import { ConstantDef } from '../../../core/constanDef';
+import { ConfirmDialogComponent } from '../../../component/confirmDialog/confirmDialog.component';
 
 interface Supplier {
   id?: number;
@@ -43,6 +44,9 @@ export class SupplierDialogComponent implements OnInit {
   suppliers: Supplier[] = [];
   loading: boolean = false;
   showAddDialog: boolean = false;
+  showEditDialog: boolean = false;
+  editingSupplier: Supplier | null = null;
+  isSelectMode: boolean = false; // Chế độ chọn nhà cung cấp (từ dialog đặt hàng)
 
   newSupplier: Supplier = {
     supplier_code: '',
@@ -58,9 +62,14 @@ export class SupplierDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<SupplierDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any,
     private service: Service,
-    private message: MessageService
-  ) {}
+    private message: MessageService,
+    private dialog: MatDialog
+  ) {
+    // Nếu có data.selectMode = true, đây là chế độ chọn nhà cung cấp
+    this.isSelectMode = data?.selectMode === true;
+  }
 
   ngOnInit(): void {
     this.loadSuppliers();
@@ -131,6 +140,90 @@ export class SupplierDialogComponent implements OnInit {
     this.dialogRef.close(supplier);
   }
 
+  onRowClick(supplier: Supplier): void {
+    // Nếu ở chế độ chọn, click vào dòng sẽ chọn nhà cung cấp
+    if (this.isSelectMode) {
+      this.selectSupplier(supplier);
+    }
+  }
+
+  editSupplier(supplier: Supplier): void {
+    this.editingSupplier = { ...supplier };
+    this.showEditDialog = true;
+  }
+
+  updateSupplier(): void {
+    if (!this.editingSupplier || !this.editingSupplier.name || !this.editingSupplier.phone) {
+      this.showError('Vui lòng nhập tên và số điện thoại nhà cung cấp');
+      return;
+    }
+
+    if (!this.editingSupplier.supplier_code) {
+      this.showError('Không tìm thấy mã nhà cung cấp');
+      return;
+    }
+
+    this.service.updateSupplier(this.editingSupplier).subscribe({
+      next: (rs: any) => {
+        if (rs.status === ConstantDef.STATUS_SUCCESS) {
+          this.showSuccess('Cập nhật nhà cung cấp thành công');
+          this.showEditDialog = false;
+          this.editingSupplier = null;
+          this.loadSuppliers();
+        } else {
+          const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Cập nhật nhà cung cấp thất bại';
+          this.showError(errorMsg);
+        }
+      },
+      error: (error: any) => {
+        console.error('Update supplier error:', error);
+        const errorMsg = error?.error?.response?.error_message_vn ||
+                        error?.error?.response?.error_message_us ||
+                        error?.message ||
+                        'Lỗi hệ thống';
+        this.showError(`Lỗi: ${errorMsg}`);
+      }
+    });
+  }
+
+  deleteSupplier(supplier: Supplier): void {
+    if (!supplier.supplier_code) {
+      this.showError('Không tìm thấy mã nhà cung cấp');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      disableClose: true,
+      data: {
+        title: 'Xác nhận xóa nhà cung cấp',
+        message: `Bạn có chắc chắn muốn xóa nhà cung cấp "${supplier.name}"?`,
+        buttons: [
+          { label: 'Hủy', class: 'default', value: false, color: '', background: '' },
+          { label: 'Xóa', class: 'warn', value: true, color: '', background: '' },
+        ],
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.service.deleteSupplier(supplier.supplier_code).subscribe({
+          next: (rs: any) => {
+            if (rs.status === ConstantDef.STATUS_SUCCESS) {
+              this.showSuccess('Xóa nhà cung cấp thành công');
+              this.loadSuppliers();
+            } else {
+              const errorMsg = rs.response?.error_message_vn || rs.response?.error_message_us || 'Xóa nhà cung cấp thất bại';
+              this.showError(errorMsg);
+            }
+          },
+          error: () => {
+            this.showError('Lỗi hệ thống');
+          }
+        });
+      }
+    });
+  }
+
   close(): void {
     this.dialogRef.close();
   }
@@ -153,6 +246,7 @@ export class SupplierDialogComponent implements OnInit {
     });
   }
 }
+
 
 
 

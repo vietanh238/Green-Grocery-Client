@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { Select } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
+import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
 import { forkJoin } from 'rxjs';
 import { Service } from '../../../core/services/service';
@@ -56,7 +57,8 @@ interface Supplier {
     InputTextModule,
     InputNumberModule,
     Select,
-    ToastModule
+    ToastModule,
+    DialogModule
   ],
   providers: [MessageService]
 })
@@ -67,6 +69,10 @@ export class PurchaseOrderDialogComponent implements OnInit {
   expectedDate: string = '';
   note: string = '';
   loading: boolean = false;
+  allProducts: Product[] = [];
+  showAddProductDialog: boolean = false;
+  productSearchText: string = '';
+  filteredProducts: Product[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<PurchaseOrderDialogComponent>,
@@ -220,7 +226,8 @@ export class PurchaseOrderDialogComponent implements OnInit {
     const supplierDialog = this.dialog.open(SupplierDialogComponent, {
       width: '900px',
       maxWidth: '95vw',
-      disableClose: true
+      disableClose: true,
+      data: { selectMode: true } // Bật chế độ chọn
     });
 
     supplierDialog.afterClosed().subscribe((supplier: Supplier) => {
@@ -236,6 +243,91 @@ export class PurchaseOrderDialogComponent implements OnInit {
 
   removeItem(index: number): void {
     this.poItems.splice(index, 1);
+  }
+
+  openAddProductDialog(): void {
+    this.loadAllProducts();
+    this.showAddProductDialog = true;
+    this.productSearchText = '';
+    this.filteredProducts = [];
+  }
+
+  loadAllProducts(): void {
+    this.loading = true;
+    this.service.getProducts().subscribe({
+      next: (response: any) => {
+        this.loading = false;
+        if (response.status === ConstantDef.STATUS_SUCCESS) {
+          this.allProducts = response.response || [];
+          this.filteredProducts = this.allProducts;
+        } else {
+          this.showError('Không thể tải danh sách sản phẩm');
+        }
+      },
+      error: () => {
+        this.loading = false;
+        this.showError('Lỗi khi tải danh sách sản phẩm');
+      }
+    });
+  }
+
+  onProductSearch(): void {
+    if (!this.productSearchText || this.productSearchText.trim() === '') {
+      this.filteredProducts = this.allProducts;
+      return;
+    }
+
+    const searchTerm = this.productSearchText.toLowerCase().trim();
+    this.filteredProducts = this.allProducts.filter(product => {
+      return (
+        product.name.toLowerCase().includes(searchTerm) ||
+        product.sku.toLowerCase().includes(searchTerm)
+      );
+    });
+  }
+
+  addProductToPO(product: Product): void {
+    // Kiểm tra xem sản phẩm đã có trong danh sách chưa
+    const existingItem = this.poItems.find(item => item.product_id === product.id);
+    if (existingItem) {
+      this.message.add({
+        severity: 'warn',
+        summary: 'Thông báo',
+        detail: 'Sản phẩm đã có trong danh sách đặt hàng',
+        life: 2000
+      });
+      return;
+    }
+
+    // Thêm sản phẩm vào danh sách
+    const newItem: POItem = {
+      product_id: product.id,
+      product_name: product.name,
+      product_sku: product.sku,
+      product_unit: product.unit,
+      quantity: 1,
+      unit_price: product.cost_price || 0,
+      total_price: product.cost_price || 0,
+      note: `Tồn kho hiện tại: ${product.stock_quantity}`
+    };
+
+    this.poItems.push(newItem);
+    this.showAddProductDialog = false;
+    this.productSearchText = '';
+    this.filteredProducts = [];
+
+    this.message.add({
+      severity: 'success',
+      summary: 'Thành công',
+      detail: 'Đã thêm sản phẩm vào danh sách đặt hàng',
+      life: 2000
+    });
+  }
+
+  closeAddProductDialog(): void {
+    this.showAddProductDialog = false;
+    this.productSearchText = '';
+    this.filteredProducts = [];
   }
 
   getTotalAmount(): number {
@@ -329,6 +421,12 @@ export class PurchaseOrderDialogComponent implements OnInit {
       detail,
       life: 3000
     });
+  }
+
+  getStockClass(product: Product): string {
+    if (product.stock_quantity === 0) return 'out-of-stock';
+    if (product.stock_quantity <= product.reorder_point) return 'low-stock';
+    return 'in-stock';
   }
 }
 

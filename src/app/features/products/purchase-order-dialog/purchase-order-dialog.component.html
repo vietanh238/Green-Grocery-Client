@@ -53,19 +53,25 @@
     <div class="section">
       <div class="section-header">
         <h3 class="section-title">Danh sách sản phẩm cần đặt</h3>
-        <div class="summary-badges">
-          <span class="badge blue">
-            <i class="pi pi-shopping-bag"></i>
-            {{ poItems.length }} sản phẩm
-          </span>
-          <span class="badge orange">
-            <i class="pi pi-box"></i>
-            {{ getTotalItems() }} đơn vị
-          </span>
-          <span class="badge green">
-            <i class="pi pi-dollar"></i>
-            {{ getTotalAmount() | number: '1.0-0' }} đ
-          </span>
+        <div class="section-header-actions">
+          <button class="btn-add-product" (click)="openAddProductDialog()">
+            <i class="pi pi-plus"></i>
+            Thêm sản phẩm
+          </button>
+          <div class="summary-badges">
+            <span class="badge blue">
+              <i class="pi pi-shopping-bag"></i>
+              {{ poItems.length }} sản phẩm
+            </span>
+            <span class="badge orange">
+              <i class="pi pi-box"></i>
+              {{ getTotalItems() }} đơn vị
+            </span>
+            <span class="badge green">
+              <i class="pi pi-dollar"></i>
+              {{ getTotalAmount() | number: '1.0-0' }} đ
+            </span>
+          </div>
         </div>
       </div>
 
@@ -185,6 +191,113 @@
 
   <p-toast position="top-right" />
 </div>
+
+<!-- Add Product Dialog -->
+<p-dialog
+  [(visible)]="showAddProductDialog"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '800px', maxWidth: '95vw' }"
+  styleClass="add-product-dialog"
+  (onHide)="closeAddProductDialog()"
+>
+  <ng-template pTemplate="header">
+    <h3 class="dialog-title">
+      <i class="pi pi-plus-circle"></i>
+      Thêm sản phẩm vào đơn đặt hàng
+    </h3>
+  </ng-template>
+
+  <div class="add-product-content">
+    <div class="search-section">
+      <div class="search-wrapper">
+        <i class="pi pi-search search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Tìm kiếm sản phẩm theo tên hoặc SKU..."
+          [(ngModel)]="productSearchText"
+          (input)="onProductSearch()"
+        />
+        <button *ngIf="productSearchText" class="clear-btn" (click)="productSearchText = ''; onProductSearch()">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="products-list">
+      <p-table
+        [value]="filteredProducts"
+        [loading]="loading"
+        [paginator]="true"
+        [rows]="10"
+        styleClass="product-select-table"
+        [scrollable]="true"
+        scrollHeight="400px"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 50px">#</th>
+            <th>Tên sản phẩm</th>
+            <th style="width: 120px">SKU</th>
+            <th style="width: 100px">ĐVT</th>
+            <th style="width: 100px" class="text-center">Tồn kho</th>
+            <th style="width: 120px" class="text-right">Giá nhập</th>
+            <th style="width: 100px" class="text-center">Thao tác</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-product let-rowIndex="rowIndex">
+          <tr>
+            <td>{{ rowIndex + 1 }}</td>
+            <td>
+              <div class="product-info">
+                <span class="product-name">{{ product.name }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="sku-badge">{{ product.sku }}</span>
+            </td>
+            <td>{{ product.unit }}</td>
+            <td class="text-center">
+              <span class="stock-badge" [class]="getStockClass(product)">
+                {{ product.stock_quantity }}
+              </span>
+            </td>
+            <td class="text-right">
+              <span class="price">{{ product.cost_price | number: '1.0-0' }} đ</span>
+            </td>
+            <td class="text-center">
+              <button class="btn-add-to-po" (click)="addProductToPO(product)" title="Thêm vào đơn hàng">
+                <i class="pi pi-plus"></i>
+                Thêm
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <i class="pi pi-inbox"></i>
+                <p>{{ productSearchText ? 'Không tìm thấy sản phẩm' : 'Chưa có sản phẩm nào' }}</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="add-product-dialog-footer">
+      <button class="btn-cancel" (click)="closeAddProductDialog()">
+        <i class="pi pi-times"></i>
+        Đóng
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
+
 
 
 
