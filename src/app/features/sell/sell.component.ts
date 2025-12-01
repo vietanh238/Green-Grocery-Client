@@ -476,26 +476,13 @@ export class SellComponent implements OnInit, OnDestroy {
     });
   }
 
-  private handlePaymentSuccess(paymentData: any): void {
-    if (paymentData && (paymentData.order_code || paymentData.status === 'completed')) {
-      this.saveCartBackup();
-      this.cartItems = [];
-      this.clearCartFromStorage();
-      this.loadProducts();
-
-      if (paymentData.order_code) {
-        this.showNotification(
-          'success',
-          `Thanh toán thành công - Mã đơn: ${paymentData.order_code}`
-        );
-      } else {
-        this.showNotification('success', 'Thanh toán thành công');
-      }
-
-      this.clearCartBackupAfterDelay();
-    } else {
-      this.showNotification('error', 'Thanh toán không thành công, vui lòng thử lại');
-    }
+  private handlePaymentSuccess(data: any): void {
+    this.saveCartBackup();
+    this.cartItems = [];
+    this.clearCartFromStorage();
+    this.loadProducts();
+    this.showNotification('success', 'Thanh toán thành công');
+    this.clearCartBackupAfterDelay();
   }
 
   private findProductByBarcode(barCode: string): Product | undefined {
