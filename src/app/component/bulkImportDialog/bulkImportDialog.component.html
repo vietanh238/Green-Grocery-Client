@@ -37,10 +37,25 @@
             </div>
           </div>
 
-          <button class="btn-template" (click)="downloadTemplate()">
-            <i class="pi pi-download"></i>
-            Tải file mẫu Excel
-          </button>
+          <div class="upload-options">
+            <button class="btn-template" (click)="downloadTemplate()">
+              <i class="pi pi-download"></i>
+              Tải file mẫu Excel
+            </button>
+            <div class="divider">hoặc</div>
+            <button class="btn-ai-upload" (click)="invoiceImageInput.click()" [disabled]="parsingInvoice">
+              <mat-spinner *ngIf="parsingInvoice" diameter="16" class="spinner-small"></mat-spinner>
+              <i *ngIf="!parsingInvoice" class="pi pi-image"></i>
+              {{ parsingInvoice ? 'Đang đọc...' : 'Nhập từ ảnh hóa đơn (AI)' }}
+            </button>
+            <input
+              #invoiceImageInput
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              (change)="onInvoiceImageSelect($event)"
+              style="display: none"
+            />
+          </div>
 
           <div
             class="upload-area"

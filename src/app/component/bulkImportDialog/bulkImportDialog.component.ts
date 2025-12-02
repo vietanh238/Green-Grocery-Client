@@ -45,6 +45,7 @@ export class BulkImportDialogComponent implements OnInit, OnDestroy {
   selectedFile: File | null = null;
   isDragOver = false;
   loading = false;
+  parsingInvoice = false;
 
   validProducts: BulkProduct[] = [];
   errors: any[] = [];
@@ -157,6 +158,87 @@ export class BulkImportDialogComponent implements OnInit, OnDestroy {
 
   removeFile(): void {
     this.selectedFile = null;
+  }
+
+  onInvoiceImageSelect(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      this.showError('Vui lòng chọn file ảnh (JPG, PNG, WEBP)');
+      return;
+    }
+
+    if (!this.isValidFileSize(file, 10)) {
+      this.showError('Kích thước file quá lớn. Tối đa 10MB');
+      return;
+    }
+
+    this.parseInvoiceImage(file);
+    event.target.value = '';
+  }
+
+  private parseInvoiceImage(file: File): void {
+    this.parsingInvoice = true;
+    this.validProducts = [];
+    this.errors = [];
+    this.totalRows = 0;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const sub = this.service
+      .parseProductInvoiceImage(formData)
+      .pipe(finalize(() => (this.parsingInvoice = false)))
+      .subscribe({
+        next: (response: any) => {
+          if (response.status === ConstantDef.STATUS_SUCCESS) {
+            const products = response.response?.products || [];
+            if (!products.length) {
+              this.showError('Không tìm thấy sản phẩm nào trong hóa đơn');
+              return;
+            }
+
+            this.validProducts = products;
+            this.totalRows = products.length;
+            this.currentStep = 2;
+            this.showSuccess(`Đã đọc được ${products.length} sản phẩm từ hóa đơn`);
+          } else {
+            const errorMsg = response.response?.error_message_vn || 'Không thể đọc hóa đơn';
+            const suggestion = response.response?.suggestion;
+            const debugInfo = response.response?.debug_info;
+
+            let fullMessage = errorMsg;
+            if (suggestion) {
+              fullMessage += `\n\n${suggestion}`;
+            }
+
+            if (debugInfo) {
+              console.log('Debug OCR Info:', debugInfo);
+              if (debugInfo.ocr_lines_sample) {
+                fullMessage += `\n\nOCR đọc được:\n${debugInfo.ocr_lines_sample.slice(0, 5).join('\n')}`;
+              }
+              if (debugInfo.sample_product_names) {
+                fullMessage += `\n\nSản phẩm trong hệ thống:\n${debugInfo.sample_product_names.join(', ')}`;
+              }
+            }
+
+            this.showError(fullMessage);
+          }
+        },
+        error: (error: any) => {
+          const errorMsg = error?.error?.response?.error_message_vn || 'Lỗi hệ thống khi đọc hóa đơn';
+          const suggestion = error?.error?.response?.suggestion;
+          if (suggestion) {
+            this.showError(`${errorMsg}\n\n${suggestion}`);
+          } else {
+            this.showError(errorMsg);
+          }
+        },
+      });
+
+    this.subscriptions.add(sub);
   }
 
   private isValidFileType(file: File): boolean {

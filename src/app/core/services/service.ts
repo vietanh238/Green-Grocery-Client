@@ -85,6 +85,10 @@ export class Service {
     return this.http.post(`${this.API_PRODUCT}bulk-create/`, productsData);
   }
 
+  parseProductInvoiceImage(formData: FormData): Observable<any> {
+    return this.http.post(`${this.API_PRODUCT}invoice/parse/`, formData);
+  }
+
   getSuppliers(): Observable<any> {
     return this.http.get(`${this.API_PRODUCT}suppliers/`);
   }
