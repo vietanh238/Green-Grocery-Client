@@ -223,16 +223,23 @@
             ></p-tag>
           </td>
           <td class="text-center">
-            <span class="stock-badge" [ngClass]="item.days_until_stockout <= 3 ? 'low' : 'ok'">
+            <span class="stock-badge" [ngClass]="(item.days_until_stockout !== null && item.days_until_stockout !== undefined && item.days_until_stockout <= 3) ? 'low' : 'ok'">
               {{ item.current_stock }}
             </span>
           </td>
           <td class="text-center">
             <span
+              *ngIf="item.days_until_stockout !== null && item.days_until_stockout !== undefined"
               [style.color]="item.days_until_stockout <= 3 ? '#ef4444' : 'inherit'"
               style="font-weight: 600"
             >
               {{ item.days_until_stockout }} ngày
+            </span>
+            <span
+              *ngIf="item.days_until_stockout === null || item.days_until_stockout === undefined"
+              style="color: #6b7280; font-style: italic"
+            >
+              N/A
             </span>
           </td>
           <td class="text-right">{{ item.predicted_demand_30_days | number : '1.0-0' }}</td>
