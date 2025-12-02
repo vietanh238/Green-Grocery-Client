@@ -280,7 +280,7 @@ export class PaymentQrDialogComponent implements OnInit, OnDestroy {
     this.qrLoaded = false;
 
     const timestamp = Date.now();
-    const orderCode = (timestamp % 900000000) + 100000000;
+    const orderCode = ((timestamp % 900000000) + 100000000).toString();
 
     const currentUrl = window.location.origin + this.router.url;
 

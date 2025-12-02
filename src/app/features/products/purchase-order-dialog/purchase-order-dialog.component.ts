@@ -5,7 +5,6 @@ import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angu
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { Select } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
@@ -56,7 +55,6 @@ interface Supplier {
     TableModule,
     InputTextModule,
     InputNumberModule,
-    Select,
     ToastModule,
     DialogModule
   ],

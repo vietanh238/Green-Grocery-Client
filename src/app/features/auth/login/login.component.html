@@ -36,8 +36,8 @@
           class="form-control"
           id="loginPhoneNum"
           name="phoneNum"
-          (keydown)="validateInput($event)"
-          [(ngModel)]="phoneNum"
+          (keydown)="validateNumericInput($event)"
+          [(ngModel)]="phoneNumber"
         />
       </div>
       <div class="mb-3">
@@ -66,7 +66,7 @@
           class="form-control"
           id="registerPhoneNum"
           name="registerPhoneNum"
-          (keydown)="validateInput($event)"
+          (keydown)="validateNumericInput($event)"
           [(ngModel)]="registerData.phone_number"
         />
       </div>

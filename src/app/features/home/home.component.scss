@@ -1,3 +1,5 @@
+@use "sass:color";
+
 $primary-green: #16a34a;
 $primary-green-hover: #15803d;
 $primary-green-light: #dcfce7;
@@ -291,7 +293,11 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0
     }
 
     &.revenue .stat-icon {
-      background: linear-gradient(135deg, $primary-green-light 0%, lighten($primary-green, 40%) 100%);
+      background: linear-gradient(
+        135deg,
+        $primary-green-light 0%,
+        color.adjust($primary-green, $lightness: 40%) 100%
+      );
       color: $primary-green;
     }
 
@@ -521,7 +527,11 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0
           }
 
           &.success {
-            background: linear-gradient(135deg, $primary-green-light 0%, lighten($primary-green, 40%) 100%);
+            background: linear-gradient(
+              135deg,
+              $primary-green-light 0%,
+              color.adjust($primary-green, $lightness: 40%) 100%
+            );
             color: $primary-green;
           }
         }

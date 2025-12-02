@@ -1,3 +1,5 @@
+@use "sass:color";
+
 $primary-color: #22c55e;
 $primary-hover: #16a34a;
 $danger-color: #ef4444;
@@ -243,7 +245,7 @@ $bg-section: #f9fafb;
   padding: 0;
 
   &:hover {
-    background: darken($danger-color, 10%);
+    background: color.adjust($danger-color, $lightness: -10%);
     transform: scale(1.1);
   }
 
