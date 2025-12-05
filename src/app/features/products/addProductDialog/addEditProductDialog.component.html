@@ -144,6 +144,7 @@
               [class.input-error]="errors['category']"
               class="form-input"
               (input)="inputNewCategory()"
+              style="padding: 7px 16px"
             />
           </div>
 
@@ -310,7 +311,11 @@
             />
             <small *ngIf="errors['reorderPoint']" class="error-message">
               <i class="pi pi-exclamation-triangle"></i>
-              {{ reorderPoint >= maxStockLevel ? 'Điểm đặt lại phải nhỏ hơn tồn kho tối đa' : 'Điểm đặt lại không được âm' }}
+              {{
+                reorderPoint >= maxStockLevel
+                  ? 'Điểm đặt lại phải nhỏ hơn tồn kho tối đa'
+                  : 'Điểm đặt lại không được âm'
+              }}
             </small>
             <small *ngIf="!errors['reorderPoint']" class="input-hint">
               Cảnh báo khi tồn kho dưới mức này
@@ -330,7 +335,11 @@
             />
             <small *ngIf="errors['maxStockLevel']" class="error-message">
               <i class="pi pi-exclamation-triangle"></i>
-              {{ maxStockLevel <= reorderPoint ? 'Tồn kho tối đa phải lớn hơn điểm đặt lại' : 'Tồn kho tối đa phải lớn hơn 0' }}
+              {{
+                maxStockLevel <= reorderPoint
+                  ? 'Tồn kho tối đa phải lớn hơn điểm đặt lại'
+                  : 'Tồn kho tối đa phải lớn hơn 0'
+              }}
             </small>
             <small *ngIf="!errors['maxStockLevel']" class="input-hint">
               Cảnh báo khi vượt mức này
