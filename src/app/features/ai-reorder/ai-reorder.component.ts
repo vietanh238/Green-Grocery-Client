@@ -182,9 +182,14 @@ export class AiReorderComponent implements OnInit {
               r.estimated_cost = Number(r.estimated_cost) || 0;
               r.predicted_demand_7_days = Number(r.predicted_demand_7_days) || 0;
               r.predicted_demand_30_days = Number(r.predicted_demand_30_days) || 0;
-              r.days_until_stockout = r.days_until_stockout !== null && r.days_until_stockout !== undefined
-                ? Number(r.days_until_stockout)
-                : null;
+              if (r.days_until_stockout !== null && r.days_until_stockout !== undefined) {
+                r.days_until_stockout = Number(r.days_until_stockout);
+                if (r.days_until_stockout >= 999) {
+                  r.days_until_stockout = 999;
+                }
+              } else {
+                r.days_until_stockout = 999;
+              }
             });
 
             this.summary = {
@@ -386,7 +391,7 @@ export class AiReorderComponent implements OnInit {
         SKU: r.product_sku || 'N/A',
         'Độ ưu tiên': this.getUrgencyLabel(r.urgency || 'low'),
         'Tồn kho hiện tại': `${Number(r.current_stock) || 0} ${r.unit || 'cái'}`,
-        'Hết hàng sau (ngày)': (r.days_until_stockout !== null && r.days_until_stockout !== undefined) ? Number(r.days_until_stockout) : 'N/A',
+        'Hết hàng sau (ngày)': (r.days_until_stockout !== null && r.days_until_stockout !== undefined && r.days_until_stockout < 999) ? Number(r.days_until_stockout) : 'Không hết',
         'Nhu cầu 30 ngày': (Number(r.predicted_demand_30_days) || 0).toFixed(1),
         'Đề xuất nhập': `${Math.max(1, Math.ceil(Number(r.optimal_order_quantity) || 0))} ${r.unit || 'cái'}`,
         'Chi phí dự kiến (đ)': Number(r.estimated_cost) || 0,

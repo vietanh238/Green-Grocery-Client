@@ -37,17 +37,17 @@
         </div>
         <div class="stat-item">
           <span class="stat-label">Hết hàng sau</span>
-          <span class="stat-value danger" *ngIf="recommendation.days_until_stockout !== null && recommendation.days_until_stockout !== undefined && recommendation.days_until_stockout <= 3">
+          <span class="stat-value danger" *ngIf="recommendation.days_until_stockout !== null && recommendation.days_until_stockout !== undefined && recommendation.days_until_stockout < 999 && recommendation.days_until_stockout <= 3">
             {{ recommendation.days_until_stockout }} ngày
           </span>
-          <span class="stat-value warning" *ngIf="recommendation.days_until_stockout !== null && recommendation.days_until_stockout !== undefined && recommendation.days_until_stockout > 3 && recommendation.days_until_stockout <= 7">
+          <span class="stat-value warning" *ngIf="recommendation.days_until_stockout !== null && recommendation.days_until_stockout !== undefined && recommendation.days_until_stockout < 999 && recommendation.days_until_stockout > 3 && recommendation.days_until_stockout <= 7">
             {{ recommendation.days_until_stockout }} ngày
           </span>
-          <span class="stat-value" *ngIf="recommendation.days_until_stockout !== null && recommendation.days_until_stockout !== undefined && recommendation.days_until_stockout > 7">
+          <span class="stat-value" *ngIf="recommendation.days_until_stockout !== null && recommendation.days_until_stockout !== undefined && recommendation.days_until_stockout < 999 && recommendation.days_until_stockout > 7">
             {{ recommendation.days_until_stockout }} ngày
           </span>
-          <span class="stat-value" style="color: #6b7280; font-style: italic" *ngIf="recommendation.days_until_stockout === null || recommendation.days_until_stockout === undefined">
-            N/A
+          <span class="stat-value" style="color: #10b981; font-weight: 600" *ngIf="recommendation.days_until_stockout === null || recommendation.days_until_stockout === undefined || recommendation.days_until_stockout >= 999">
+            Không hết
           </span>
         </div>
         <div class="stat-item">
